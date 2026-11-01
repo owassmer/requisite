@@ -462,10 +462,9 @@ export default function (pi: ExtensionAPI) {
       // first, then everything else the commit changed, tests included (Owen, October 8: the rest was being fetched in
       // pieces, which leaves the reading to habit).
       const report = /^=== report\n([\s\S]*?)^=== end of report/m.exec(text)?.[1]?.trim();
-      // Its beyond lines went to the outcome's held list (scripts/work), to be read with the verifier's findings.
-      const heldNote = /^=== beyond: (.*)$/m.exec(text)?.[1];
-      const shownReport = heldNote && report ? report.replace(/^beyond:\n[\s\S]*?(?=^(?:found):|(?![\s\S]))/m, `beyond: ${heldNote}\n\n`) : report;
-      if (/^=== worker on /m.test(text)) lines.push(shownReport ? `The worker's report:\n${shownReport}` : "The worker filed no report.");
+      // The whole report, beyond lines included: each is traced to its cause when it arrives, never held for later
+      // (Owen, November 1: no deferrals).
+      if (/^=== worker on /m.test(text)) lines.push(report ? `The worker's report:\n${report}` : "The worker filed no report.");
       const applied = /^=== applied to \S+ as ([0-9a-f]+)/m.exec(text)?.[1];
       // Whether the branch, with every run applied to it, still passes lint and the type check (scripts/work checks it
       // after applying): runs applied side by side each passed their own gates, not necessarily together.

@@ -138,17 +138,6 @@ if [ "$status" -eq 0 ] && tail -n 20 "$root/.runs/$run.jsonl" | grep -q '"stopRe
 # The worker's report (tools/roles/worker.ts) goes in the log, where the coordinator's finish notice reads it.
 if [ -f "$ws/.tmp/report.json" ]; then
   { echo "=== report"; node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); for (const k of ["changed","departures","notTrue","decisions","beyond"]) if (r[k] !== undefined) console.log(k + ":\n" + String(r[k] ?? "").trim() + "\n")' "$ws/.tmp/report.json"; echo "=== end of report"; } >> "$log"
-  # What a worker saw bearing on other claims goes to its outcome's held list, read together with the verifier's
-  # findings for what they share, not relayed one by one into the next task (Handoff, October 15).
-  outcome="$(basename "$task" .md | grep -oE '^[0-9]{3}' || true)"
-  beyond="$(node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(String(r.beyond ?? "").trim())' "$ws/.tmp/report.json")"
-  if [ -n "$outcome" ] && [ -n "$beyond" ] && [ "$(printf '%s' "$beyond" | tr '[:upper:]' '[:lower:]')" != "none" ]; then
-    held="tasks/$outcome-held.md"
-    [ -f "$held" ] || echo "# What workers saw bearing on other claims, held to read with the verifier's findings" > "$held"
-    { echo; echo "From $run's report:"; printf '%s\n' "$beyond"; } >> "$held"
-    git add "$held" && git commit -q -m "held: $run's beyond" -- "$held" || echo "=== could not commit $held; its lines are in it uncommitted" >> "$log"
-    echo "=== beyond: $(printf '%s\n' "$beyond" | grep -c .) lines added to $held" >> "$log"
-  fi
 else
   echo "=== no report filed" >> "$log"
   [ "$status" -eq 0 ] && status=8
