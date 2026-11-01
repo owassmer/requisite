@@ -1,0 +1,6 @@
+# What Requisite's models read: a change to these is shown whole in a run's finish notice, before the rest.
+# The state renderer and question text decision models see, and the prompts and tool descriptions agents see.
+requisite/judgment/render.py
+requisite/judgment/questions
+requisite/agents/prompts
+requisite/library/templates

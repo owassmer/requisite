@@ -1,0 +1,3 @@
+# The definition: the canonical §4 module and the tables the invariants hold. A change to these is shown whole first.
+requisite/core
+requisite/registry.toml

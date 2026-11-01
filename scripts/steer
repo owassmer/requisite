@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+// scripts/steer <run> "<message>"   Tell a running worker or verifier something. It reads it after its current tool
+//                                    calls, before its next model call, and carries on with it in mind.
+// scripts/steer <run> --stop ["why"] End the run now. Nothing it did is applied: a worker's workspace is kept (its
+//                                    path is in the log), and a verifier commits no list.
+//
+// <run> is the name of a .runs/<run>.log in this checkout, or the start of one (work-002-4); it must match exactly one
+// run that is still going. The run's driver (tools/roles/run.mjs) picks the message up from .runs/<run>.steer and
+// answers in the log; this waits for that answer and prints it. The message shows in the run's log and feed.
+import { appendFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { join } from "node:path";
+
+const root = execSync("git rev-parse --show-toplevel", { encoding: "utf8" }).trim();
+const RUNS = join(root, ".runs");
+const [name, ...rest] = process.argv.slice(2);
+const stop = rest[0] === "--stop";
+const message = (stop ? rest.slice(1) : rest).join(" ").trim();
+const fail = (m) => {
+  console.error(m);
+  process.exit(2);
+};
+if (!name || (!stop && !message)) fail('usage: scripts/steer <run> "<message>"  |  scripts/steer <run> --stop ["why"]');
+// Nothing reaches a worker unread: the delegation gate leaves word of each message its fresh reader read.
+if (!stop && !process.env.FACTORY_UNREAD) {
+  const { createHash } = await import("node:crypto");
+  const mark = join(root, ".runs", "read", createHash("sha256").update(message.trim()).digest("hex"));
+  if (!existsSync(mark)) fail("this message has not been read by the fresh reader in this text: send it on its own (one scripts/steer per command) so it is read first");
+}
+
+// A run is going until tools/feed/runs.mjs says it finished (a finish line, or its script is gone).
+const { runStateOf } = await import(join(root, "tools/feed/runs.mjs"));
+const finished = (log) => runStateOf(log).state === "finished";
+const logs = existsSync(RUNS) ? readdirSync(RUNS).filter((f) => f.endsWith(".log")).map((f) => f.slice(0, -4)) : [];
+const exact = logs.includes(name) ? [name] : [];
+const going = (exact.length ? exact : logs.filter((r) => r.startsWith(name))).filter((r) => !finished(join(RUNS, `${r}.log`)));
+if (going.length === 0) fail(`no run still going matches ${name} in ${RUNS} (scripts/watch --list shows the runs)`);
+if (going.length > 1) fail(`${name} matches more than one run still going: ${going.join(", ")}`);
+const run = going[0];
+const log = join(RUNS, `${run}.log`);
+if (!readFileSync(log, "utf8").includes("=== steerable")) fail(`${run} was started before runs could be steered`);
+
+const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+appendFileSync(join(RUNS, `${run}.steer`), JSON.stringify({ id, kind: stop ? "stop" : "steer", message }) + "\n");
+
+// The driver answers within a second while Pi works; a run still building its workspace answers once Pi starts.
+const deadline = Date.now() + 120_000;
+const timer = setInterval(() => {
+  const text = readFileSync(log, "utf8");
+  const answer = text.split("\n").find((l) => l.includes(`(${id})`));
+  if (answer) {
+    console.log(answer.replace(/^=== /, ""));
+    clearInterval(timer);
+    process.exit(/^=== (steered|stopped) /.test(answer) ? 0 : 1);
+  }
+  if (/^=== finished/m.test(text)) {
+    console.log(`${run} finished before reading this; it was not ${stop ? "stopped" : "steered"}`);
+    clearInterval(timer);
+    process.exit(1);
+  }
+  if (Date.now() > deadline) {
+    // Still building its workspace or starting its product: the driver reads the message once Pi starts.
+    console.log(`queued (${id}): ${run} has not started its ${/^=== verifier/m.test(text) ? "verifier" : "worker"} yet; it will act on this when it does, and its log will say so`);
+    clearInterval(timer);
+    process.exit(0);
+  }
+}, 300);

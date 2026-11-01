@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# tools/feed/feed [run]: follow a run in Pi's transcript view, read-only (see feed.mjs).
+exec node "$(dirname "$0")/feed.mjs" "$@"

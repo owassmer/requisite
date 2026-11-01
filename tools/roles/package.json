@@ -1,0 +1,9 @@
+{
+  "name": "requisite-roles",
+  "private": true,
+  "type": "module",
+  "description": "The sandbox every worker and verifier runs in. See sandbox.ts.",
+  "dependencies": {
+    "@anthropic-ai/sandbox-runtime": "0.0.78"
+  }
+}

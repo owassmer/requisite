@@ -1,0 +1,44 @@
+#!/bin/bash
+# scripts/prune-workspaces    Removes the workspaces that ended worker runs left behind.
+#
+# A run that fails or is stopped keeps its workspace, so it can be resumed (scripts/work --resume). Nothing removed them
+# later: 63 had piled up by October 14, and running out of disk stopped runs twice. Owen said yes to removing them
+# automatically (October 14, #168): a run's workspace goes once a later run of the same task has finished, since a
+# superseded workspace is never resumed, or three days after the run ended. A run still going keeps its workspace, and
+# so does one this cannot place: a workspace no run log names is left alone.
+# scripts/work calls this before it checks for disk space; it can also be run by hand.
+set -u
+cd "$(git rev-parse --show-toplevel)" || exit 0
+running() { [ -n "$1" ] && kill -0 "$1" 2>/dev/null && ps -o command= -p "$1" | grep -q 'scripts/work'; }
+removed=0
+for checkout in $(git worktree list --porcelain | sed -n 's/^worktree //p'); do
+  for log in "$checkout"/.runs/work-*.log; do
+    [ -f "$log" ] || continue
+    ws="$(sed -n 1p "$log" | grep -o '/private/[^ ]*' || true)"
+    [ -n "$ws" ] && [ -d "$ws" ] || continue
+    running "$(grep -o 'steerable (pid [0-9]*' "$log" | grep -o '[0-9]*$' || true)" && continue
+    name="$(basename "$log" .log)"; task="${name%-*}"; stamp="${name##*-}"
+    why=""
+    for other in "$checkout"/.runs/"$task"-*.log; do
+      o="$(basename "$other" .log)"
+      # Only a later run whose worker began supersedes it: one that ended before its worker started (the product did not
+      # start, or the workspace it would resume was missing) carried nothing on, and pruning on it lost 006-1c's work
+      # (October 18).
+      if [[ "${o##*-}" > "$stamp" ]] && grep -q '^=== finished' "$other" && grep -q '^=== grounding' "$other"; then why="a later run of the task, $o, has finished"; break; fi
+    done
+    # A run another task resumed (its work carried into that run's workspace) is superseded once that run has finished.
+    if [ -z "$why" ]; then
+      for other in "$checkout"/.runs/work-*.log; do
+        [ "$other" = "$log" ] && continue
+        if grep -q "^=== resuming $name:" "$other" && grep -q "^=== finished exit 0" "$other"; then why="its work was resumed by $(basename "$other" .log), which has finished"; break; fi
+      done
+    fi
+    [ -z "$why" ] && [ -n "$(find "$log" -mtime +3 2>/dev/null)" ] && why="it ended more than three days ago"
+    [ -n "$why" ] || continue
+    rm -rf "$ws" "$ws.tmp" "$ws.resume.patch"
+    echo "=== workspace removed ($why)" >> "$log"
+    removed=$((removed + 1))
+  done
+done
+[ "$removed" -eq 0 ] || echo "removed $removed ended runs' workspaces"
+exit 0

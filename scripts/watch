@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+// scripts/watch [run]           Follow a worker or verifier run live, one readable line per step, until it finishes.
+//                               With no run, the newest in .runs/. A run is the name of its .runs/<run>.log.
+//                               To watch a run as Pi shows a session, tools/feed/feed [run].
+// scripts/watch --list          The runs, newest first.
+// scripts/watch --render        Read Pi's JSON event stream on stdin and write the readable lines (used by
+//                               scripts/work and scripts/verify; see Pi's docs/json.md).
+import { createReadStream, existsSync, readdirSync, statSync, watch as fsWatch } from "node:fs";
+import { execSync } from "node:child_process";
+import { join } from "node:path";
+
+const root = execSync("git rev-parse --show-toplevel", { encoding: "utf8" }).trim();
+const RUNS = join(root, ".runs");
+const arg = process.argv[2];
+const one = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+
+function render() {
+  const out = (line) => process.stdout.write(`${new Date().toISOString().slice(11, 19)} ${line}\n`);
+  let buf = "";
+  let prompts = 0; // the first user message is the task; later ones are the coordinator steering
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (chunk) => {
+    buf += chunk;
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const raw = buf.slice(0, i).replace(/\r$/, "");
+      buf = buf.slice(i + 1);
+      let e;
+      try { e = JSON.parse(raw); } catch { continue; }
+      if (e.type === "message_start" && e.message?.role === "user" && ++prompts > 1) {
+        const c = e.message.content;
+        out(`steered: ${one(typeof c === "string" ? c : (c ?? []).map((b) => b.text ?? "").join(" "), 1200)}`);
+      } else if (e.type === "tool_execution_start") out(`→ ${e.toolName}: ${one(e.args?.command ?? e.args?.path ?? JSON.stringify(e.args), 400)}`);
+      else if (e.type === "tool_execution_end") {
+        const text = (e.result?.content ?? []).map((c) => c.text ?? "").join(" ");
+        out(`  ${e.isError ? "✗" : "←"} ${one(text, 300)}`);
+      } else if (e.type === "message_end" && e.message?.role === "assistant") {
+        for (const c of e.message.content ?? []) if (c.type === "text" && c.text.trim()) out(`says: ${one(c.text, 1200)}`);
+        if (e.message.stopReason === "error") out(`✗ model error: ${one(e.message.errorMessage, 400)}`);
+      } else if (e.type === "auto_retry_start") out(`… retrying: ${one(e.errorMessage, 200)}`);
+      else if (e.type === "compaction_start") out("… compacting context");
+    }
+  });
+}
+
+function runs() {
+  if (!existsSync(RUNS)) return [];
+  return readdirSync(RUNS).filter((f) => f.endsWith(".log")).map((f) => ({ run: f.slice(0, -4), t: statSync(join(RUNS, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+}
+
+function follow(run) {
+  const file = join(RUNS, `${run}.log`);
+  if (!existsSync(file)) { console.error(`no run ${run}; scripts/watch --list shows them`); process.exit(2); }
+  let pos = 0, pending = "", done = false;
+  const read = () => {
+    const size = statSync(file).size;
+    if (size <= pos) return;
+    createReadStream(file, { start: pos, end: size - 1, encoding: "utf8" }).on("data", (d) => {
+      pending += d;
+      const lines = pending.split("\n");
+      pending = lines.pop();
+      for (const l of lines) {
+        console.log(l);
+        if (l.startsWith("=== finished")) done = true;
+      }
+      if (done) process.exit(0);
+    });
+    pos = size;
+  };
+  read();
+  fsWatch(file, read);
+  setInterval(read, 2000);
+}
+
+if (arg === "--render") render();
+else if (arg === "--list") for (const r of runs()) console.log(`${new Date(r.t).toISOString()}  ${r.run}`);
+else {
+  const run = arg ?? runs()[0]?.run;
+  if (!run) { console.error("no runs yet; scripts/work and scripts/verify write them to .runs/"); process.exit(2); }
+  follow(run);
+}

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# gates: the full lint, type check and test run, one at a time on this machine. It waits its turn while another full run
+# holds the lock, and says so. A focused run (uv run pytest tests/<file>) needs no turn: use it freely while working, and
+# run gates before you finish. Run from the root of a checkout or workspace. CI runs the same three (.github/workflows).
+set -uo pipefail
+locks=/private/tmp/requisite-locks; lock="$locks/gates"
+mkdir -p "$locks" 2>/dev/null
+alive() { local pid="$1" err; [ -n "$pid" ] || return 1; err="$(kill -0 "$pid" 2>&1)" && return 0; [[ "$err" == *"not permitted"* ]]; }
+said=0
+until mkdir "$lock" 2>/dev/null; do
+  holder="$(cat "$lock/pid" 2>/dev/null)"
+  if [ -n "$holder" ] && ! alive "$holder"; then rm -rf "$lock"; continue; fi
+  [ "$said" = 1 ] || { echo "gates: another full run is going (pid ${holder:-?}); waiting for its turn"; said=1; }
+  sleep 5
+done
+echo $$ > "$lock/pid"
+trap 'rm -rf "$lock"' EXIT
+cd "${GATES_ROOT:-.}" && [ -f pyproject.toml ] || { echo "gates: no pyproject.toml here; run from the root of a checkout or workspace"; exit 2; }
+# The whole output goes to a log, and a failure ends with what failed and where to read it, so a failed run is read, not
+# run again (Handoff, October 13).
+log="$(mktemp "${TMPDIR:-/tmp}/gates.XXXXXX")"
+started=$SECONDS
+( uv run --frozen ruff check requisite tests && uv run --frozen mypy && uv run --frozen pytest -m "not live" -rfE ) > "$log" 2>&1
+status=$?
+took=$(( SECONDS - started ))
+if [ "$status" -eq 0 ]; then
+  tail -3 "$log"
+  echo "gates: passed in ${took}s (full output: $log)"
+else
+  echo "gates: FAILED in ${took}s. What failed:"
+  grep -E "^(FAILED|ERROR) |: error: |^[^ ]+\.py:[0-9]+:[0-9]+: [A-Z]+[0-9]+ |^E  " "$log" | head -40
+  tail -3 "$log"
+  echo "gates: full output: $log"
+  echo "gates: to look at one failure, run its file alone (no turn needed): uv run pytest tests/<file>"
+fi
+exit "$status"

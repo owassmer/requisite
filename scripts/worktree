@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# scripts/worktree <outcome id>    A coordinator's own checkout for one outcome, beside the main one and ready to run.
+#
+# Checks out branch outcome/<id> (cut from main if it does not exist yet) in ../<repo>-<id>, clones the factory's Node
+# dependencies copy-on-write from the main checkout, syncs its Python environment offline, and links the local source
+# documents (spec/, not in git) and .env. Each checkout keeps its own .runs/,
+# so a coordinator working there is told only about its own runs. Prints the folder.
+set -euo pipefail
+id="${1:?usage: scripts/worktree <outcome id>}"
+main="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
+dir="$(dirname "$main")/$(basename "$main")-$id"
+[ -e "$dir" ] && { echo "$dir already exists" >&2; exit 2; }
+cd "$main"
+if git show-ref --verify --quiet "refs/heads/outcome/$id"; then git worktree add -q "$dir" "outcome/$id"
+else git worktree add -q -b "outcome/$id" "$dir" main; fi
+for m in tools/roles/node_modules; do
+  [ -d "$main/$m" ] && cp -cR "$main/$m" "$dir/$m"
+done
+ln -s "$main/spec" "$dir/spec"
+[ -f "$main/.env" ] && ln -s "$main/.env" "$dir/.env"
+(cd "$dir" && uv sync --frozen --offline -q) || echo "worktree: uv sync --frozen --offline failed in $dir; run uv sync --frozen there" >&2
+git -C "$dir" config core.hooksPath tools/hooks
+echo "$dir"

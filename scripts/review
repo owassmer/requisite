@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# scripts/review <brief file> [<file>...]    The other family reviews the coordinator's own plan against the code.
+# scripts/review --definition                 The other family judges the staged change to the definition, as a run in
+#                                             the background with its feed (.runs/<run>.log; the verdict, .runs/<run>.md).
+# scripts/review --definition --answer <file> Judged again with the coordinator's answer to each BROKEN finding of its
+#                                             verdict on this same diff: the reviewer withdraws a finding the answer
+#                                             meets, or keeps it BROKEN with the passage that makes it one.
+# scripts/review --check                      Exits 0 when nothing in the definition is staged, or that staged change was
+#                                             judged HOLDS (the pre-commit hook, tools/hooks/pre-commit, runs this).
+#
+# Why (Handoff, October 17): the coordinator writes the exact changes for a unification itself, so the check on that reasoning has
+# to come from outside its model family, as the verifier's does on an outcome. A review reads the plan and the code it
+# names and reports what will not compile, will not do what it says, or adds a copy; the coordinator weighs each finding
+# against the purpose and the settled design before it changes the plan, as it weighs a verifier's report, since the
+# reviewer holds only what it is given. It reports findings and never fixes: its suggested fixes, unaligned with the
+# whole purpose, tended to hedges and unknown-states (Owen, October 18), while its findings were usually sound.
+# The reviewer works in a sandboxed copy of the committed repository (app, the legal trees, design, tasks, AGENTS.md) with
+# the files or folders named here, and every repository path the brief itself names, added (a run's notes, an earlier
+# review, a records folder); it changes nothing there but its review. The brief says
+# what to review and where to write it: review.md in the workspace.
+# The review is .runs/<run>.md, the log .runs/<run>.log; a feed opens on it, and scripts/steer <run> reaches it.
+# The whole script is one block, so bash reads all of it before running any.
+{
+set -euo pipefail
+MODEL="${REVIEW_MODEL:-openai-codex/gpt-6-astra:high}"   # the verifier's family
+# The judgment of a staged definition change, run in the background so the coordinator works on while it goes and Owen
+# watches it in its feed (October 28). Its diff and prompt were fixed when it was dispatched, and its verdict is kept by
+# that diff's hash, as before; the hook refuses the commit until it is HOLDS.
+if [ "${1:-}" = --definition-run ]; then
+  root="$(git rev-parse --show-toplevel)"; cd "$root"
+  run="${FACTORY_RUN:?}"; verdict="${REVIEW_VERDICT:?}"; log="$root/.runs/$run.log"
+  echo "=== review of the staged definition ($MODEL), verdict kept at $verdict" > "$log"
+  echo "=== dispatched by session ${PI_SESSION_ID:-none}" >> "$log"
+  echo "=== steerable (pid $$): scripts/steer $run \"<message>\" (or --stop)" >> "$log"
+  set +e
+  node "$root/tools/roles/run.mjs" --inbox "$root/.runs/$run.steer" --prompt "$(cat "$root/.runs/$run.prompt")" -- \
+    pi --mode rpc --no-session --no-extensions --no-skills --no-context-files --no-prompt-templates \
+      --tools read,grep,find,ls --model "$MODEL" 2>> "$log" \
+    | tee "$root/.runs/$run.jsonl" | "$root/scripts/watch" --render >> "$log"
+  status=${PIPESTATUS[0]}; set -e
+  [ "$status" -eq 0 ] || { echo "=== finished exit $status" >> "$log"; exit "$status"; }
+  # Its answer: the text of the reviewer's last message.
+  out="$(node -e '
+    const lines = require("fs").readFileSync(process.argv[1], "utf8").split("\n");
+    let text = "";
+    for (const l of lines) { let e; try { e = JSON.parse(l); } catch { continue; }
+      if (e.type === "message_end" && e.message?.role === "assistant") { const t = (e.message.content ?? []).filter((c) => c.type === "text").map((c) => c.text).join("\n").trim(); if (t) text = t; } }
+    process.stdout.write(text);' "$root/.runs/$run.jsonl")"
+  printf '%s\n' "$out" > "$root/.runs/$run.md"
+  printf '%s\n' "$out" | grep '^NOTED' > "$verdict.noted" || true
+  if printf '%s\n' "$out" | grep -q '^BROKEN' || ! printf '%s\n' "$out" | grep -qx 'HOLDS'; then
+    printf '%s\n' "$out" > "$verdict"; echo "=== verdict: BROKEN (.runs/$run.md)" >> "$log"
+  else
+    printf 'HOLDS\n' > "$verdict"; echo "=== verdict: HOLDS" >> "$log"
+  fi
+  echo "=== finished exit 0" >> "$log"
+  exit 0
+fi
+# The definition is judged when it is written (Owen, October 27): what the coordinator writes is shaped by what is concrete
+# in front of it (old code read in order to edit it, a green test), and nothing judged its design between writing it and
+# the verifier, who sees only the running product and cannot see a fact held twice. The verdict is kept by the hash of the
+# staged diff, so a changed diff is judged again; the hook refuses a commit of the definition without HOLDS on it.
+if [ "${1:-}" = --definition ] || [ "${1:-}" = --check ]; then
+  root="$(git rev-parse --show-toplevel)"; cd "$root"
+  # The definition: the canonical §4 module and the invariants' tables (requisite/core), the registry of what the sources
+  # enumerate, and the tests that hold them.
+  DEF=(requisite/core requisite/registry.toml tests/core)
+  diff="$(git diff --cached -- "${DEF[@]}")"
+  if [ -z "$diff" ]; then [ "$1" = --check ] || echo "Nothing in the definition is staged."; exit 0; fi
+  hash="$(printf '%s' "$diff" | shasum -a 256 | cut -c1-64)"
+  store="$(git rev-parse --git-common-dir)/review"; mkdir -p "$store"
+  verdict="$store/$hash"
+  if [ "$1" = --check ]; then
+    if [ -f "$verdict" ] && [ "$(grep -v '^[[:space:]]*$' "$verdict")" = HOLDS ]; then
+      exit 0
+    fi
+    echo "The staged change to the definition has not been judged HOLDS by the other family: run scripts/review --definition." >&2
+    [ -f "$verdict" ] && { echo "Its verdict on this exact diff:" >&2; cat "$verdict" >&2; }
+    exit 1
+  fi
+  # The reviewer reads the files as they will be committed.
+  git diff --quiet -- "${DEF[@]}" || { echo "Stage all of the definition's changes first: the reviewer reads the files as staged." >&2; exit 2; }
+  # The coordinator adjudicates each finding, as it does every check's (Owen, October 28): a finding it declines is put back
+  # to the reviewer with its answer, never reworded to pass. The reviewer still gives the verdict, and the hook still wants
+  # HOLDS; a finding kept BROKEN after the answer goes to Owen.
+  answer=""; findings=""
+  if [ "${2:-}" = --answer ]; then
+    [ -f "${3:-}" ] || { echo "review: --answer <file>: the coordinator's answer to each BROKEN finding" >&2; exit 2; }
+    [ -f "$verdict" ] && grep -q '^BROKEN' "$verdict" || { echo "review: no BROKEN verdict on this exact diff to answer" >&2; exit 2; }
+    findings="$(grep '^BROKEN' "$verdict")"; answer="$(cat "$3")"
+  fi
+  prompt="You review a change to the definition of Requisite before it is committed. You did not write it, and your
+judgment is the only one it gets before it lands. The definition is the one canonical module of the build spec's §4
+interfaces as amended by the mathematical addendum, the tables that hold the spec's invariants (I1-I10), and the registry
+of what the sources enumerate. Every package imports it, so an error here is an error everywhere. Each field, rule and
+table row cites its source: a section of the spec (spec §n), an amendment of the addendum (addendum Ann, or its section),
+Owen's decision (design/decisions.md), or our reasoning, marked as ours.
+
+The sources are in this repository: spec/build-spec-v3.txt (the spec's text; its three diagrams are spec/diagram-*.png),
+spec/Requisite_Mathematical_Addendum.md and its oracle spec/verify_math.py. Read each statement the change adds or alters
+beside its source: open the file and read the passage in its place. You may read any file here (read, grep, find, ls).
+Answer with one line per finding.
+
+A finding blocks the change, and starts with BROKEN, only where the definition would be false to its sources, and the
+finding quotes the passage that shows it:
+- a statement, type, field, constraint or table row that the cited passage contradicts, or a passage cited for
+  something it does not support;
+- a rule, value, field or row the change adds with no source at all;
+- a binding invariant (I1-I10) or an accepted amendment that the change would let code violate where the type could
+  have refused it;
+- code in the change that computes, beside the definition, something the definition states.
+Everything else does not block: it starts with NOTED, for the coordinator to weigh (a case the sources do not settle, a
+name that could be plainer, a distinction not drawn). design/ restates our reasoning and Owen's decisions; it is not a
+source of the spec's meaning.
+
+A finding cites the passage it rests on, never a restatement of it. Report findings only, never fixes. If nothing blocks,
+answer the line HOLDS, after any NOTED lines. Say nothing else.
+
+<AGENTS.md>
+$(cat AGENTS.md)
+</AGENTS.md>
+
+<design/posture.md>
+$(cat design/posture.md)
+</design/posture.md>
+
+<the staged diff>
+$diff
+</the staged diff>"
+  if [ -n "$answer" ]; then prompt="$prompt
+
+You judged this same diff before, with the findings below. The coordinator, who writes the definition, has answered each.
+For each of your findings, answer WITHDRAWN where the answer shows it is not false to its sources, quoting the finding; or keep it BROKEN, quoting the passage that makes it one. Then judge the change as
+above, and end with HOLDS where nothing still blocks.
+
+<your findings>
+$findings
+</your findings>
+
+<the coordinator's answer>
+$answer
+</the coordinator's answer>"; fi
+  # The verdict holds where no finding blocks (Handoff, October 27: the gate blocks only what is false to the sources);
+  # what it noted is kept beside it, for the coordinator to weigh. A verdict kept on this diff from an
+  # earlier judgment is replaced by this one's.
+  run="review-definition-$(date +%Y%m%dT%H%M%S)"; mkdir -p .runs
+  printf '%s' "$prompt" > ".runs/$run.prompt"
+  rm -f "$verdict" "$verdict.noted"
+  # The coordinator's answer is kept beside the verdict it answered, for Owen to read.
+  [ -z "$answer" ] || { printf '%s\n\nFindings answered:\n%s\n' "$answer" "$findings" > "$verdict.answer"; cp "$verdict.answer" ".runs/$run.answer"; }
+  FACTORY_RUN="$run" REVIEW_VERDICT="$verdict" nohup "$root/scripts/review" --definition-run </dev/null >/dev/null 2>&1 &
+  echo "Judging the staged change to the definition ($MODEL) in the background: .runs/$run.log; its verdict, .runs/$run.md."
+  exit 0
+fi
+brief="${1:?usage: scripts/review <brief file> [<file>...]}"; shift
+root="$(git rev-parse --show-toplevel)"; cd "$root"
+[ -f "$brief" ] || { echo "review: no brief $brief" >&2; exit 2; }
+for f in "$@"; do [ -e "$f" ] || { echo "review: no $f" >&2; exit 2; }; done
+# Every path in the repository the brief names goes into the workspace with it, so the reviewer reads what its judgment
+# rests on. Without this, the 006 part-3 survey ran without the parties' records or the outcome it serves, because they
+# were named in the brief but not passed (October 18).
+named=()
+for p in $(grep -oE '(outcomes|research|tasks|design|reference|requisite|tests|fixtures)/[A-Za-z0-9._/-]*[A-Za-z0-9_]' "$brief" | sort -u); do
+  [ -e "$p" ] && named+=("$p")
+done
+set -- "$@" "${named[@]+"${named[@]}"}"
+git diff --quiet HEAD -- requisite design || { echo "commit first: the review reads the committed plan and code" >&2; exit 2; }
+
+run="${FACTORY_RUN:-review-$(basename "$brief" .md)-$(date +%Y%m%dT%H%M%S)}"; mkdir -p .runs
+if [ -z "${FACTORY_RUN:-}" ]; then
+  FACTORY_RUN="$run" nohup "$root/scripts/review" "$brief" "$@" </dev/null >/dev/null 2>&1 &
+  echo "run: .runs/$run.log"; exit 0
+fi
+log="$root/.runs/$run.log"
+ws="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/requisite-review.XXXXXX")" && pwd -P)"
+echo "=== review $(basename "$brief") ($MODEL) in $ws" > "$log"; echo "=== dispatched by session ${PI_SESSION_ID:-none}" >> "$log"
+echo "=== steerable (pid $$): scripts/steer $run \"<message>\" (or --stop)" >> "$log"
+on_err() { echo "=== finished exit $1 (${0##*/} stopped at line $2)" >> "$log"; }
+trap 'on_err $? $LINENO' ERR
+
+parts=(AGENTS.md design)
+for p in requisite tests fixtures reference tasks outcomes; do [ -n "$(git ls-tree --name-only HEAD "$p")" ] && parts+=("$p"); done
+git archive HEAD -- "${parts[@]}" | tar -x -C "$ws"
+main_checkout="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
+cp -cR "$main_checkout/spec" "$ws/spec"
+for f in "$@"; do mkdir -p "$ws/$(dirname "$f")" && cp -pR "$f" "$ws/$f"; done
+
+# The reviewer holds the posture and decisions too, so it judges with the intent behind the design (Owen, October 18).
+grounding=()
+for g in design/posture.md design/decisions.md; do if [ -f "$ws/$g" ]; then grounding+=(--append-system-prompt "$ws/$g"); fi; done
+echo "=== grounding: ${grounding[*]+${grounding[*]}}" >> "$log"
+node_dir="$(dirname "$(dirname "$(command -v node)")")"
+trap - ERR; set +e
+(cd "$ws" && ROLE_WORKSPACE="$ws" ROLE_ALLOW_READ="$node_dir" \
+  node "$root/tools/roles/run.mjs" --inbox "$root/.runs/$run.steer" --prompt "$(cat "$brief")
+
+Also, for each change: where it keeps, adjusts, works around or defers to something that already exists (a rule, a
+number, a mechanism, a test, a record's shape, a review, a decision), say what that thing is for and whether its purpose
+holds here; name any the plan keeps or tunes without saying what it is for.
+
+Report findings only: what is wrong, the case that shows it, and the file, line or source passage it rests on. Do not
+propose fixes, alternatives or "smaller changes": the one who reads this writes the fix from the purpose and the
+settled design, which you do not hold whole. Where a finding rests on a record or field being absent, say whether the
+records you were given ever lack it.
+
+Write your review to review.md here; change nothing else." -- \
+  pi --mode rpc --no-session --no-extensions --no-skills --no-context-files --no-prompt-templates \
+    -e "$root/tools/roles/sandbox.ts" --tools read,bash,write --model "$MODEL" "${grounding[@]+"${grounding[@]}"}" 2>> "$log") \
+  | tee "$root/.runs/$run.jsonl" | scripts/watch --render >> "$log"
+status=${PIPESTATUS[0]}; set -e; trap 'on_err $? $LINENO' ERR
+[ "$status" -eq 0 ] || { echo "=== finished exit $status" >> "$log"; exit "$status"; }
+[ -s "$ws/review.md" ] || { echo "=== finished exit 3 (no review.md was written)" >> "$log"; exit 3; }
+cp "$ws/review.md" "$root/.runs/$run.md"
+echo "=== review: .runs/$run.md" >> "$log"
+rm -rf "$ws" "$ws.tmp"
+echo "=== finished exit 0" >> "$log"
+exit 0
+}

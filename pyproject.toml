@@ -1,0 +1,65 @@
+[project]
+name = "requisite"
+version = "0.1.0"
+description = "A runtime for discovery and contract construction: agents propose structure, decision models test bounded judgments, code commits state and computes consequences, humans authorize at fixed gates."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Proprietary" }
+dependencies = [
+    "pydantic>=2.9",
+    "numpy>=1.26",
+    "scipy>=1.11",          # HiGHS through linprog (spec §8.3)
+    "httpx>=0.27",          # provider and source adapters
+    "python-sat>=1.8.dev0", # SAT consistency of the proposition layer (spec §5) and feasible MC/DC witnesses (addendum A09)
+    "jinja2>=3.1",          # prose compilation and the static dossier (spec §8.5, WP16)
+    "pypdf>=5.0",           # filed-terms PDFs (WP2, F1)
+    "tzdata>=2024.1",       # explicit time zones on contract times (spec §14)
+]
+
+[project.scripts]
+requisite = "requisite.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "hypothesis>=6.112",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "ppi-python>=0.2",      # a reference to compare against only (spec §7.4); the design-correct estimators are ours (addendum A07)
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["requisite"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["spec", "var", "tools", ".runs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "T20"]
+ignore = ["E501", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "T20"]
+"requisite/cli.py" = ["T20"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+files = ["requisite"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
+markers = [
+    "covers(*ids): registry items this test is the one test for (requisite/registry.toml)",
+    "live: calls a live provider; never in CI (spec §14)",
+]

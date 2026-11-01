@@ -1,0 +1,22 @@
+# The gates: lint, type check and tests on every pull request and on main. Fast feedback that the code is well formed;
+# whether an outcome is done is decided by scripts/verify against the running product, from a clean clone. CI never
+# calls a live provider: tests marked live are excluded, and providers replay cassettes (spec §14).
+name: gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    env:
+      REQUISITE_REPLAY_ONLY: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff check requisite tests
+      - run: uv run --frozen mypy
+      - run: uv run --frozen pytest -m "not live" -rfE

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# The definition is committed only once the other family has judged the staged change HOLDS (scripts/review).
+exec "$(git rev-parse --show-toplevel)/scripts/review" --check

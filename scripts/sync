@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+// scripts/sync [--check]   Bring every outcome checkout's factory files to main's.
+//
+// The factory files (the guidance, the skills, the coordinator's extensions, the scripts, the tools, CI, the notebook)
+// have one home, main (scripts/record). Every checkout working on an outcome runs them, so once a factory pull request
+// is merged every checkout carries it. They used to arrive by hand, cherry-picked into each checkout, which held only as
+// long as the habit did: the coordinator's own checkout went without the merged compaction fix (#31) for most of a day.
+// Now each outcome checkout's factory files are restored from origin/main and committed on its branch, as one commit
+// naming main's commit. A checkout with a run still going is left until the run ends (bash reads scripts/work as it
+// runs, and a worker's tools come from its checkout), and one with uncommitted factory changes is left and named.
+// The coordinator's extension runs this when its session starts, after each run finishes, when a turn settles, and
+// before each dispatch. --check reports without changing anything. Exit 0 when every checkout is in step or waiting on
+// its runs; 1 when one could not be brought into step.
+import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, realpathSync } from "node:fs";
+import { join } from "node:path";
+
+// The product's own settings are not among them: they reach main with the outcome that changes them, as scripts/record
+// holds (Handoff, October 14: restoring a product setting from main undid an outcome's change to it).
+const FACTORY = ["AGENTS.md", "CLAUDE.md", ".agents", ".github", ".pi", "scripts", "tools", "notebook.md"];
+const check = process.argv.includes("--check");
+const git = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+const root = git(process.cwd(), "rev-parse", "--show-toplevel");
+try { git(root, "fetch", "-q", "origin", "main"); } catch (e) { console.log(`sync: could not fetch main (${String(e.message).split("\n")[0]}); using what is here`); }
+const main = git(root, "rev-parse", "--short", "origin/main");
+const { runStateOf } = await import(join(root, "tools/feed/runs.mjs"));
+
+const worktrees = git(root, "worktree", "list", "--porcelain").split("\n\n").map((b) => ({
+  path: /^worktree (.+)$/m.exec(b)?.[1], branch: /^branch refs\/heads\/(.+)$/m.exec(b)?.[1],
+})).filter((w) => w.path && w.branch && !w.branch.startsWith("factory-") && w.branch !== "main");
+// Every checkout that delegates from this repository gets main's factory files (outcome/*, pitch, and any other); the
+// factory's own branches (factory-*) and main itself are where those files are made.
+
+let failed = false;
+for (const { path, branch } of worktrees) {
+  let paths = FACTORY.filter((p) => existsSync(join(path, p)) || git(path, "ls-tree", "--name-only", "origin/main", p));
+  try {
+    git(path, "diff", "--quiet", "HEAD", "origin/main", "--", ...paths);
+    console.log(`${path} [${branch}]: in step with main ${main}`);
+    continue;
+  } catch { /* differs */ }
+  const runs = join(path, ".runs");
+  const going = existsSync(runs)
+    ? readdirSync(realpathSync(runs)).filter((f) => f.endsWith(".log")).filter((f) => runStateOf(join(realpathSync(runs), f)).state !== "finished").map((f) => f.slice(0, -4))
+    : [];
+  // While a run goes, everything but the scripts comes now: bash reads scripts/work as the run goes, but a run's drive
+  // server and tools are started from the checkout when the run asks, so they should be main's. A branch whose runs
+  // follow one another held drive context from 005-38's run for an hour (October 16) by waiting for a gap that never came.
+  if (going.length) {
+    paths = paths.filter((p) => p !== "scripts");
+    try { git(path, "diff", "--quiet", "HEAD", "origin/main", "--", ...paths); console.log(`${path} [${branch}]: in step with main ${main} but for its scripts, which wait for its runs to end (${going.join(", ")})`); continue; } catch { /* differs */ }
+  }
+  // An edit to a factory file main also holds would be lost by restoring it; a file only this checkout has (a local
+  // setting such as .pi/settings.json) is untouched by the restore and is not committed, so it holds nothing back.
+  if (git(path, "status", "--porcelain", "--untracked-files=no", "--", ...paths)) { console.log(`${path} [${branch}]: behind main ${main}, with uncommitted factory changes; left as it is`); failed = true; continue; }
+  if (check) { console.log(`${path} [${branch}]: behind main ${main}`); failed = true; continue; }
+  try {
+    git(path, "restore", "--source=origin/main", "--staged", "--worktree", "--", ...paths);
+    git(path, "commit", "-q", "-m", `Factory files from main (${main})`, "--", ...paths);
+    try { git(path, "push", "-q", "origin", branch); } catch (e) { console.log(`${path} [${branch}]: committed, not pushed (${String(e.message).split("\n")[0]})`); }
+    console.log(`${path} [${branch}]: brought to main ${main} (${git(path, "rev-parse", "--short", "HEAD")})${going.length ? `, but for its scripts, which wait for its runs to end (${going.join(", ")})` : ""}`);
+  } catch (e) {
+    console.log(`${path} [${branch}]: could not be brought to main ${main} (${String(e.message).split("\n")[0]})`);
+    failed = true;
+  }
+}
+process.exit(failed ? 1 : 0);

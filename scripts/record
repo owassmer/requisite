@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# scripts/record note [--from <entry id>...] "<line>"
+#                                  Append a line to notebook.md on main. --from names the session entries (Owen's
+#                                  messages) the line records, so the coordinator's memory can tell they are recorded.
+# scripts/record note --from <entry id>... --case-of <entry id>
+#                                  Record the entries as cases of the cause already on the notebook line that holds
+#                                  --case-of's entry: a lapse that is a form of a cause the notebook holds is added to it,
+#                                  never made a lesson of its own, so the notebook stays unified (October 17). Each entry is
+#                                  Owen's message, or the coordinator's own where it found the lapse itself.
+# scripts/record change --cause <entry id> "<text>"
+#                                  Record an environment change made for the cause whose cases line holds that entry: a
+#                                  change to the factory that unifies around the cause's core. It goes under the cause's
+#                                  cases, answering every case no earlier change answered.
+# scripts/record <file>...         Put these factory files, as they stand in this checkout, on main.
+#
+# Factory records (the notebook, AGENTS.md, .pi/, scripts/, tools/, the skills) have one home: main. When they rode on
+# outcome branches, the notebook split three ways and a fresh coordinator, grounding in main, missed a day of entries
+# (Owen, October 7). So the coordinator records through here: each record is committed to the branch factory-records,
+# in its own checkout beside the main one, and the branch's pull request is kept open for Owen to merge. Once he has
+# merged it, the next record starts the branch again from main. Outcome branches get the records when main is merged
+# into them. Prints what it committed and the pull request.
+set -euo pipefail
+[ $# -ge 1 ] || { sed -n '2,3p' "$0"; exit 2; }
+here="$(git rev-parse --show-toplevel)"
+main="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
+dir="$(dirname "$main")/$(basename "$main")-records"
+branch=factory-records
+
+git -C "$main" fetch -q origin main
+open="$(gh pr list --head "$branch" --state open --json number --jq '.[0].number' 2>/dev/null || true)"
+if [ ! -d "$dir" ]; then
+  if git -C "$main" show-ref --verify --quiet "refs/heads/$branch"; then git -C "$main" worktree add -q "$dir" "$branch"
+  else git -C "$main" worktree add -q -b "$branch" "$dir" origin/main; fi
+fi
+# With no pull request open, what was recorded has been merged (or closed): start again from main.
+[ -n "$open" ] || git -C "$dir" checkout -q -B "$branch" origin/main
+# With one open, it is carried onto main as main now stands: two sessions record here, and what main took by squash since
+# (the same change) drops out, so the pull request never conflicts with main over its own earlier lines (October 16, #238).
+[ -z "$open" ] || git -C "$dir" rebase -q origin/main || { git -C "$dir" rebase --abort; echo "record: the open records could not be carried onto main; resolve on $branch" >&2; exit 2; }
+
+if [ "$1" = "note" ]; then
+  shift; from=(); caseof=""
+  while [ "${1:-}" = "--from" ] || [ "${1:-}" = "--case-of" ]; do
+    if [ "$1" = "--from" ]; then from+=("$2"); else caseof="$2"; fi; shift 2
+  done
+  line="$*"
+  if [ -n "$caseof" ]; then
+    [ -z "$line" ] || { echo "record: a case is added to the cause's line, with no text of its own (its words are in the session)" >&2; exit 2; }
+    [ ${#from[@]} -gt 0 ] || { echo "record: --case-of records the entries given with --from" >&2; exit 2; }
+  else
+    [ -n "$line" ] || { echo "record: an empty note" >&2; exit 2; }
+    # Every note is a dated list item: it states what was learned, and its entries say where it came from.
+    case "$line" in "- "*) ;; *) line="- $(date +%F) $line";; esac
+  fi
+  # Each --from is an entry of this session that Owen said or answered: looked up, never written from memory (the
+  # coordinator twice attached ids it had not looked up, October 8).
+  if [ ${#from[@]} -gt 0 ]; then
+    [ -n "${PI_SESSION_FILE:-}" ] && [ -f "$PI_SESSION_FILE" ] || { echo "record: --from needs the coordinator's session (PI_SESSION_FILE) to check the entries against" >&2; exit 2; }
+    for id in "${from[@]}"; do
+      python3 -I - "$PI_SESSION_FILE" "$id" "$caseof" <<'PY' || exit 2
+import json, sys
+path, want, caseof = sys.argv[1], sys.argv[2], sys.argv[3]
+for l in open(path):
+    try: e = json.loads(l)
+    except ValueError: continue
+    if e.get("id") != want: continue
+    m = e.get("message") or {}
+    asked = m.get("role") == "assistant" and any(c.get("type") == "toolCall" and c.get("name") in ("ask", "mcp__pi__ask") for c in m.get("content") or [] if isinstance(c, dict))
+    if m.get("role") == "user" or asked: sys.exit(0)
+    # A lapse the coordinator found and said is a case of a cause too: its own message is the entry, on a cause line only.
+    if caseof and m.get("role") == "assistant": sys.exit(0)
+    sys.exit(f"record: entry {want} is not a message of Owen's or a question he answered{'' if caseof else ' (a lapse you found yourself is recorded with --case-of)'}; look up the entry with recall")
+sys.exit(f"record: no entry {want} in this session; look it up with recall rather than writing it")
+PY
+    done
+    [ -n "$caseof" ] || line="$line [entry ${from[*]}]"
+  fi
+  if [ -n "$caseof" ]; then
+    # The cause's line ends with its cases by date; today's count and entries are added there.
+    python3 -I - "$dir/notebook.md" "$caseof" "$(date +%m-%d)" "${from[@]}" <<'PY' || exit 2
+import re, sys
+path, anchor, day, new = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+lines = open(path).read().split("\n")
+hits = [i for i, l in enumerate(lines) if re.search(rf"\[entry [^\]]*\b{re.escape(anchor)}\b", l)]
+if len(hits) != 1: sys.exit(f"record: entry {anchor} is on {len(hits)} notebook lines; name an entry on the one cause line")
+l = lines[hits[0]].rstrip().rstrip(".")
+m = re.search(rf"(?:^|; ){day}: (\d+)(?: \[entry ([^\]]*)\])?$", l)
+if m:
+    ids = (m.group(2) or "").split() + new
+    l = l[: m.start()] + ("; " if m.group(0).startswith("; ") else "") + f"{day}: {int(m.group(1)) + 1} [entry {' '.join(ids)}]"
+else:
+    l = f"{l}; {day}: 1 [entry {' '.join(new)}]"
+lines[hits[0]] = l + "."
+open(path, "w").write("\n".join(lines))
+PY
+    line="cases of the cause at ${caseof}: ${from[*]}"
+  else
+    printf '%s\n' "$line" >> "$dir/notebook.md"
+  fi
+  git -C "$dir" add notebook.md
+  what="Notebook: $(printf '%s' "$line" | cut -c1-60)…"
+elif [ "$1" = "change" ]; then
+  shift; [ "${1:-}" = "--cause" ] && [ -n "${2:-}" ] || { echo "record: change --cause <entry id on the cause's cases line> \"<text>\"" >&2; exit 2; }
+  cause="$2"; shift 2; text="$*"; [ -n "$text" ] || { echo "record: an empty change" >&2; exit 2; }
+  python3 -I - "$dir/notebook.md" "$cause" "$(date +%F)" "$text" <<'PY' || exit 2
+import re, sys
+path, anchor, day, text = sys.argv[1:5]
+lines = open(path).read().split("\n")
+hits = [i for i, l in enumerate(lines) if re.search(r"\d\d-\d\d: \d+ \[entry ", l) and re.search(rf"\[entry [^\]]*\b{re.escape(anchor)}\b", l)]
+if len(hits) != 1: sys.exit(f"record: entry {anchor} is on {len(hits)} cases lines; name an entry on the one cause's cases line")
+i = hits[0]
+ids = [x for m in re.findall(r"\[entry ([^\]]*)\]", lines[i]) for x in m.split()]
+j = i + 1
+answered = set()
+while j < len(lines) and lines[j].startswith("- Environment change"):
+    m = re.search(r"\[answers entry ([^\]]*)\]", lines[j]); answered |= set(m.group(1).split()) if m else set(); j += 1
+open_ids = [x for x in ids if x not in answered]
+if not open_ids: sys.exit("record: every case of this cause is answered by an earlier change")
+lines.insert(j, f"- Environment change, {day}: {text.strip().rstrip('.')}. [answers entry {' '.join(open_ids)}]")
+open(path, "w").write("\n".join(lines))
+PY
+  git -C "$dir" add notebook.md
+  what="Notebook: an environment change for the cause at $cause"
+else
+  for f in "$@"; do
+    rel="${f#./}"
+    case "$rel" in requisite/*|tests/*|fixtures/*|cassettes/*) echo "record: $rel is product, which reaches main with its outcome" >&2; exit 2;; esac
+    [ -e "$here/$rel" ] || { echo "record: no $rel in $here" >&2; exit 2; }
+    mkdir -p "$dir/$(dirname "$rel")" && cp -p "$here/$rel" "$dir/$rel" && git -C "$dir" add "$rel"
+  done
+  # The file's home is main now: the checkout it came from goes back to its own copy, and gets the recorded one when main
+  # is brought into it (scripts/sync). Left changed there, every sync reported it as uncommitted (October 13).
+  if [ "$here" != "$dir" ]; then for f in "$@"; do git -C "$here" ls-files --error-unmatch "${f#./}" >/dev/null 2>&1 && git -C "$here" checkout -q -- "${f#./}"; done; fi
+  what="Factory records: $*"
+fi
+if git -C "$dir" diff --cached --quiet; then echo "record: nothing new to record"; exit 0; fi
+git -C "$dir" commit -q -m "$what"
+# Started again from main (no pull request open), the branch replaces what the remote still holds from records already
+# merged: a squash merge leaves those commits on the remote branch, and a plain push was refused there, silently, so the
+# next pull request carried the old commits and merged empty (October 13: #95, #97, #101, #104).
+if [ -z "$open" ]; then git -C "$dir" push -q -u --force origin "$branch" 2>&1 | grep -v -i '^remote:' || true
+else git -C "$dir" push -q -u --force-with-lease origin "$branch" 2>&1 | grep -v -i '^remote:' || true; fi
+[ "$(git -C "$dir" rev-parse HEAD)" = "$(git -C "$dir" rev-parse "origin/$branch")" ] || { echo "record: the push to origin/$branch did not land; nothing was opened" >&2; exit 3; }
+if [ -z "$open" ]; then
+  gh pr create --base main --head "$branch" --title "Factory records" \
+    --body "Notebook lines and factory files recorded by the coordinator (scripts/record). Kept open while records accrue; merge whenever." >/dev/null
+  open="$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')"
+fi
+echo "recorded on $branch ($(git -C "$dir" log -1 --format=%h)); pull request #$open"

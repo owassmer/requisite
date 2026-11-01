@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+# scripts/work <task file>    A fresh worker makes one task true. Called by the coordinator from the outcome's branch.
+#
+# The worker gets its own workspace: a new git repository holding only the product (requisite/, tests/, fixtures/,
+# cassettes/), what explains it (AGENTS.md, design/, reference/, the source documents in spec/, copied from this checkout
+# since they are not in git) and its own offline-synced .venv, with no history, skills, outcomes, tasks, feature map or
+# notebook. It runs inside the role sandbox (tools/roles/sandbox.ts): it reads only its workspace (and the Python, uv and
+# Node installs), changes only the product there, and has no network beyond loopback, so it can never call a live
+# provider: recorded responses (cassettes/) are its only way to a judgment, and a test never spends (spec §14). Its
+# source tools (web_search, web_fetch, source_keep: tools/roles/worker.ts) run outside the shell's sandbox, for fixture
+# data from public sources. The running product is the CLI (`uv run requisite`) in the workspace. The task's text is its
+# prompt. When it finishes, its changes to the product are applied to the outcome's branch as one commit; a change
+# anywhere else fails the run and is not applied.
+# While it runs, scripts/steer <run> "<message>" reaches the worker (tools/roles/run.mjs drives Pi in RPC mode), and
+# scripts/steer <run> --stop ends it with nothing applied.
+# The run streams to .runs/<run>.log and Pi's events to .runs/<run>.jsonl; the coordinator's session shows it live in a
+# Ghostty split (tools/feed/feed, opened by .pi/extensions/factory-runs.ts), and scripts/watch prints the log.
+# scripts/work --sees prints what the worker's workspace holds, one per line (the delegation gate's fresh reader is told).
+# The whole script is one block, so bash reads all of it before running any: a run lasts an hour, and the file changing
+# under it (an edit, factory files brought from main) can end a run before its work is applied (Handoff, October 12).
+{
+set -euo pipefail
+WORKER="claude-cli/claude-opus-5-5:xhigh"   # change the worker model here and nowhere else; the fresh reader derives it
+root="$(git rev-parse --show-toplevel)"; cd "$root"
+main_checkout="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
+PRODUCT=(requisite tests fixtures cassettes)          # what the worker may change
+SEES=("${PRODUCT[@]}" AGENTS.md CLAUDE.md README.md pyproject.toml uv.lock .python-version design)
+[ -n "$(git ls-tree --name-only HEAD reference)" ] && SEES+=(reference)
+# Sources kept by earlier workers (tools/roles/worker.ts, source_keep), once there are any.
+[ -n "$(git ls-tree --name-only HEAD research/sources)" ] && SEES+=(research/sources)
+existing=(); for p in "${SEES[@]}"; do [ -n "$(git ls-tree --name-only HEAD "$p")" ] && existing+=("$p"); done; SEES=("${existing[@]}")
+if [ "${1:-}" = "--sees" ]; then printf '%s\n' "${SEES[@]}" "spec (the build spec v3 and the mathematical addendum, with the oracle verify_math.py)"; exit 0; fi
+task="${1:?usage: scripts/work tasks/<id>-<n>.md}"
+[ -f "$task" ] || { echo "no task file $task; write it first" >&2; exit 2; }
+task_text="$(cat "$task")"
+[ -d "$main_checkout/spec" ] || { echo "no spec/ in $main_checkout: the source documents are local, and every worker reads them" >&2; exit 2; }
+# Nothing is delegated unread: the coordinator's delegation gate leaves word of each text its fresh reader read
+# (.pi/extensions/delegation.ts). FACTORY_UNREAD=1 is for runs outside the coordinator's session (probes).
+read_mark=".runs/read/$(printf '%s' "$task_text" | shasum -a 256 | cut -d' ' -f1)"
+if [ -z "${FACTORY_RUN:-}" ] && [ -z "${FACTORY_UNREAD:-}" ] && [ ! -f "$read_mark" ]; then
+  echo "$task has not been read by the fresh reader in this text: dispatch it on its own (scripts/work $task) so it is read first" >&2; exit 9
+fi
+git diff --quiet HEAD -- "${PRODUCT[@]}" || { echo "the product has uncommitted changes here; commit or clear them first" >&2; exit 2; }
+
+run="${FACTORY_RUN:-work-$(basename "${task%.md}")-$(date +%Y%m%dT%H%M%S)}"; mkdir -p .runs
+# A dispatch never holds the caller: after the checks above, the run carries on in the background under the same
+# name, and this prints where its log is (the coordinator is told when it finishes).
+if [ -z "${FACTORY_RUN:-}" ]; then
+  FACTORY_RUN="$run" nohup "$root/scripts/work" "$@" </dev/null >/dev/null 2>&1 &
+  echo "run: .runs/$run.log"; exit 0
+fi
+log="$root/.runs/$run.log"
+ws="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/requisite-work.XXXXXX")" && pwd -P)"
+echo "=== worker on $task ($WORKER) in $ws" > "$log"; echo "=== dispatched by session ${PI_SESSION_ID:-none}" >> "$log"
+echo "=== steerable (pid $$): scripts/steer $run \"<message>\" (or --stop)" >> "$log"
+on_err() { echo "=== finished exit $1 (${0##*/} stopped at line $2)" >> "$log"; }
+trap 'on_err $? $LINENO' ERR
+# At most three workers run at once here: the machine (8 cores, 8 GB) is shared with Handoff's and Slope's factories.
+# A slot names its holder's pid and the machine's boot, since after a restart a pid can belong to another process.
+slot=""; locks=/private/tmp/requisite-locks; mkdir -p "$locks"
+boot="$(sysctl -n kern.boottime 2>/dev/null | grep -o '{ sec = [0-9]*' | grep -o '[0-9]*' || true)"
+alive() { [ -n "$1" ] && [ "$(sed -n 2p "$2" 2>/dev/null)" = "$boot" ] && kill -0 "$1" 2>/dev/null; }
+until [ -n "$slot" ]; do
+  for n in 1 2 3; do
+    d="$locks/worker-$n"
+    if mkdir "$d" 2>/dev/null; then printf '%s\n%s\n' $$ "$boot" > "$d/pid"; slot="$d"; break; fi
+    alive "$(sed -n 1p "$d/pid" 2>/dev/null)" "$d/pid" || rm -rf "$d"
+  done
+  [ -n "$slot" ] || { [ -n "${waited:-}" ] || echo "=== waiting for a worker slot (three run at once)" >> "$log"; waited=1; sleep 10; }
+done
+[ -z "${waited:-}" ] || echo "=== got a worker slot" >> "$log"
+# A run's background processes end with it (Handoff, October 13: a build outlived its run by 45 minutes).
+end_leftovers() {
+  local pids
+  pids="$(lsof -d cwd -Fpn 2>/dev/null | awk -v ws="$ws" '/^p/{p=substr($0,2)} /^n/{n=substr($0,2); if (n==ws || index(n, ws"/")==1 || index(n, ws".tmp")==1) print p}' | grep -vx "$$" || true)"
+  [ -n "$pids" ] || return 0
+  echo "=== ended processes left running in the workspace: $(echo $pids)" >> "$log"
+  kill $pids 2>/dev/null || true; sleep 2; kill -9 $pids 2>/dev/null || true
+}
+trap 'end_leftovers; rm -rf "$slot"' EXIT
+# A run with the disk nearly full fails partway and looks like a code failure, so it waits for room and says why.
+"$root/scripts/prune-workspaces" >> "$log" 2>&1 || true
+free_gb() { df -g "${TMPDIR:-/tmp}" | awk 'NR==2 {print $4}'; }
+until [ "$(free_gb)" -ge 2 ]; do
+  [ -n "${noroom:-}" ] || echo "=== waiting for disk space: $(free_gb) GB free, 2 GB needed" >> "$log"; noroom=1; sleep 60
+done
+[ -z "${noroom:-}" ] || echo "=== disk space free: $(free_gb) GB" >> "$log"
+
+# The workspace: the product and what explains it, as a fresh repository, with its own environment.
+git archive HEAD -- "${SEES[@]}" | tar -x -C "$ws"
+cp -cR "$main_checkout/spec" "$ws/spec"
+printf '.venv/\nvar/\nspec/\n.role/\n.tmp/\n__pycache__/\n.ruff_cache/\n.pytest_cache/\n.mypy_cache/\n.hypothesis/\n' > "$ws/.gitignore"
+# The workspace installs offline from uv's cache; a package that has left the cache stops the run here, saying so
+# (Slope, October 28). `uv sync --frozen` with the network, in this checkout, puts it back.
+(cd "$ws" && uv sync --frozen --offline -q) >> "$log" 2>&1 || {
+  echo "=== finished exit 4 (the workspace's Python environment could not be installed offline: run uv sync --frozen in the checkout to restore uv's cache)" >> "$log"; exit 4; }
+# Copies keep each file's date, and macOS deletes files in the temp folder older than three days every night (Handoff,
+# October 12: it emptied a worker's dependencies mid-run). Dated now, they last the run.
+find "$ws/.venv" "$ws/spec" -exec touch -h {} + 2>/dev/null || true
+mkdir -p "$ws/.role/bin" && cp tools/gates/gates "$ws/.role/bin/gates"
+git -C "$ws" init -q && git -C "$ws" add -A && \
+  GIT_CONFIG_GLOBAL=/dev/null git -C "$ws" -c user.name=worker -c user.email=worker@requisite.local commit -q -m base
+base="$(git -C "$ws" rev-parse HEAD)"
+
+node_dir="$(dirname "$(dirname "$(command -v node)")")"
+uv_reads="$(dirname "$(command -v uv)"):$HOME/.local/share/uv:$HOME/.cache/uv:$(dirname "$(readlink -f "$(command -v python3.12)")")"
+# The worker holds the posture and the decisions in its system prompt, as the coordinator does: reasoning it is informed
+# by, not rules it is bound to. The task goes there too, since the system prompt survives compaction and a task line lost
+# to compaction is where a worker reaches for the cheapest green (Handoff, October 18).
+grounding=()
+for g in design/posture.md design/decisions.md; do [ -f "$ws/$g" ] && grounding+=(--append-system-prompt "$ws/$g"); done
+mkdir -p "$ws/.tmp"; { echo "# Your task, as dispatched"; echo; printf '%s\n' "$task_text"; } > "$ws/.tmp/task.md"
+grounding+=(--append-system-prompt "$ws/.tmp/task.md")
+echo "=== grounding: ${grounding[*]}" >> "$log"
+# The role's own exit status is handled below; the error trap would announce "finished" before the run had.
+trap - ERR; set +e
+(cd "$ws" && ROLE_WORKSPACE="$ws" ROLE_ALLOW_READ="$node_dir:$uv_reads" \
+  ROLE_ALLOW_WRITE="$(IFS=:; echo "${PRODUCT[*]}"):research/sources:.venv:.git:.tmp:.role:var:.ruff_cache:.pytest_cache:.mypy_cache:.hypothesis" \
+  UV_FROZEN=1 UV_OFFLINE=1 UV_NO_SYNC=1 REQUISITE_REPLAY_ONLY=1 \
+  GIT_AUTHOR_NAME=worker GIT_AUTHOR_EMAIL=worker@requisite.local GIT_COMMITTER_NAME=worker GIT_COMMITTER_EMAIL=worker@requisite.local \
+  node "$root/tools/roles/run.mjs" --inbox "$root/.runs/$run.steer" --prompt "You are the worker. Make this task true in the running product (uv run requisite --help; uv run pytest; gates), then commit, then report.
+The source documents are in spec/: the build spec v3 (spec/build-spec-v3.txt, with its diagrams as images) and the mathematical addendum (spec/Requisite_Mathematical_Addendum.md, with its oracle spec/verify_math.py). Read the sections your task cites in full before writing code.
+
+$task_text" -- \
+  pi --mode rpc --no-session --no-extensions --no-skills --no-context-files --no-prompt-templates \
+    -e "$HOME/.pi/agent/extensions/claude-cli" -e "$root/tools/roles/sandbox.ts" -e "$root/tools/roles/worker.ts" \
+    --tools read,bash,edit,write,report,web_search,web_fetch,web_browse,source_keep --model "$WORKER" \
+    --append-system-prompt "$ws/AGENTS.md" "${grounding[@]}" 2>> "$log") | tee "$root/.runs/$run.jsonl" | scripts/watch --render >> "$log"
+status=${PIPESTATUS[0]}; set -e; trap 'on_err $? $LINENO' ERR
+# Stopped by the coordinator (scripts/steer --stop): nothing it did is applied.
+if [ "$status" -eq 7 ]; then
+  echo "=== stopped by the coordinator; nothing applied (workspace kept at $ws)" >> "$log"
+  echo "=== finished exit 7" >> "$log"; exit 7
+fi
+# Pi exits 0 even when the model failed; a run whose last answer is a model error did not do its work.
+if [ "$status" -eq 0 ] && tail -n 20 "$root/.runs/$run.jsonl" | grep -q '"stopReason":"error"'; then status=5; echo "=== the model failed; see the error above" >> "$log"; fi
+
+# The worker's report (tools/roles/worker.ts) goes in the log, where the coordinator's finish notice reads it.
+if [ -f "$ws/.tmp/report.json" ]; then
+  { echo "=== report"; node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); for (const k of ["changed","departures","notTrue","decisions","beyond"]) if (r[k] !== undefined) console.log(k + ":\n" + String(r[k] ?? "").trim() + "\n")' "$ws/.tmp/report.json"; echo "=== end of report"; } >> "$log"
+  # What a worker saw bearing on other claims goes to its outcome's held list, read together with the verifier's
+  # findings for what they share, not relayed one by one into the next task (Handoff, October 15).
+  outcome="$(basename "$task" .md | grep -oE '^[0-9]{3}' || true)"
+  beyond="$(node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); process.stdout.write(String(r.beyond ?? "").trim())' "$ws/.tmp/report.json")"
+  if [ -n "$outcome" ] && [ -n "$beyond" ] && [ "$(printf '%s' "$beyond" | tr '[:upper:]' '[:lower:]')" != "none" ]; then
+    held="tasks/$outcome-held.md"
+    [ -f "$held" ] || echo "# What workers saw bearing on other claims, held to read with the verifier's findings" > "$held"
+    { echo; echo "From $run's report:"; printf '%s\n' "$beyond"; } >> "$held"
+    git add "$held" && git commit -q -m "held: $run's beyond" -- "$held" || echo "=== could not commit $held; its lines are in it uncommitted" >> "$log"
+    echo "=== beyond: $(printf '%s\n' "$beyond" | grep -c .) lines added to $held" >> "$log"
+  fi
+else
+  echo "=== no report filed" >> "$log"
+  [ "$status" -eq 0 ] && status=8
+fi
+
+# Its product changes come back to the outcome's branch; anything else is refused.
+git -C "$ws" add -A
+changed="$(git -C "$ws" diff --cached --name-only "$base")"
+inside=(-e '^research/sources/'); for d in "${PRODUCT[@]}"; do inside+=(-e "^$d/"); done
+outside="$(printf '%s\n' "$changed" | grep -v "${inside[@]}" | grep -v '^$' || true)"
+if [ -n "$outside" ]; then
+  echo "=== refused: changes outside the product, nothing applied (workspace kept at $ws):" >> "$log"
+  printf '%s\n' "$outside" >> "$log"
+  echo "=== finished exit 3" >> "$log"; exit 3
+fi
+if [ -n "$changed" ]; then
+  mkdir -p "$ws.tmp" && git -C "$ws" diff --cached --binary "$base" > "$ws.tmp/worker.patch"
+  # Workers on one outcome can run at once from the same commit; their changes merge, and a real conflict stops here.
+  if ! git apply --index --3way "$ws.tmp/worker.patch" >> "$log" 2>&1; then
+    echo "=== conflict applying the worker's changes; nothing committed (patch kept at $ws.tmp/worker.patch, workspace kept)" >> "$log"
+    git status --short -- "${PRODUCT[@]}" >> "$log"
+    printf '%s\n' "$changed" | while IFS= read -r p; do
+      [ -n "$p" ] || continue
+      if git cat-file -e "HEAD:$p" 2>/dev/null; then git checkout -q HEAD -- "$p"; else git rm -q --cached -f --ignore-unmatch -- "$p" >/dev/null; rm -f -- "$p"; fi
+    done
+    echo "=== finished exit 6" >> "$log"; exit 6
+  fi
+  msg="$(git -C "$ws" log --format=%B "$base"..HEAD 2>/dev/null | sed '/^$/N;/^\n$/D')"
+  git commit -q --no-verify -m "${msg:-$(head -1 "$task" | sed 's/^# //')}" -m "Worker on $task."
+  echo "=== applied to $(git branch --show-current) as $(git log -1 --format=%h)" >> "$log"
+  # Each worker's gates ran on its own workspace, so runs applied side by side are checked together here, on the branch
+  # as it now stands (Handoff, October 14: two runs' gates passed and the branch did not typecheck).
+  if checked="$(uv run --frozen -q ruff check requisite tests 2>&1 && uv run --frozen -q mypy 2>&1)"; then echo "=== the branch checks with this applied" >> "$log"
+  else { echo "=== the branch does not check with this applied:"; printf '%s\n' "$checked" | grep -E 'error|[A-Z]+[0-9]+ ' | head -20; } >> "$log"; fi
+else
+  echo "=== no product changes" >> "$log"
+fi
+echo "=== finished exit $status" >> "$log"
+[ "$status" -eq 0 ] && rm -rf "$ws" "$ws.tmp"
+exit "$status"
+}

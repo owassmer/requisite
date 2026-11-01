@@ -1,0 +1,30 @@
+# Secrets: never in git (spec §14). Keys are read at run time from the environment, this .env, Slope's .env or the
+# Keychain (requisite/secrets.py), and never logged, cassetted or fixtured.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.token
+.netrc
+# The source documents (the build spec, the mathematical addendum): local only, since this repository is public and the
+# spec carries the demo plan. scripts/work and scripts/review copy spec/ into a role's workspace from this checkout.
+spec
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+dist/
+build/
+# Node (the factory's tools)
+node_modules/
+# Runtime state: the store, blobs and dossiers a local run writes
+var/
+# Factory runs (scripts/work, verify, review), live
+.runs/
+.DS_Store
+*.log
