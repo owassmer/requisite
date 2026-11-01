@@ -39,6 +39,9 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   design; workers (Claude Opus 5.5, xhigh) take work packages that stand apart, each in a sandbox with no network beyond
   loopback; a verifier and a reviewer of the other family (GPT-6 Astra) judge outcomes and each staged change to the
   definition. A fresh reader restates each task before it goes.
+- Tier-0 work lands on one branch, `outcome/tier0`, in the main checkout: its outcomes (000-007) are one connected demo,
+  each built on the last, so separate branches would only add merges. It goes to main at Gate A, Gate B and Tier 0 green,
+  each after the verifier has judged the outcomes it carries (coordinator's reasoning, November 1).
 
 ## Providers and keys
 
