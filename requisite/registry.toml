@@ -1,0 +1,625 @@
+# What the sources enumerate, each item covered by exactly one test (tests/test_registry.py).
+#
+# The sources list things the runtime must hold: the invariants (spec §3), the gates (spec §2.4), the diagnoses (spec
+# §2.1), the post-mortem classes (spec §11), each work package's acceptance tests (spec §13), the addendum's amended and
+# new acceptance tests (addendum §13), and the oracle's verified checks (spec/verify_math.py). What is built is chosen by
+# these lists, not by the code's keys: a test declares the items it is the one test for with
+# @pytest.mark.covers("<id>", ...), and the registry test fails on a covered id the registry lacks, on an item covered
+# twice, and on a covered item marked replaced. An item no test covers yet is open; `requisite registry` prints the board
+# by tier, never-cut items first. One test may cover several items where one check proves them together (a truth table).
+#
+# Fields: id; source (where the sources say it); says (what must hold, in the source's terms); tier (spec §0: 0 required
+# for the demo, 1 after Tier 0 is green; a work package's own tier in spec §13 decides); never_cut (spec §13: "Never
+# cut: invariants I1–I10, the three-valued evaluator, the rendering check or the diff", and nothing beyond it); replaced_by (an accepted amendment
+# replaced it: build to the replacement, never to this; Owen accepted the addendum on November 1).
+
+# ---------------------------------------------------------------- invariants (spec §3; each has an acceptance test in §13)
+
+[[item]]
+id = "I1"
+source = "spec §3; WP1"
+says = "Single write path: agents create Proposals only; a Proposal becomes active only after its required gates pass (schema, tests, stability, relevance, human, as applicable to its kind). Only submit_proposal changes case state."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I2"
+source = "spec §3; WP1"
+says = "Immutable evidence: artifacts are content-addressed and never overwritten; overwriting an artifact raises; a changed source is a new version linked to its predecessor."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I3"
+source = "spec §3; WP2"
+says = "Time discipline: every judgment state carries as_of; observed claims come only from artifacts with published_at <= as_of and observed_at <= the evaluation time; a later-published artifact is excluded by as_of."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I4"
+source = "spec §3; WP2; spec §14"
+says = "Synthetic quarantine: synthetic artifacts live in a separate namespace and can never be referenced as observed claims in a non-synthetic case; a synthetic claim in observed fails type checking."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I5"
+source = "spec §3; spec §6.1; WP3"
+says = "Hypotheticals are labeled: anything not established by evidence enters a judgment only through assumed, rendered in its own labeled section; the renderer separates observed from assumed."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I6"
+source = "spec §3; spec §6.3; WP8"
+says = "Unknown stays unknown: not_established and contested map to Kleene unknown and propagate by three-valued logic, never coerced to false; the Kleene truth tables pass."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I7"
+source = "spec §3; WP6"
+says = "Code owns consequences: dates, thresholds, payoffs, cash flows, aggregation and optimization are computed by registered nodes; a static check forbids provider calls inside nodes."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I8"
+source = "spec §3; spec §8.4; WP8"
+says = "One settlement function: the same IR evaluator computes payoffs in construction, example outcomes in drafting, ground truth in fuzzing and settlement at resolution; example outcomes equal evaluator outcomes."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I9"
+source = "spec §3; spec §6.5; WP10; addendum A04"
+says = "Price is not probability: quotes are stored as prices (bid, ask, last, size, timestamp); an implied probability is a derived node with an explicit risk-premium assumption; quotes enter the optimizer as prices."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I10"
+source = "spec §3; WP3; addendum §11.3"
+says = "Version pinning: every judgment records provider, model id and known training cutoff (unknown recorded as unknown)."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "I10.contamination"
+source = "spec §3; WP13"
+says = "Forecast evaluations exclude events that resolved before the judging model's training cutoff; an unknown cutoff is recorded as unknown, not as clean (addendum §11.3)."
+tier = 0
+never_cut = true
+
+# ---------------------------------------------------------------- human gates (spec §2.4)
+
+[[item]]
+id = "G1"
+source = "spec §2.4; spec §7.1"
+says = "The objective, horizon and loss definition always require a human approval."
+tier = 0
+
+[[item]]
+id = "G2"
+source = "spec §2.4"
+says = "Any contested diagnosis on a relevant question always requires a human; it is held as not_established until resolved."
+tier = 0
+
+[[item]]
+id = "G3"
+source = "spec §2.4; spec §8.6"
+says = "Contract acceptance always requires a human, including accepting remaining ambiguity in the AcceptanceRecord."
+tier = 0
+
+[[item]]
+id = "G4"
+source = "spec §2.4; spec §9"
+says = "Template promotion always requires a human."
+tier = 1
+
+# ---------------------------------------------------------------- diagnoses (spec §2.1), routed by a table
+
+[[item]]
+id = "DX.base"
+source = "spec §2.1; spec §13 WP4 (Tier 0 for provider, paraphrase and split); addendum §2.4"
+says = "An unstable question gets one primary diagnosis with its prescribed action, all probe evidence retained: from the base run's paraphrase-versus-provider split, imprecise_target (disagreement concentrates across paraphrases and each paraphrase is stable across judges; agent refines the target and answer meanings) or contested (paraphrases agree, providers disagree; human review, held not_established); from the split probe, compound (stable sub-questions whose code composition reproduces the parent's intent; replaced with sub-questions plus a composition node); otherwise unexplained (human review, saved as a fixture)."
+tier = 0
+
+[[item]]
+id = "DX.evidence_state"
+source = "spec §2.1; spec §13 WP4 (Tier 1 for evidence and state probes)"
+says = "The evidence probe (adding the next-ranked evidence lifts stability over threshold: evidence_gap, agent fetches) and the state probe (disagreement tracks facts moving between observed and assumed: incoherent_state, fix the state construction). After the base run, the probes follow in the order evidence, split, state; unexplained only where none of them fires."
+tier = 1
+
+# ---------------------------------------------------------------- post-mortem classes (spec §11, amended by A10)
+
+[[item]]
+id = "PM.table"
+source = "spec §11 step 3; addendum A10 §11.1"
+says = "Each residual gets a primary class among question_definition_error, evidence_missing, evidence_wrong, interpretation_error, dependency_error, consequence_error, contract_compilation_error, rendering_error, execution_error (defects), accepted_basis_risk, accepted_exclusion, ordinary_uncertainty, external_change (not defects), with contributing component defects allowed beside it."
+tier = 1
+
+# ---------------------------------------------------------------- work-package acceptance tests (spec §13)
+
+[[item]]
+id = "WP0.ci"
+source = "spec §13 WP0"
+says = "CI is green on an empty suite."
+tier = 0
+
+[[item]]
+id = "WP0.secrets"
+source = "spec §13 WP0; spec §14"
+says = "Secrets never appear in logs or cassettes."
+tier = 0
+
+[[item]]
+id = "WP1.roundtrip"
+source = "spec §13 WP1"
+says = "The §4 models round-trip."
+tier = 0
+
+[[item]]
+id = "WP3.answer_keys"
+source = "spec §13 WP3"
+says = "The same answer keys come back across providers."
+tier = 0
+
+[[item]]
+id = "WP3.replay"
+source = "spec §13 WP3; spec §6.2"
+says = "Replay is deterministic; CI never calls a live provider."
+tier = 0
+
+[[item]]
+id = "WP4.imprecise_target"
+source = "spec §13 WP4"
+says = "Seeded fixture: a vague question yields imprecise_target."
+tier = 0
+
+[[item]]
+id = "WP4.compound_split"
+source = "spec §13 WP4"
+says = "Seeded fixture: splitting a compound question raises stability."
+tier = 0
+
+[[item]]
+id = "WP4.evidence_gap"
+source = "spec §13 WP4"
+says = "Seeded fixture: a starved question yields evidence_gap."
+tier = 1
+
+[[item]]
+id = "WP5.branches_sum"
+source = "spec §13 WP5; addendum §4.2"
+says = "Branch probabilities at each node sum to 1 (outgoing events partition the parent state); incoherent forecasts are rejected, never silently normalized."
+tier = 0
+
+[[item]]
+id = "WP5.conjunction"
+source = "spec §13 WP5"
+says = "P(A and B) > P(A) is flagged."
+tier = 0
+
+[[item]]
+id = "WP5.acyclic"
+source = "spec §13 WP5"
+says = "Conditioning is acyclic."
+tier = 0
+
+[[item]]
+id = "WP6.descendants"
+source = "spec §13 WP6; spec §5"
+says = "One changed input recomputes only its descendants."
+tier = 0
+
+[[item]]
+id = "WP6.early_cutoff"
+source = "spec §13 WP6; spec §5"
+says = "An unchanged value hash stops propagation."
+tier = 0
+
+[[item]]
+id = "WP6.diff"
+source = "spec §13 WP6; spec §5"
+says = "The diff lists exactly the changed nodes, with old and new values, grouped by layer."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "WP7.informational"
+source = "spec §13 WP7; spec §2.2; addendum §3.4"
+says = "A question that reaches no decision is informational for that decision: it leaves the review queue and stays inspectable."
+tier = 0
+
+[[item]]
+id = "WP7.queue"
+source = "spec §13 WP7; spec §2.4; addendum A01"
+says = "The review queue orders a seeded fixture correctly (relevance and instability, S_prob included, ties by spread of the objective)."
+tier = 0
+
+[[item]]
+id = "WP7.evpi"
+source = "spec §2.2; spec §13 WP7; addendum §3.6"
+says = "EVPI (EVPPI) for expected-utility objectives; for CVaR objectives, compare fixed and signal-contingent policies under the same risk functional."
+tier = 1
+
+[[item]]
+id = "WP8.mcdc"
+source = "spec §13 WP8; spec §8.6 step 1"
+says = "MC/DC yields at least N + 1 scenarios with the independence property."
+tier = 0
+replaced_by = "A.T15"
+
+[[item]]
+id = "WP9.fidelity_f1"
+source = "spec §13 WP9; spec §8.6 step 6"
+says = "On F1, fidelity >= 0.95 over the coverage set."
+tier = 0
+
+[[item]]
+id = "WP9.ambiguity_attributed"
+source = "spec §13 WP9; spec §8.6 step 7"
+says = "An injected undefined term raises ambiguity over threshold and is attributed to its clause."
+tier = 0
+
+[[item]]
+id = "WP9.rendering_check"
+source = "spec §8.6 step 4; spec §13 never-cut"
+says = "Rendering check: judges asked the atomic condition questions of a rendered packet; a packet that does not recover its intended assignment is fixed before any clause is blamed."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "WP10.budget"
+source = "spec §13 WP10"
+says = "The premium budget is respected."
+tier = 0
+
+[[item]]
+id = "WP10.perfect_hedge"
+source = "spec §13 WP10"
+says = "With a perfect instrument the residual equals the premium."
+tier = 0
+replaced_by = "A.T07"
+
+[[item]]
+id = "WP10.uncorrelated"
+source = "spec §13 WP10"
+says = "With uncorrelated instruments it buys nothing."
+tier = 0
+replaced_by = "A.T08"
+
+[[item]]
+id = "WP10.late_payout"
+source = "spec §13 WP10; addendum §6.6"
+says = "A late-settling payout flags a breach."
+tier = 0
+
+[[item]]
+id = "WP11a.trace"
+source = "spec §13 WP11a"
+says = "Every register row traces to claims, judgments and nodes."
+tier = 0
+
+[[item]]
+id = "WP11a.recompute"
+source = "spec §13 WP11a"
+says = "Materiality recomputes on a parameter change."
+tier = 0
+
+[[item]]
+id = "WP11b.coverage"
+source = "spec §13 WP11b; spec §7.4; addendum A07 §8.5"
+says = "In simulation with a biased judge, the naive interval misses and the corrected interval's coverage is within 3 points of nominal over 1,000 draws, under the exact implemented sampling design, with Monte Carlo uncertainty reported."
+tier = 0
+
+[[item]]
+id = "WP11c.coverage"
+source = "spec §13 WP11c"
+says = "The same simulation coverage test for a regression coefficient (DSL)."
+tier = 1
+
+[[item]]
+id = "WP12.promotion_blocked"
+source = "spec §13 WP12; spec §9.1"
+says = "Promotion is blocked below 3 stable instantiations across 2 cases."
+tier = 1
+
+[[item]]
+id = "WP12.split"
+source = "spec §13 WP12; spec §9.1"
+says = "Slot-dependent instability yields a split proposal."
+tier = 1
+
+[[item]]
+id = "WP12.harvest_f1"
+source = "spec §13 WP12; spec §9.3; addendum §5.5"
+says = "Filed-terms harvesting for F1: each harvested contract is supported_exact, supported_with_explicit_assumptions or unsupported, never silently simplified."
+tier = 0
+
+[[item]]
+id = "WP13.no_write"
+source = "spec §13 WP13; spec §14"
+says = "No write endpoint is reachable from a market adapter."
+tier = 1
+
+[[item]]
+id = "WP13.sum_110"
+source = "spec §13 WP13"
+says = "A synthetic exclusive set summing to 1.10 is flagged."
+tier = 1
+replaced_by = "A.T11"
+
+[[item]]
+id = "WP14.accepted_uncovered"
+source = "spec §13 WP14; spec §11"
+says = "An accepted_uncovered scenario cannot be classed as a defect."
+tier = 1
+replaced_by = "A.T19"
+
+[[item]]
+id = "WP14.override_reason"
+source = "spec §13 WP14; spec §11 step 5"
+says = "An override without a reason is rejected."
+tier = 0
+
+[[item]]
+id = "WP14.acceptance_record"
+source = "spec §11 step 1; spec §4; addendum §12"
+says = "An AcceptanceRecord is immutable and written at decision time."
+tier = 0
+
+[[item]]
+id = "WP15.no_db_write"
+source = "spec §13 WP15"
+says = "Agents hold no direct database write; they touch the system only through the harness tools."
+tier = 0
+
+[[item]]
+id = "WP15.trace"
+source = "spec §13 WP15"
+says = "Each agent run leaves a trace of Proposals and gate results."
+tier = 0
+
+[[item]]
+id = "WP16.offline"
+source = "spec §13 WP16"
+says = "The dossier renders offline from a frozen case."
+tier = 0
+
+[[item]]
+id = "WP16.links"
+source = "spec §13 WP16; spec §8.7"
+says = "Each clause links to its IR node, questions and evidence."
+tier = 0
+
+[[item]]
+id = "WP17.load"
+source = "spec §13 WP17"
+says = "Fixtures load."
+tier = 0
+
+[[item]]
+id = "WP17.golden"
+source = "spec §13 WP17"
+says = "Golden outputs are stable across reruns."
+tier = 0
+
+# ---------------------------------------------------------------- the addendum's acceptance-test amendments (addendum §13)
+
+[[item]]
+id = "A.T01"
+source = "addendum §13 row 1; A01 §2.2; A04"
+says = "Every provider outputs about 0.5 for a forecast: high stability, uncertainty preserved, no fact binding."
+tier = 0
+
+[[item]]
+id = "A.T02"
+source = "addendum §13 row 2; A01 §2.2"
+says = "Same argmax but materially different probability vectors: S_arg high, S_prob fails; review priority is not zero solely because S_arg = 1."
+tier = 0
+
+[[item]]
+id = "A.T03"
+source = "addendum §13 row 3; A02 §3.1-3.2"
+says = "A stable coarse answer ('not all covered') that combines none and partial coverage: a refinement witness forces a new material distinction."
+tier = 0
+
+[[item]]
+id = "A.T04"
+source = "addendum §13 row 4; A03 §3.3"
+says = "Answer-specific optimum sets that share an action: no material flip from arbitrary solver ties."
+tier = 0
+
+[[item]]
+id = "A.T05"
+source = "addendum §13 row 5; A03 §3.3"
+says = "A state flip that violates A implies B: the impossible state is rejected and downstream reconditioning uses valid states."
+tier = 0
+
+[[item]]
+id = "A.T06"
+source = "addendum §13 row 6; A05 §5.3; A06 §6.6"
+says = "A perfect aggregate payout that arrives after the cash loss: the timing gap remains; a terminal match is not liquidity protection."
+tier = 0
+
+[[item]]
+id = "A.T07"
+source = "addendum §13 row 7; A06 §6.4-6.5"
+says = "A fully funded business and a positive-cost irrelevant (dominated) instrument: zero purchase under premium tie-breaking."
+tier = 0
+
+[[item]]
+id = "A.T08"
+source = "addendum §13 row 8; A06 §6.5"
+says = "A zero-covariance tail hedge is bought where it lowers the tail: the counterexample is accepted; zero purchase is not asserted."
+tier = 0
+
+[[item]]
+id = "A.T09"
+source = "addendum §13 row 9; A06 §6.3"
+says = "A CVaR objective with an atom at the VaR uses the fractional tail mass of the optimization formula."
+tier = 0
+
+[[item]]
+id = "A.T10"
+source = "addendum §13 row 10; C01 §7.2"
+says = "A new candidate with a negative reduced cost is re-solved and its actual improvement verified; no availability claim."
+tier = 0
+
+[[item]]
+id = "A.T11"
+source = "addendum §13 row 11; A04 §4.5"
+says = "YES and NO asks summing to 1.10 are not automatically a probability or arbitrage violation; quote-aware payoff semantics."
+tier = 1
+
+[[item]]
+id = "A.T12"
+source = "addendum §13 row 12; A07 §8.2"
+says = "Gold set is the entire finite frame: the corrected mean equals the gold truth and the finite-frame sampling SE is zero."
+tier = 0
+
+[[item]]
+id = "A.T13"
+source = "addendum §13 row 13; A07 §8.4"
+says = "Unequal label sampling across strata: correct estimate and design-specific variance; no unweighted correction."
+tier = 0
+
+[[item]]
+id = "A.T14"
+source = "addendum §13 row 14; A08 §9"
+says = "An annotated regressor entering a squared moment: the score is corrected; naive corrected-regressor substitution fails the fixture."
+tier = 1
+
+[[item]]
+id = "A.T15"
+source = "addendum §13 row 15; A09 §10.2"
+says = "A AND B with A implies B: no fabricated independent witness for B; feasible unique-cause witnesses only, infeasible obligations recorded."
+tier = 0
+
+[[item]]
+id = "A.T16"
+source = "addendum §13 row 16; A05 §5.2"
+says = "An unknown trigger that defaults to NO at expiry: trigger_truth stays unknown; procedure_status resolves NO with the recorded policy."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "A.T17"
+source = "addendum §13 row 17; A05 §5.3"
+says = "Unknown observations in a count give an interval or unknown numeric result, not false or zero."
+tier = 0
+never_cut = true
+
+[[item]]
+id = "A.T18"
+source = "addendum §13 row 18; A09 §10.1"
+says = "A rendering check that passes while resolver gold disagrees: the cause stays open, not automatically attributed to a clause."
+tier = 0
+
+[[item]]
+id = "A.T19"
+source = "addendum §13 row 19; A10 §11.1"
+says = "A known uncovered scenario with an arithmetic defect: accepted-risk and defect records coexist (a post-mortem: spec §13 WP14, Tier 1 for post-mortems)."
+tier = 1
+
+[[item]]
+id = "A.T20"
+source = "addendum §13 row 20; A11 §11.2"
+says = "Evidence changes but the number does not: numeric early cutoff holds; the provenance and approval change is still visible."
+tier = 0
+
+[[item]]
+id = "A.T21"
+source = "addendum §13 row 21; A12 §11.4"
+says = "Three stable promoted instances give scoped-reuse status, never a high-confidence accuracy claim."
+tier = 1
+
+[[item]]
+id = "A.T22"
+source = "addendum §13 row 22; A02 §3.7"
+says = "Budget exhausted with relevant unresolved state: a reproducible blocked draft, not an approved conclusion."
+tier = 0
+
+# ---------------------------------------------------------------- the oracle (spec/verify_math.py; addendum §13 "Verified checks")
+# Each is reproduced by the production kernel, to the oracle's tolerance, from spec/verified_synthetic_results.json.
+
+[[item]]
+id = "O01"
+source = "verify_math.py check 1"
+says = "Stable does not mean certain: twelve configurations at (0.5001, 0.4999) give S_arg = 1 and S_prob = 1."
+tier = 0
+
+[[item]]
+id = "O02"
+source = "verify_math.py check 2"
+says = "Six (0.999, 0.001) and six (0.501, 0.499): S_arg = 1, S_prob = 0.8333223518437791 (JS divergence, base 2)."
+tier = 0
+
+[[item]]
+id = "O03"
+source = "verify_math.py check 3"
+says = "Tie-robust relevance: conditional decision costs [[0,0,3],[3,0,0]] (rows answers, columns actions; regrets derived per row) give min-max regret 0 at action 1."
+tier = 0
+
+[[item]]
+id = "O04"
+source = "verify_math.py check 4"
+says = "A stable coarse question requiring refinement: conditional decision costs [[0,10],[100,10]] give min-max regret 10."
+tier = 0
+
+[[item]]
+id = "O05"
+source = "verify_math.py check 5"
+says = "Discrete CVaR at an atom: losses (0, 100) with probabilities (0.95, 0.05) at alpha 0.90 give 50."
+tier = 0
+
+[[item]]
+id = "O06"
+source = "verify_math.py check 6"
+says = "Zero-covariance tail hedge: the liquidity LP buys one unit; liquidity CVaR 0.25 (from 0.5); terminal residual CVaR 2 to 1.75."
+tier = 0
+
+[[item]]
+id = "O07"
+source = "verify_math.py check 7"
+says = "Flat objective uses premium tie-break: zero quantity, zero premium."
+tier = 0
+
+[[item]]
+id = "O08"
+source = "verify_math.py check 8"
+says = "Dated receipts: late cash (90, -30, 90) gives shortfall 30; early cash (90, 90, 90) gives 0; premium 10."
+tier = 0
+
+[[item]]
+id = "O09"
+source = "verify_math.py check 9"
+says = "Dual-guided candidate: reduced cost -110 equals the finite difference; re-solve buys q = 2/11 at premium 20/11; CVaR 20 to 0."
+tier = 0
+
+[[item]]
+id = "O10"
+source = "verify_math.py check 10"
+says = "Finite-frame difference estimator: truth 0.5, naive model mean 0.6, mean over all size-3 samples 0.5, mean estimated variance equals design variance 0.021333..., all-gold SE 0."
+tier = 0
+
+[[item]]
+id = "O11"
+source = "verify_math.py check 11"
+says = "Feasible MC/DC respects constraints: with A implies B, A has a witness and B has none."
+tier = 0
+
+[[item]]
+id = "O12"
+source = "verify_math.py check 12"
+says = "Unknown count bounds: [True, False, None, None, True] gives [2, 4]."
+tier = 0
+
+[[item]]
+id = "O13"
+source = "verify_math.py check 13"
+says = "Three flawless cases: one-sided exact 95% upper error bound 1 - 0.05^(1/3) = 0.6315968501359612."
+tier = 0
