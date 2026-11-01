@@ -71,11 +71,14 @@ work is judged against this file; its writer is the coordinator (a worker's repo
 
 ## Numbers
 
-- Probabilities are exact everywhere code computes with them: Fraction, Decimal or int, summing to exactly one, never
-  normalized (addendum §4.2), and a float is refused where a sum to one is checked. Expectations under them (CVaR, E[D],
-  a breach probability) are exact Fractions, since a third of a dollar has no finite Decimal. Money is Decimal, and the
-  optimizer's cash accounting is exact Decimal, in which a rounding raises (worker on 000-1, November 1). A decision
-  model's reported probabilities are made a distribution by the provider layer, which says how; no kernel repairs one.
+- Two kinds of probability, held apart (addendum A04 §4.1). Scenario and branch probabilities (a ProbabilityEstimate,
+  an event tree's branches, the optimizer's scenarios) are exact: Fraction, Decimal or int, summing to exactly one, never
+  normalized (addendum §4.2), with a float refused. Expectations under them (CVaR, E[D], a breach probability) are exact
+  Fractions, since a third of a dollar has no finite Decimal. A decision model's answer distribution is the provider's
+  float output. It is checked to sum to one within the oracle's 1e-10 and never normalized, and the stability kernel
+  computes over it as the oracle does. A provider whose reported probabilities fail that check returns no distribution,
+  and the provider layer records why (worker on 000-1 and coordinator, November 1). Money is Decimal, and the optimizer's
+  cash accounting is exact Decimal, in which a rounding raises.
 - The liquidity optimizer (000-1, addendum A06, C01 §7.2). Receipts arrive per grid date and the kernel cumulates them,
   so its input is the I8 evaluator's dated transfers placed on the grid. The business arrives as B_0, operating cash
   before the modeled loss, and the loss, so the kernel also computes the loss, payoff and terminal residual of the
