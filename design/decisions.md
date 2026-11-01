@@ -43,6 +43,15 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   a defect fix, recorded with its cause, and the whole flow runs again from the same objective and as_of; it is never
   re-run until a preferred lead appears (addendum A01 §2.5: tests used adaptively to revise are not independent
   validation).
+- The wide flow reads its frame by a two-phase design (coordinator's reasoning, November 1). Reading one item from
+  regulations.gov is one request, and the key allows 1,000 an hour (measured November 1), so a broad frame cannot be read
+  whole. Phase 1 is a stratified simple random sample of the frame without replacement, read and model-labelled. Phase 2
+  is the gold sample Owen labels: a stratified simple random subsample of phase 1, whose strata may come from the model's
+  phase-1 labels. A frame small enough to read whole is a phase-1 census, and then the estimator is exactly addendum
+  A07's finite-frame form. The plain difference estimator (λ = 1) is the primary estimate, since its design-unbiasedness
+  is exact; a tuned λ is reported beside it with its measured coverage (A07 §8.3). Two-phase theory is standard survey
+  sampling (Särndal, Swensson and Wretman 1992, ch. 9), not the addendum's, and is proved in the tests by exact
+  enumeration.
 - The same reason holds for F1, by the coordinator's reasoning: the filed contracts are drawn by a rule over the filed
   record (spec §9.3; one per strike type where they exist), plus the Western Grazers specimen the spec names, and the IR
   grammar comes from spec §8.1, never fitted to them. A filed construct the IR cannot express is a finding about the
