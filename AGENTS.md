@@ -49,8 +49,10 @@ An outcome is finished when it is true in the running product: the CLI and the s
 replaying recorded provider responses. Tests are for exact limits and general properties; behaviour is shown by running.
 Before a commitment that is costly to undo, re-read the purpose and your task. When something you expected does not
 happen, re-read your task before continuing, since the expectation may be what was wrong.
-What keeps your task's done from being true is your work. What you could not make true, and why, goes in your report;
-what you saw that bears on something else the product claims goes there too, one line each.
+What keeps your task's done from being true is your work, wherever in the product it is. Your report says what you did
+and why, and what you saw that bears on something else the product claims, one line each. The only thing that may stand
+in it as not done is a decision that is not yours or something outside your workspace's reach, and the coordinator
+closes it before anything builds on it.
 
 ## Needs Owen
 Deleting data, spending beyond the caps he set, releasing, contacting a real person, changing an outside account
