@@ -24,7 +24,7 @@ WORKER="claude-cli/claude-opus-5-5:xhigh"   # change the worker model here and n
 root="$(git rev-parse --show-toplevel)"; cd "$root"
 main_checkout="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
 PRODUCT=(requisite tests fixtures cassettes)          # what the worker may change
-SEES=("${PRODUCT[@]}" AGENTS.md CLAUDE.md README.md pyproject.toml uv.lock .python-version design)
+SEES=("${PRODUCT[@]}" AGENTS.md CLAUDE.md README.md pyproject.toml uv.lock .python-version design .github)   # .github: CI's gates, which a test reads (WP0.ci)
 [ -n "$(git ls-tree --name-only HEAD reference)" ] && SEES+=(reference)
 # Sources kept by earlier workers (tools/roles/worker.ts, source_keep), once there are any.
 [ -n "$(git ls-tree --name-only HEAD research/sources)" ] && SEES+=(research/sources)
