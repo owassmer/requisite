@@ -26,6 +26,37 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   Tier 0 is green; the demo is Tue Nov 3, 13:30 ET. Never cut: I1–I10, the three-valued evaluator, the rendering check,
   the diff (spec §13).
 
+## Discovery finds what it analyzes
+
+- The discovery flow chooses its own corpus and its own lead. From the objective a human approves at G1, it defines its
+  frame from the public record as of a pinned date, screens and samples it by a declared design, retrieves and freezes
+  what it reads, and its leads decide which docket and which business the deep case takes. No one picks a docket
+  beforehand (Owen, November 1: "the whole point of discovery is that it finds it independently through it's flow we
+  build. If you decide beforehand then 1. we will likely hyperfixate on the docket, and 2. the whole repeatable flow that
+  is supposed to find these is not faithfully tested"). This replaces spec §12's "proposes three dockets; Owen picks one"
+  and §15's Sun 22:00 docket question, and removes the cut rule "Run F2 from a hand-picked docket comment instead of the
+  F4 wide run", which is the hand pick this decision removes.
+- The dockets the coordinator surveyed by hand on November 1 enter nothing: no source identifier is written into code,
+  prompts, tasks or fixtures before the flow produces it, and no template, question or structure is shaped to a source
+  the flow has not yet chosen.
+- Once the flow's version and as_of are frozen and it has run, its result stands. A change made after seeing a result is
+  a defect fix, recorded with its cause, and the whole flow runs again from the same objective and as_of; it is never
+  re-run until a preferred lead appears (addendum A01 §2.5: tests used adaptively to revise are not independent
+  validation).
+- The same reason holds for F1, by the coordinator's reasoning: the filed contracts are drawn by a rule over the filed
+  record (spec §9.3; one per strike type where they exist), plus the Western Grazers specimen the spec names, and the IR
+  grammar comes from spec §8.1, never fitted to them. A filed construct the IR cannot express is a finding about the
+  grammar, fixed there if the construct is general.
+
+## No escape routes, loud or quiet
+
+- Owen, November 1: "I am also uncompromisingly averse to 'loud failure' escape routes and deferrals/dismissals/shortcuts
+  to reasoning." Making a gap visible (an error, an unknown, a flag, "needs review", a BROKEN line, a "not true" in a
+  report, an OPEN item) is not the job done; the bar is no failure (Handoff's decision of October 6 is the same: aiming at
+  visible failure gives an exit from the bar). Nothing waits on a later tier, a follow-up, a held list or Owen when
+  reasoning can settle it now; nothing is called harmless, flaky, pre-existing or cosmetic without being checked. How it
+  reads in the product, where unknowns are real findings, is in design/posture.md.
+
 ## The factory
 
 - The repository is public on GitHub, created by the coordinator, with no branch protection (Owen, November 1: "make it
