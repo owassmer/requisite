@@ -33,6 +33,7 @@ if [ "${1:-}" = "--sees" ]; then
   printf '%s\n' "${SEES[@]}"
   [ -d "$main_checkout/spec" ] && (cd "$main_checkout" && find spec -type f | sort)
   echo "gates (on the worker's PATH: the full lint, type check and test run)"
+  echo ".tmp/carried/ (only for a task with a line 'Carries: <run>': that interrupted run's scratch files in scratch/ and its whole record, thoughts, commands and results in order, in transcript.md)"
   exit 0
 fi
 task="${1:?usage: scripts/work tasks/<id>-<n>.md}"
