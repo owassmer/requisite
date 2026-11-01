@@ -103,6 +103,19 @@ printf '.venv/\nvar/\nspec/\n.role/\n.tmp/\n__pycache__/\n.ruff_cache/\n.pytest_
 # October 12: it emptied a worker's dependencies mid-run). Dated now, they last the run.
 find "$ws/.venv" "$ws/spec" -exec touch -h {} + 2>/dev/null || true
 mkdir -p "$ws/.role/bin" && cp tools/gates/gates "$ws/.role/bin/gates"
+# A task that continues an interrupted run names it on a line "Carries: <run>". Its product changes are already on the
+# branch (applied when it stopped), so the new workspace has them; what it worked out beside them is not, so its scratch
+# files and its own reasoning and commands come along whole, in .tmp/carried/ (November 1: three runs stopped at a
+# usage limit mid-investigation, and a summary of an hour's search would have lost what it had ruled out).
+carry="$(grep -m1 -oE '^Carries: [A-Za-z0-9._-]+' "$task" | cut -d' ' -f2 || true)"
+if [ -n "$carry" ]; then
+  [ -f "$root/.runs/$carry.log" ] && [ -f "$root/.runs/$carry.jsonl" ] || { echo "=== finished exit 2 (the carried run $carry has no log or event stream in .runs)" >> "$log"; exit 2; }
+  oldws="$(sed -n '1s/^=== worker on .* in //p' "$root/.runs/$carry.log")"
+  mkdir -p "$ws/.tmp/carried"
+  if [ -n "$oldws" ] && [ -d "$oldws/.tmp/scratch" ]; then cp -R "$oldws/.tmp/scratch" "$ws/.tmp/carried/scratch"; fi
+  python3 -I "$root/tools/roles/transcript.py" "$root/.runs/$carry.jsonl" > "$ws/.tmp/carried/transcript.md"
+  echo "=== carried from $carry: $(find "$ws/.tmp/carried" -type f | wc -l | tr -d ' ') files into .tmp/carried" >> "$log"
+fi
 git -C "$ws" init -q && git -C "$ws" add -A && \
   GIT_CONFIG_GLOBAL=/dev/null git -C "$ws" -c user.name=worker -c user.email=worker@requisite.local commit -q -m base
 base="$(git -C "$ws" rev-parse HEAD)"
