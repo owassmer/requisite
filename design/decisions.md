@@ -69,6 +69,31 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   reasoning can settle it now; nothing is called harmless, flaky, pre-existing or cosmetic without being checked. How it
   reads in the product, where unknowns are real findings, is in design/posture.md.
 
+## Numbers
+
+- Probabilities are exact everywhere code computes with them: Fraction, Decimal or int, summing to exactly one, never
+  normalized (addendum §4.2), and a float is refused where a sum to one is checked. Expectations under them (CVaR, E[D],
+  a breach probability) are exact Fractions, since a third of a dollar has no finite Decimal. Money is Decimal, and the
+  optimizer's cash accounting is exact Decimal, in which a rounding raises (worker on 000-1, November 1). A decision
+  model's reported probabilities are made a distribution by the provider layer, which says how; no kernel repairs one.
+- The liquidity optimizer (000-1, addendum A06, C01 §7.2). Receipts arrive per grid date and the kernel cumulates them,
+  so its input is the I8 evaluator's dated transfers placed on the grid. The business arrives as B_0, operating cash
+  before the modeled loss, and the loss, so the kernel also computes the loss, payoff and terminal residual of the
+  scenario table. Money is scaled by the power of ten at the leading digit of max |B_st − r_t|, the business's own cash,
+  so a generous cap cannot widen the tolerance. ε_solver is absolute on the scaled primary objective, default 1e-9 (the
+  oracle's). The premium-minimizing solve is held to ε/2, and the chosen portfolio's exactly recomputed CVaR must lie
+  within ε × scale of the LP optimum, or the solve fails (HiGHS answers miss an exact ≤ ε by about 1e-16, as in the
+  oracle's check 6). Deficits are reported exactly. A breach of a solve's portfolios is a deficit beyond ε × scale,
+  because the premium tie-break may leave an otherwise fully funded portfolio that close to the floor. That tolerance is
+  far below a cent for any business whose cash is under ten billion dollars; the coordinator's reasoning is that a
+  sub-cent deficit is no breach of anything money can measure. Dominance with a dated premium means A_stj ≤ 0.
+- Reduced costs are diagnostics only. HiGHS's duals are not unique (in the addendum's own timing fixture a late payout
+  and an early one both price at −110), so wherever the product shows a reduced cost it shows beside it the re-solve's
+  measured improvement (C01 §7.2: a re-solve always runs).
+- The oracle's recorded values (spec/verified_synthetic_results.json, local) are written into the tests that reproduce
+  them, since spec/ is not in git; each transcription is checked against the JSON (the coordinator re-checked 000-1's:
+  checks 5–9 match exactly).
+
 ## The factory
 
 - The repository is public on GitHub, created by the coordinator, with no branch protection (Owen, November 1: "make it
