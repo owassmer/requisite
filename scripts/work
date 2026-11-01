@@ -29,7 +29,12 @@ SEES=("${PRODUCT[@]}" AGENTS.md CLAUDE.md README.md pyproject.toml uv.lock .pyth
 # Sources kept by earlier workers (tools/roles/worker.ts, source_keep), once there are any.
 [ -n "$(git ls-tree --name-only HEAD research/sources)" ] && SEES+=(research/sources)
 existing=(); for p in "${SEES[@]}"; do [ -n "$(git ls-tree --name-only HEAD "$p")" ] && existing+=("$p"); done; SEES=("${existing[@]}")
-if [ "${1:-}" = "--sees" ]; then printf '%s\n' "${SEES[@]}" "spec (the build spec v3 and the mathematical addendum, with the oracle verify_math.py)"; exit 0; fi
+if [ "${1:-}" = "--sees" ]; then
+  printf '%s\n' "${SEES[@]}"
+  [ -d "$main_checkout/spec" ] && (cd "$main_checkout" && find spec -type f | sort)
+  echo "gates (on the worker's PATH: the full lint, type check and test run)"
+  exit 0
+fi
 task="${1:?usage: scripts/work tasks/<id>-<n>.md}"
 [ -f "$task" ] || { echo "no task file $task; write it first" >&2; exit 2; }
 task_text="$(cat "$task")"
