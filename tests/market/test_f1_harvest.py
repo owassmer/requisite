@@ -13,9 +13,9 @@ import pytest
 from fake_kalshi import FIXTURES, FakeKalshi, load, market_entry, series_entry
 
 from requisite import cassettes, cli
-from requisite.core import Artifact
+from requisite.core import Artifact, FiledSeries
 from requisite.market import f1, kalshi
-from requisite.store import Store
+from requisite.store import Refused, Store
 
 AS_OF = datetime(2026, 10, 20, 12, 0, tzinfo=UTC)
 SETTLED = datetime(2026, 9, 19, 15, 41, 4, 503741, tzinfo=UTC)
@@ -74,6 +74,15 @@ def test_the_harvest_commits_filings_rules_and_known_outcomes(record, live, make
     assert all(x.outcome is not None and x.outcome.result == "yes" for x in drawn.markets)
     floor = json.loads(store.content(drawn.markets[1].artifact.id))["market"]["floor_strike"]
     assert floor == 10.0
+    # each harvested series is committed with the draw's instant, so a later step reads the harvest from the store
+    kept_named = f1.filed_series(store, "KXCAGOAT")
+    assert kept_named == FiledSeries(series="KXCAGOAT", as_of=AS_OF, why=named.why, record=named.record.id,
+                                     contract=named.contract.id, terms=named.terms.id,
+                                     markets={"KXCAGOAT-26SEP30": m.artifact.id})  # fmt: skip
+    assert kept_named.key == "KXCAGOAT|2026-10-20T12:00:00+00:00"
+    assert f1.filed_series(store, "KXRANGE", AS_OF).markets == {x.ticker: x.artifact.id for x in drawn.markets}
+    with pytest.raises(Refused, match="KXNONE is harvested 0 times in this case"):
+        f1.filed_series(store, "KXNONE")
     # every response the draw rests on is committed, as its evidence
     assert all(store.get("artifact", a.id, Artifact) == a for a in h.evidence)
     assert len(h.evidence) == len(h.draw.responses)

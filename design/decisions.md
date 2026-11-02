@@ -127,6 +127,28 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   the body that took the action govern"); a settlement lag stated as a deadline; VoidTransfer optional where no void
   path exists; a date read from text; a CashTransfer with a known amount and an unresolved date; a missing-data rule for
   a payout quantity (A05 §5.3); and what a binary or capped payout pays per period.
+- A listed series is read as an instrument family (worker on 001-4, accepted by the coordinator, November 1). The
+  contract reader writes one representative market's IR (the first harvested market by ticker) and bindings saying which
+  IR value each per-market listing field fills; code gives every market its IR from those, a pure function, and the
+  proposal's payload is core.ContractFamily. Bindings and the reader's input are limited to the listing fields
+  (kalshi.LISTING_FIELDS): the reader never sees an outcome or a price, so it cannot fit the check. f1.retrieve commits
+  each series as a core.FiledSeries with the draw's instant, so later steps read the harvest from the store. A kind's
+  registered schema check runs once its record validates (spec §5: the contract layer's validator is the IR type check
+  and the evaluator). A replayed agent run is the proposal it already made (agents/trace.made_from).
+- The F1 settled-market check (001-4): a settled market's expiration_value enters as an Observation of the observable
+  the family's settlement binding names, from its highest-precedence consulted source, for the instant the bound listing
+  field gives, taken as published at that instant with the market record as its artifact: the record states the value
+  the exchange settled on, not when the source published it, and its own date (settlement_ts) falls after expiration,
+  where a faithful cutoff would see nothing. The IR is settled at its own final instant, because exchanges settle early
+  by rules outside the filing (Kalshi Rule 7.2 settled KXBRDEP's NO markets months before their latest expiration), so
+  the check compares outcomes, not dates, and says so. A market reproduces when its status matches the result and any
+  stated payout equals settlement_value_dollars. The gate passes only with at least one market checked and all checked
+  markets reproduced; it reports whether any checked market lay at or next to its comparison's boundary (found by the
+  evaluator: the comparison made inclusive or strict, and the adjacent market's strike), since only such a market tells
+  an off-by-one strike or an inclusive bound apart.
+- An eleventh grammar finding (001-4): the IR expires early only when its trigger is true, while Kalshi's terms expire a
+  market early once its outcome is decided either way; a faithful IR of those terms stays pending until the latest
+  expiration. In the definition batch with the other ten.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0

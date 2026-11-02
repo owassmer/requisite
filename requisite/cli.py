@@ -197,11 +197,23 @@ def _approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _contract_read(args: argparse.Namespace) -> int:
+    from requisite.contract import harvest
+
+    print(harvest.render(harvest.read(_store(args), args.series, as_of=args.as_of)))
+    return 0
+
+
 def _show(args: argparse.Namespace) -> int:
     p = _store(args).proposal(args.proposal)
     if p is None:
         print(f"no proposal {args.proposal}")
         return 1
+    if p.kind == "contract":
+        from requisite.contract import harvest
+
+        print(harvest.render(p))
+        return 0
     _show_proposal(p)
     return 0
 
@@ -260,6 +272,14 @@ def main(argv: list[str] | None = None) -> int:
     case_args(m)
     m.add_argument("--as-of", required=True, type=_instant, help="the instant the draw is pinned at, with its zone")
     m.set_defaults(run=_f1_retrieve)
+    ct = sub.add_parser("contract", help="filed contracts read into the IR (spec §9.3) and checked against settlements")
+    csub = ct.add_subparsers(dest="step", required=True)
+    m = csub.add_parser("read", help="the contract_reader reads a harvested series into the IR; its gates check the IRs "
+                        "against how its markets settled")  # fmt: skip
+    case_args(m)
+    m.add_argument("--series", required=True, help="the harvested series' ticker")
+    m.add_argument("--as-of", type=_instant, help="the draw's instant, where the series is harvested at more than one")
+    m.set_defaults(run=_contract_read)
     a = sub.add_parser("approve", help="a human decides at a gate (G1-G4) on one proposal, as it stands")
     case_args(a)
     a.add_argument("proposal")

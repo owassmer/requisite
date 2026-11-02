@@ -41,9 +41,10 @@ The harvest. For each harvested series (the named one and each drawn one): its s
 Market, or Get Historical Market for an archived one: spec §9.3), which carries the market's rules text (rules_primary,
 rules_secondary), its strike, and, for a market settled by the instant, its known outcome (result, settlement_ts,
 expiration_value). A drawn series' markets are those of the event that put it in the draw; the named series' are all of
-its markets. Every response the draw rests on is committed too, so the draw's evidence is frozen beside what it chose.
-Text extraction of the filings is the evidence package's (requisite/evidence/extract.py); here they are committed as
-retrieved.
+its markets. Each harvested series is committed as a core.FiledSeries naming those artifacts and the draw's instant, so
+a later step reads the harvest, and which markets settled by the instant, from committed state alone. Every response
+the draw rests on is committed too, so the draw's evidence is frozen beside what it chose. Text extraction of the
+filings is the evidence package's (requisite/evidence/extract.py); here they are committed as retrieved.
 """
 
 from __future__ import annotations
@@ -56,7 +57,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from requisite.core import Artifact, observable_at
+from requisite.core import Artifact, FiledSeries, observable_at
 from requisite.evidence.artifacts import LISTING_BASIS, commit, describe, listed
 from requisite.evidence.fetched import Fetched
 from requisite.market.kalshi import (
@@ -70,7 +71,7 @@ from requisite.market.kalshi import (
     settled_at,
     strike_type,
 )
-from requisite.store import Store
+from requisite.store import Refused, Store
 
 NAMED = "KXCAGOAT"  # decisions, F1's draw rule: "The Western Grazers contract is in by name"
 SALT = "requisite-F1|"  # decisions: sha256("requisite-F1|" + ticker)
@@ -380,7 +381,7 @@ def _series(client: Kalshi, store: Store, ticker: str, why: str, markets: Sequen
     if not terms_url:
         raise KalshiError(f"{ticker}: its series record carries no contract_terms_url; F1 reads filed terms")
     contract_url = series.get("contract_url")
-    return HarvestedSeries(
+    harvested = HarvestedSeries(
         ticker=ticker,
         why=why,
         record=record,
@@ -388,6 +389,24 @@ def _series(client: Kalshi, store: Store, ticker: str, why: str, markets: Sequen
         terms=_filing(client, store, str(terms_url)),
         markets=tuple(_market(client, store, t, where, as_of) for t, where in markets),
     )
+    filed = FiledSeries(series=ticker, as_of=as_of, why=why, record=record.id,
+                        contract=harvested.contract.id if harvested.contract else None, terms=harvested.terms.id,
+                        markets={m.ticker: m.artifact.id for m in harvested.markets})  # fmt: skip
+    store.commit("filed_series", filed.key, filed)
+    return harvested
+
+
+def filed_series(store: Store, series: str, as_of: datetime | None = None) -> FiledSeries:
+    """A series' committed harvest: the one at `as_of`, or, given no instant, its only one."""
+    found = [f for f in store.all("filed_series", FiledSeries) if f.series == series]
+    if as_of is not None:
+        found = [f for f in found if f.as_of == as_of]
+    if len(found) != 1:
+        at = f" at {as_of.isoformat()}" if as_of is not None else ""
+        instants = ", ".join(f.as_of.isoformat() for f in found)
+        raise Refused(f"{series} is harvested {len(found)} times{at} in this case" + (f" ({instants}); name the draw's "
+                       "instant" if found else "; retrieve it with `market f1-retrieve`"))  # fmt: skip
+    return found[0]
 
 
 def retrieve(client: Kalshi, store: Store, d: Draw) -> Harvest:

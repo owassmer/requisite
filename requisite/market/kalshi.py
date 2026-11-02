@@ -260,6 +260,25 @@ class Kalshi:
 
 # ---------------------------------------------------------------- what a market record says
 
+# The fields of a market record that state the terms it was listed under: its identity and titles, its rules text, its
+# strike vocabulary, its notional and its times (spec §9.3: "Each market carries rules_primary, rules_secondary,
+# early_close_condition and a small strike vocabulary: strike_type, floor_strike, cap_strike, functional_strike and
+# custom_strike"; the OpenAPI's Market). Never its outcome (status, result, expiration_value, settlement_ts,
+# settlement_value_dollars), against which a reading of its terms is checked, nor its prices and volumes, which say
+# nothing of its terms (I9). A field Kalshi adds is outside this list until it is read and placed here.
+LISTING_FIELDS = (
+    "ticker", "event_ticker", "market_type", "title", "subtitle", "yes_sub_title", "no_sub_title", "rules_primary",
+    "rules_secondary", "early_close_condition", "can_close_early", "strike_type", "floor_strike", "cap_strike",
+    "functional_strike", "custom_strike", "notional_value_dollars", "open_time", "close_time", "expiration_time",
+    "expected_expiration_time", "latest_expiration_time", "occurrence_datetime", "settlement_timer_seconds",
+)  # fmt: skip
+
+
+def listing(market: Mapping[str, Any]) -> dict[str, Any]:
+    """A market record's listing fields (LISTING_FIELDS), those it carries."""
+    return {k: market[k] for k in LISTING_FIELDS if k in market}
+
+
 
 @dataclass(frozen=True)
 class Settled:

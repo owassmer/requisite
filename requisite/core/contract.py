@@ -9,6 +9,7 @@ status and a dated per-unit transfer schedule (A05 §5.1).
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
+from datetime import UTC
 from typing import Annotated, Any, Literal
 
 from pydantic import Field, model_validator
@@ -589,9 +590,10 @@ Equivalence = Literal[
 
 class HarvestedContract(Record):
     """A filed contract read into the IR (spec §9.3, WP12; A05 §5.5: each harvested contract is supported exactly, with
-    explicit assumptions, or unsupported, never silently simplified). `ir` is set unless unsupported; `assumptions` and
-    `unsupported_terms` say what the IR does not carry exactly; `equivalence` is A09 §10.5's scope of the claim that
-    the IR means what the filing says."""
+    explicit assumptions, or unsupported, never silently simplified). `filing` names the committed harvest of the filing
+    read (a FiledSeries key, for a listed series) and `filed_terms` the artifacts of the filed documents read; `ir` is set
+    unless unsupported; `assumptions` and `unsupported_terms` say what the IR does not carry exactly; `equivalence` is A09
+    §10.5's scope of the claim that the IR means what the filing says."""
 
     filing: str
     filed_terms: Sequence[str]
@@ -612,3 +614,184 @@ class HarvestedContract(Record):
         if self.support == "unsupported" and not self.unsupported_terms:
             raise ValueError("an unsupported contract names the terms the IR cannot carry")
         return self
+
+
+# ---------------------------------------------------------------- filed series (spec §9.3; F1)
+# A listed series has one filed terms document: contract_terms_url is a field of the series, not of its markets, and the
+# terms are written with placeholders that each market's own fields fill (the Western Grazers terms: "as in effect on
+# the last day of <time period>"; fixtures/kalshi/KXCAGOAT). So a series is read as an instrument family: one market's
+# IR, and bindings saying which IR value each per-market field fills (ours). That every market's operative terms are the
+# representative's with its own values bound is the family's claim, not assumed: a market IR may differ from the
+# representative only at its bound values (ContractFamily), each must re-derive from its market's record by the
+# bindings (the contract proposal's schema gate), and each settled market is checked against how it settled (its tests
+# gate).
+
+
+class FiledSeries(Record):
+    """A series of filed terms as F1 harvested it at the draw's instant (spec §9.3, §12 F1; decisions, F1's draw rule):
+    its series record, its filed contract (contract_url, None where the series carries none) and current terms
+    (contract_terms_url), and each harvested market's record by ticker. `as_of` is the draw's instant: a market's known
+    outcome is the one its record shows settled by it."""
+
+    series: str
+    as_of: Instant
+    why: str
+    record: ArtifactId
+    contract: ArtifactId | None
+    terms: ArtifactId
+    markets: Mapping[str, ArtifactId]
+
+    @property
+    def key(self) -> str:
+        """The harvest's key: the series and the draw's instant, in UTC."""
+        return f"{self.series}|{self.as_of.astimezone(UTC).isoformat()}"
+
+
+ListingSlot = Literal[
+    "threshold", "at", "since", "deadline", "window_start", "window_end", "open", "close", "expiration",
+    "observation_cutoff",
+]  # fmt: skip
+TIMING_SLOTS = frozenset({"open", "close", "expiration", "observation_cutoff"})
+# The node kinds that have each slot: a comparison's threshold, an instant read, a By's bounds, a window's ends.
+SLOT_NODES: Mapping[str, tuple[type[Record], ...]] = {
+    "threshold": (Cmp, NumCmp),
+    "at": (At, ValueAt),
+    "since": (By,),
+    "deadline": (By,),
+    "window_start": (Throughout, CountTrue, DurationIn),
+    "window_end": (Throughout, CountTrue, DurationIn),
+}
+
+
+class ListingBinding(Record):
+    """One per-market listing field of a series and the IR value it fills (ours; spec §9.3's per-market fields). `field`
+    is the market record's field, a dotted path into its objects where the value is nested (custom_strike.Option).
+    `node` and `slot` name the value it fills: a node's threshold (Cmp, NumCmp), the instant it reads (At, ValueAt), a
+    By's bounds (since, deadline), or a window's ends (Throughout, CountTrue, DurationIn); or, with no node, one of the
+    timing's dates (open, close, expiration, observation_cutoff). The field's value enters as it is, in the slot's type:
+    a threshold takes the number, text or date its comparison's value is, an instant slot an instant."""
+
+    field: str
+    node: str | None
+    slot: ListingSlot
+
+    @model_validator(mode="after")
+    def _target(self) -> ListingBinding:
+        if not self.field.strip() or any(not part for part in self.field.split(".")):
+            raise ValueError("a binding names a market field, its nested parts joined by dots")
+        if (self.slot in TIMING_SLOTS) != (self.node is None):
+            raise ValueError("a timing date is filled with no node, and a node's value with its node named")
+        return self
+
+
+class SettlementBinding(Record):
+    """What a market record's settlement value reports (ours; spec §9.3: "settled markets supplying known outcomes"):
+    the observable whose value the exchange settled on, and the market field (`at_field`) giving the instant that value
+    is for."""
+
+    observable: str
+    at_field: str
+
+
+def _binding_problems(ir: ContractIR, bindings: Sequence[ListingBinding], settlement: SettlementBinding | None
+                      ) -> list[str]:  # fmt: skip
+    """What makes bindings name values the IR does not have: each binding fills a slot its node has, no value is filled
+    twice, and the settlement value reports an observable the IR declares."""
+    nodes = {n.id: n for e in (ir.trigger, ir.payout.quantity) if e is not None for n in walk(e)}
+    problems = []
+    filled = [(b.node, b.slot) for b in bindings]
+    twice = sorted({f"{n or 'timing'}.{s}" for n, s in filled if filled.count((n, s)) > 1})
+    if twice:
+        problems.append(f"values filled by more than one field: {twice}")
+    for b in bindings:
+        if b.node is None:
+            continue
+        node = nodes.get(b.node)
+        if node is None:
+            problems.append(f"{b.field} fills {b.slot} of {b.node}, which is not a node of the IR")
+        elif not isinstance(node, SLOT_NODES[b.slot]):
+            problems.append(f"{b.field} fills {b.slot} of {b.node}, a {node.kind} node, which has no {b.slot}")
+        elif b.slot == "since" and isinstance(node, By) and node.since is None:
+            problems.append(f"{b.field} fills the lower bound of {b.node}, which states none (nor whether it is included)")
+    if settlement is not None and settlement.observable not in {o.id for o in ir.observables}:
+        problems.append(f"the settlement value reports {settlement.observable}, which the IR does not declare")
+    return problems
+
+
+class ContractFamily(Record):
+    """A filed series read into the IR as an instrument family (spec §9.3, WP12): the harvested contract's support
+    classification (A05 §5.5), one representative market's IR, the bindings that give each market's IR from its record,
+    what its settlement value reports, and each harvested market's IR so derived, so that each re-derives from what is
+    committed. An unsupported series has no IR, bindings or market IRs."""
+
+    contract: HarvestedContract
+    representative: ContractIR | None
+    bindings: Sequence[ListingBinding] = ()
+    settlement: SettlementBinding | None = None
+    markets: Sequence[ContractIR] = ()
+
+    @model_validator(mode="after")
+    def _family(self) -> ContractFamily:
+        supported = self.contract.support != "unsupported"
+        if supported != (self.representative is not None):
+            raise ValueError("a supported series has its representative IR, and an unsupported one has none")
+        if self.representative is None:
+            if self.bindings or self.settlement is not None or self.markets:
+                raise ValueError("an unsupported series has no bindings, settlement binding or market IRs")
+            return self
+        rep = self.representative
+        if self.contract.ir != rep.ref:
+            raise ValueError("the harvested contract names its representative IR")
+        ids = [m.id for m in self.markets]
+        if len(set(ids)) != len(ids):
+            raise ValueError("each market has one IR")
+        if any(m.version != rep.version for m in self.markets):
+            raise ValueError("a family's market IRs carry its representative's version")
+        problems = _binding_problems(rep, self.bindings, self.settlement)
+        if problems:
+            raise ValueError("; ".join(problems))
+        shape = _unbound(rep, self.bindings)
+        differ = [m.id for m in self.markets if _unbound(m, self.bindings) != shape]
+        if differ:
+            raise ValueError(f"market IRs {differ} differ from the representative beyond the values their bindings fill "
+                             "(a source, policy, operator or rule no binding varies: A09 §10.4, A05 §5.5)")
+        return self
+
+
+_WINDOW_FIELD = {"throughout": "window", "count_true": "days", "duration_in": "window"}
+_UNBOUND = "<bound>"
+
+
+def _unbound(ir: ContractIR, bindings: Sequence[ListingBinding]) -> Any:
+    """An IR's content with its id and every value its bindings fill blanked: two market IRs of one family have this
+    equal, since only their bound values may differ."""
+    dump = ir.model_dump(mode="json")
+    dump["id"] = _UNBOUND
+    for b in bindings:
+        if b.node is None:
+            dump["timing"][b.slot] = _UNBOUND
+    by_node: dict[str, list[ListingBinding]] = {}
+    for b in bindings:
+        if b.node is not None:
+            by_node.setdefault(b.node, []).append(b)
+
+    def blank(node: dict[str, Any]) -> None:
+        """Blank a node's bound values, then its child nodes', following only the IR's own structure (an And's or Or's
+        args, a Not's arg, a temporal or count node's expr, a NumCmp's expr, a Computed's inputs), so a parameter of an
+        Interpretive or ReadValue node (its bindings) is compared as it is."""
+        for b in by_node.get(node["id"], []):
+            if b.slot == "threshold":
+                node["value"] = _UNBOUND
+            elif b.slot in ("at", "since", "deadline"):
+                node[b.slot] = _UNBOUND
+            else:
+                node[_WINDOW_FIELD[node["kind"]]]["start" if b.slot == "window_start" else "end"] = _UNBOUND
+        children = [*node.get("args", ()), *([node["arg"]] if "arg" in node else []),
+                    *([node["expr"]] if "expr" in node else []), *node.get("inputs", {}).values()]  # fmt: skip
+        for child in children:
+            blank(child)
+
+    blank(dump["trigger"])
+    if dump["payout"].get("quantity") is not None:
+        blank(dump["payout"]["quantity"])
+    return dump

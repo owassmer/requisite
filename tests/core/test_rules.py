@@ -223,3 +223,30 @@ def test_a_kept_docket_has_its_comment_count():
     with pytest.raises(ValidationError, match="kept docket"):
         c.FrameDocket(**{**d, "comments": None})
     assert c.FrameDocket(**{**d, "kept": False, "comments": None}).comments is None
+
+
+def test_a_familys_market_irs_differ_from_its_representative_only_at_their_bound_values():
+    family = one(c.ContractFamily)
+    rep = family.representative
+    assert rep is not None
+    trigger = rep.trigger.model_copy(update={"value": rep.trigger.value + 1})  # the bound threshold, another market's
+    other = rep.model_copy(update={"id": "KXWET-26DEC31-T21", "trigger": trigger})
+    assert c.ContractFamily(**{**dict(family), "markets": [rep, other]}).markets[1] == other
+    policy = rep.resolution.model_copy(update={"on_unknown_at_expiry": "yes"})  # no binding varies the procedure
+    stray = rep.model_copy(update={"id": "KXWET-26DEC31-T22", "resolution": policy})
+    with pytest.raises(ValidationError, match="beyond the values their bindings fill"):
+        c.ContractFamily(**{**dict(family), "markets": [rep, stray]})
+
+
+def test_an_interpretive_parameter_is_compared_even_where_it_looks_like_a_bound_node():
+    family = one(c.ContractFamily)
+    rep = family.representative
+    assert rep is not None
+
+    def with_parameter(value: str, ir_id: str) -> c.ContractIR:
+        q = c.Interpretive(id="q", question_template="t", bindings={"p": {"id": rep.trigger.id, "value": value}})
+        return rep.model_copy(update={"id": ir_id, "trigger": c.And(id="all", args=[rep.trigger, q])})
+
+    a, b = with_parameter("A", rep.id), with_parameter("B", "KXWET-26DEC31-T23")
+    with pytest.raises(ValidationError, match="beyond the values their bindings fill"):
+        c.ContractFamily(**{**dict(family), "representative": a, "markets": [a, b]})

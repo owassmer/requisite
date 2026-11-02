@@ -88,6 +88,8 @@ CONTRACT = c.ContractIR(
     resolution=PROCEDURE,
     exclusions=[c.Exclusion(text="Not advice.", operative=False)],
 )
+BINDING = c.ListingBinding(field="floor_strike", node="trigger", slot="threshold")
+SETTLEMENT = c.SettlementBinding(observable="rain", at_field="close_time")
 SUMMARY = c.CashSummary(
     quantities={"y": D("0.1818181818")},
     premium=D("1.818181818"),
@@ -265,6 +267,20 @@ def examples() -> list[c.Record]:
             assumptions=["first-print values"],
             equivalence="tested_equivalent_on_suite",
         ),
+        c.FiledSeries(series="KXWET", as_of=T0, why="drawn for greater", record=ART, contract=None, terms=ART,
+                      markets={"KXWET-26DEC31-T20": ART}),  # fmt: skip
+        BINDING,
+        SETTLEMENT,
+        c.ContractFamily(
+            contract=c.HarvestedContract(filing="KXWET|2026-11-01T12:00:00+00:00", filed_terms=[ART],
+                                         support="supported_exact", ir=CONTRACT.ref,
+                                         equivalence="tested_equivalent_on_suite"),
+            representative=CONTRACT,
+            bindings=[BINDING, c.ListingBinding(field="close_time", node="wet_days", slot="window_end"),
+                      c.ListingBinding(field="expiration_time", node=None, slot="expiration")],
+            settlement=SETTLEMENT,
+            markets=[CONTRACT],
+        ),  # fmt: skip
         c.GateResult(gate="schema", passed=True, detail="ok"),
         c.Proposal(id="pr1", case="case1", kind="question", payload={"id": "q"}, author="run-1", rationale="r",
                    status="proposed"),  # fmt: skip

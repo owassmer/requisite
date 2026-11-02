@@ -22,11 +22,11 @@ from fractions import Fraction
 from typing import Any
 
 from numpy import random as np_random
-from pydantic import BaseModel
 
 from requisite import core
 from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
+from requisite.agents.trace import made_from, record_run
 from requisite.discovery import labels, sampling
 from requisite.evidence.frame import docket_documents, entries, frame_gate, measure_document
 from requisite.evidence.frame import frames as evidence_frames
@@ -45,26 +45,12 @@ def _proposal_id(kind: str, payload: Mapping[str, Any]) -> str:
     return f"{kind}-{core.sha256(core.canonical_json(dict(payload)))[:16]}"
 
 
-def _record_run(store: Store, result: runner.AgentResult[Any], input: Mapping[str, Any], proposals: list[str]) -> None:
-    output = result.output.model_dump(mode="json") if isinstance(result.output, BaseModel) else result.output
-    run = core.AgentRun(
-        id=result.run[:16],
-        role=result.role,
-        model=result.model,
-        effort=result.effort,
-        input_hash=core.sha256(core.canonical_json(dict(input))),
-        output_hash=core.sha256(core.canonical_json(output)),
-        response=result.run,
-        proposals=proposals,
-        at=store.clock(),
-    )
-    store.commit("agent_run", run.id, run)
-
-
 def draft_objective(store: Store, brief: str, today: date) -> core.Proposal:
     """Step 1: the objective_drafter's draft of the run's objective, submitted as a proposal that awaits G1."""
     input = {"brief": brief, "today": today.isoformat()}
     result = runner.run("objective_drafter", input, ObjectiveDraft, effort="high")
+    if done := made_from(store, result):
+        return done[0]  # this run's answer is already proposed (agents/trace.py)
     draft = result.output
     objective = core.WideObjective(
         id="objective",
@@ -88,7 +74,7 @@ def draft_objective(store: Store, brief: str, today: date) -> core.Proposal:
             status="proposed",
         )
     )
-    _record_run(store, result, input, [proposal.id])
+    record_run(store, result, input, [proposal.id])
     return proposal
 
 
@@ -144,6 +130,8 @@ def draft_frame(
     objective = approved_objective(store)
     input = {"objective": objective.model_dump(mode="json"), "as_of": as_of.isoformat()}
     result = runner.run("frame_drafter", input, FrameDraft, effort="high")
+    if done := made_from(store, result):
+        return done[0]  # this run's answer is already proposed (agents/trace.py)
     d = result.output
     criteria = core.FrameCriteria(
         id="frame",
@@ -171,7 +159,7 @@ def draft_frame(
             status="proposed",
         )
     )
-    _record_run(store, result, input, [proposal.id])
+    record_run(store, result, input, [proposal.id])
     return proposal
 
 
@@ -182,6 +170,8 @@ def draft_paraphrases(store: Store, template_id: str) -> core.Proposal:
     t = library.template(template_id)
     input = {"template": t.model_dump(mode="json")}
     result = runner.run("paraphrase_writer", input, ParaphrasesDraft, effort="high")
+    if done := made_from(store, result):
+        return done[0]  # this run's answer is already proposed (agents/trace.py)
     paraphrases = [library.original(t)] + [
         core.Paraphrase(id=p.id, target=p.target, meanings=p.meanings) for p in result.output.paraphrases
     ]
@@ -205,7 +195,7 @@ def draft_paraphrases(store: Store, template_id: str) -> core.Proposal:
             status="proposed",
         )
     )
-    _record_run(store, result, input, [proposal.id])
+    record_run(store, result, input, [proposal.id])
     return proposal
 
 

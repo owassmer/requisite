@@ -9,9 +9,9 @@ from collections.abc import Sequence
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
-from requisite.core import ContractIR, TimeWindow
+from requisite.core import ContractFamily, ContractIR, HarvestedContract, ListingBinding, SettlementBinding, TimeWindow
 from requisite.core.contract import Support
 from requisite.core.governance import CommentStatus, DocumentType
 
@@ -59,13 +59,29 @@ class ParaphrasesDraft(_Answer):
 
 
 class HarvestDraft(_Answer):
-    """contract_reader: a filed contract read into the IR (core.HarvestedContract's support classification, and the IR
-    itself as a core.ContractIR, validated as one)."""
+    """contract_reader: a filed series read into the IR as an instrument family (core.ContractFamily's fields that are
+    the reader's): the support classification with its assumptions and unsupported terms (core.HarvestedContract), the
+    representative market's IR (its id and version are code's), the bindings that say which IR value each per-market
+    listing field fills (core.ListingBinding), and what a market record's settlement value reports
+    (core.SettlementBinding). Validated as the core family it drafts, so an answer the definition refuses is refused
+    here, with the definition's reasons."""
 
     support: Support
     assumptions: Sequence[str]
     unsupported_terms: Sequence[str]
     ir: ContractIR | None
+    bindings: Sequence[ListingBinding]
+    settlement: SettlementBinding | None
+
+    @model_validator(mode="after")
+    def _family(self) -> HarvestDraft:
+        contract = HarvestedContract(
+            filing="draft", filed_terms=(), support=self.support, ir=self.ir.ref if self.ir is not None else None,
+            assumptions=self.assumptions, unsupported_terms=self.unsupported_terms,
+            equivalence="unsupported_or_unassessed",
+        )  # fmt: skip
+        ContractFamily(contract=contract, representative=self.ir, bindings=self.bindings, settlement=self.settlement)
+        return self
 
 
 class ProseSection(_Answer):

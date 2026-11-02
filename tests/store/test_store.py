@@ -72,6 +72,24 @@ def test_a_proposal_becomes_active_only_when_its_required_gates_pass(store):
         store.register_gate("assumption", "tests", lambda st, pr: c.GateResult(gate="tests", passed=True, detail=""))
 
 
+def test_a_kinds_registered_schema_check_runs_once_its_record_validates(store):
+    # A kind whose validator is more than its record's (spec §5: the contract layer's IR type check and evaluator)
+    # registers a schema check; it decides the schema gate only for a payload that is already a valid record.
+    seen = []
+
+    def beyond(st, pr):
+        seen.append(pr.id)
+        return c.GateResult(gate="schema", passed=False, detail="the evaluator refuses it")
+
+    store.register_gate("question", "schema", beyond)
+    malformed = store.submit_proposal(question_proposal("s1", answers=[]))
+    assert [(g.gate, g.passed) for g in malformed.gates] == [("schema", False)] and seen == []
+    assert "the evaluator refuses it" not in malformed.gates[0].detail
+    refused = store.submit_proposal(question_proposal("s2"))
+    assert seen == ["s2"] and refused.status == "rejected"
+    assert [(g.gate, g.passed, g.detail) for g in refused.gates] == [("schema", False, "the evaluator refuses it")]
+
+
 def test_a_human_gate_waits_for_an_approval_of_that_exact_payload(store):
     spec = c.DecisionSpec(
         id="d", version=1, entity="e", decision_time=NOW,

@@ -58,7 +58,10 @@ class Refused(ValueError):
 GateCheck = Callable[["Store", Proposal], GateResult]
 
 # Schema gates: each proposal kind's payload must be a valid record of this type. Kinds whose payload has no core record
-# yet are absent, and a proposal of such a kind cannot pass its schema gate (no proposal is admitted unvalidated).
+# yet are absent, and a proposal of such a kind cannot pass its schema gate (no proposal is admitted unvalidated). A kind
+# whose validator is more than its record's registers a schema check, run once the record validates (spec §5: the
+# contract layer's validator is the "IR type check, three-valued evaluator"; a contract's IRs are checked by the
+# evaluator, which this package does not import).
 PAYLOAD: dict[str, type[Record]] = {
     "question": core.AtomicQuestion,
     "proposition": core.Proposition,
@@ -66,7 +69,7 @@ PAYLOAD: dict[str, type[Record]] = {
     "assumption": core.Assumption,
     "claim": core.Claim,
     "decision_spec": core.DecisionSpec,
-    "contract": core.ContractIR,
+    "contract": core.ContractFamily,
     "objective": core.WideObjective,
     "entity_model": core.EntityModel,
     "template": core.QuestionTemplate,
@@ -304,6 +307,8 @@ class Store:
         for gate in core.required_gates(proposal.kind, proposal.payload):
             if gate == "schema":
                 result = self._schema(proposal)
+                if result.passed and (proposal.kind, gate) in self._gates:
+                    result = self._gates[(proposal.kind, gate)](self, proposal)
             elif gate == "human":
                 result = self._human(proposal)
             elif (proposal.kind, gate) in self._gates:

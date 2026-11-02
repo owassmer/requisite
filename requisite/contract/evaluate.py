@@ -368,6 +368,17 @@ def _check_ir(ir: ContractIR) -> None:
             _bounded(p, "a payment period")
 
 
+def accept(ir: ContractIR) -> None:
+    """The evaluator's type check of an IR (spec §5: the contract layer's validator is the "IR type check, three-valued
+    evaluator"): IRError where the evaluator cannot give it one meaning, before anything is evaluated."""
+    _check_ir(ir)
+
+
+def consulted(ir: ContractIR) -> tuple[dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
+    """Each observable's sources the procedure consults, highest-ranked first, and those that must agree (`_consulted`)."""
+    return _consulted(ir)
+
+
 def _consulted(ir: ContractIR) -> tuple[dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
     """Each observable's sources the procedure consults, in order, and those that must agree. Under require_agreement
     the named sources of the observable must agree (where it has two or more of them); otherwise the procedure's
@@ -963,6 +974,17 @@ def evaluate(
         unresolved=list(dict.fromkeys(out.unresolved)),
         policies=out.policies,
     )
+
+
+def final_instant(ir: ContractIR) -> datetime:
+    """The instant from which an evaluation's procedure status, on the same observations and interpretations, no longer
+    changes with time: the later of the expiration and the observation cutoff (the unknown-at-expiry rule applies once
+    both have passed), or, where the contract extends on an unknown trigger, the later of the extended pair."""
+    t, proc = ir.timing, ir.resolution
+    if proc.on_unknown_at_expiry == "extend":
+        assert proc.extension_days is not None  # core.ResolutionProcedure
+        return max(_shift(t.expiration, proc.extension_days, ir), _shift(t.observation_cutoff, proc.extension_days, ir))
+    return max(_utc(t.expiration), _utc(t.observation_cutoff))
 
 
 def _clause(ir: ContractIR, path: str) -> Ref:
