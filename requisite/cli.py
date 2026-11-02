@@ -135,6 +135,13 @@ def _wide_gold_draw(args: argparse.Namespace) -> int:
     return 0
 
 
+def _paraphrases(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
+
+    _show_proposal(wide.draft_paraphrases(_store(args), args.template))
+    return 0
+
+
 def _gold(args: argparse.Namespace) -> int:
     from requisite.discovery import gold, wide
 
@@ -236,6 +243,10 @@ def main(argv: list[str] | None = None) -> int:
         if parallel:
             w.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
         w.set_defaults(run=run)
+    ph = sub.add_parser("paraphrases", help="an agent writes a library template's frozen paraphrase set (spec §2.1)")
+    case_args(ph)
+    ph.add_argument("--template", required=True, help="the library template's id")
+    ph.set_defaults(run=_paraphrases)
     g = sub.add_parser("gold", help="label the gold sample blind, one item at a time (stop and resume at will)")
     case_args(g)
     g.add_argument("--labeler", required=True, help="who is labelling")
