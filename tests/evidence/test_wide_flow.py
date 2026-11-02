@@ -11,6 +11,7 @@ from fake_api import DOCKET, FakeAPI, fixture_world
 from test_frame import criteria
 
 from requisite import cassettes, core
+from requisite.agents.runner import AgentResult
 from requisite.discovery import labels, wide
 from requisite.evidence.frame import frame_gate
 from requisite.judgment import providers
@@ -31,6 +32,13 @@ def stand_in(spec, body):
     name = (body["questions"][0]["name"] if spec.name == "openai_decisions" else next(iter(body["questions"])))
     if "population definition" in text:
         p = {"in_population": 0.8, "other_author": 0.15, "not_established": 0.05}
+    elif "part of the author's economics" in text:
+        p = {"labor": 0.9, "inputs": 0.02, "energy": 0.02, "financing": 0.02, "revenue": 0.01, "compliance": 0.01,
+             "other": 0.01, "not_established": 0.01}  # fmt: skip
+    elif "would do to its author" in text:
+        p = {"cost_increase": 0.9, "cost_decrease": 0.03, "revenue_loss": 0.03, "not_established": 0.04}
+    elif "relief, protection or predictability" in text:
+        p = {"asks": 0.85, "does_not": 0.1, "not_established": 0.05}
     else:
         p = {"labor": 0.7, "inputs": 0.05, "labor_and_inputs": 0.05, "no_loss": 0.15, "not_established": 0.05}
     if spec.name == "openai_decisions":
@@ -100,3 +108,51 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     # Every item's probability, 0.64, is above the cut: the above-cut stratum of 26 holds them all and takes them whole.
     assert gold.phase == 2 and [(d.stratum, d.inclusion_prob) for d in gold.items] == [("under_100.bin1", Fraction(1))] * n
     assert gold.seed == wide.seed(draw.content_hash(), "phase2")
+
+
+def agent_double(role, agent_input, output, *, effort):
+    """The family_drafter and impact_extractor answering as a test's own input (never a cassette)."""
+    if role == "family_drafter":
+        dockets = [d["docket"] for d in agent_input["dockets"]]
+        draft = {"families": [{"id": "airline_labor", "name": "Airline labor", "channel": "labor",
+                               "mechanism": "the measure raises the hours or pay airlines must provide",
+                               "dockets": dockets}], "rationale": "one docket, one family"}  # fmt: skip
+    else:
+        draft = {"impacts": []}
+    return AgentResult(role, output.model_validate(draft), "run-" + core.sha256(core.canonical_json(agent_input)),
+                       "test-double", effort, True)
+
+
+def test_the_flow_goes_from_gold_labels_to_an_estimate_ranked_leads_and_a_lead_proposed_at_g1(case):
+    from requisite.discovery import results
+
+    store, client = case
+    wide.draw_sample(store)
+    wide.read_sample(store, client)
+    wide.label_phase1(store)
+    gold = wide.draw_gold(store)
+    fams = results.draft_families(store, agent_double)
+    assert fams.status == "active", fams.gates
+    # Owen's labels: the first gold item unsure on exposure, the rest in the population and exposed.
+    for n, d in enumerate(gold.items):
+        for tid, label in (("voice_in_population", "in_population"),
+                           ("exposure_to_measure", None if n == 0 else "labor")):  # fmt: skip
+            store.commit_gold_label(core.GoldLabel(
+                item=d.item, question=core.Ref(id=tid, version=1), design=gold.design, stratum=d.stratum,
+                inclusion_prob=d.inclusion_prob, outcome="labeled" if label else "unresolved", label=label,
+                labeler="owen", labeled_at=T, blind=True,
+            ))  # fmt: skip
+    est = results.estimate(store)
+    assert [s.scope for s in est.scopes] == ["overall", "airline_labor"]
+    assert est.unresolved_gold_labels == 1 and est.gold_items == len(gold.items)
+    overall = est.scopes[0]
+    n = len(gold.items)
+    # A census: the lowest completion leaves the unsure item out of the numerator, the highest puts it in.
+    assert overall.lowest.estimate == pytest.approx((n - 1) / n) and overall.highest.estimate == pytest.approx(1.0)
+    assert overall.read is not None and overall.read[1] == pytest.approx(1.0)
+    leads = results.find_leads(store, agent=agent_double)
+    # The gold-confirmed items lead (tier 2: they ask for relief, state no number), then the unsure one by the judge.
+    assert [x.basis for x in leads.leads] == ["gold"] * (n - 1) + ["judged"]
+    assert all(x.tier == 2 and x.answers["seeks_certainty"] == "asks" for x in leads.leads)
+    promoted = results.propose_lead(store, 1)
+    assert promoted.kind == "lead" and promoted.status != "active"  # it waits for a human at G1

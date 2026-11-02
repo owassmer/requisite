@@ -267,3 +267,20 @@ def test_a_rulebooks_sections_are_spec_8_5s_each_once_in_its_order():
         c.Rulebook(contract=rb.contract, sections=[*sections[:3], drafted_example, *sections[4:]])
     with pytest.raises(ValidationError, match="holds its documents"):
         c.ScenarioPacket(**{**one(c.ScenarioPacket).model_dump(), "documents": []})
+
+
+def test_a_runs_families_partition_its_dockets_and_its_estimate_reads_the_completions_hull():
+    fam = one(c.EventFamilies)
+    twice = fam.families[0].model_copy(update={"id": "other"})
+    with pytest.raises(ValidationError, match="one family only"):
+        c.EventFamilies(frame=fam.frame, families=[fam.families[0], twice])
+    scope = one(c.ScopeEstimate)
+    empty = scope.lowest.model_copy(update={"interval": []})
+    with pytest.raises(ValidationError, match="None exactly where either set is empty"):
+        c.ScopeEstimate(**{**dict(scope), "lowest": empty})
+    assert c.ScopeEstimate(**{**dict(scope), "lowest": empty, "read": None}).read is None
+    with pytest.raises(ValidationError, match="runs from the lowest"):
+        c.ScopeEstimate(**{**dict(scope), "read": (0.0, 0.0)})
+    leads = one(c.LeadList)
+    with pytest.raises(ValidationError, match="ranked 1, 2"):
+        c.LeadList(estimate=leads.estimate, leads=[leads.leads[0].model_copy(update={"rank": 2})])

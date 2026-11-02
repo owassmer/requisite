@@ -110,3 +110,33 @@ class PacketDraft(_Answer):
     """scenario_renderer: one scenario's synthetic evidence packet (quarantined: spec I4)."""
 
     documents: Sequence[PacketDocument]
+
+
+class FamilyDraft(_Answer):
+    id: str
+    name: str
+    channel: str
+    mechanism: str
+    dockets: Sequence[str]
+
+
+class FamiliesDraft(_Answer):
+    """family_drafter: a wide run's event families over its kept dockets' measures (core.EventFamilies; its frame is
+    code's). Every docket given is in exactly one family."""
+
+    families: Sequence[FamilyDraft]
+    rationale: str
+
+
+class ImpactDraft(_Answer):
+    quote: str
+    amount: str
+    currency: str
+    period: Literal["year", "month", "one_time", "other"]
+
+
+class ImpactsDraft(_Answer):
+    """impact_extractor: the cost impacts a filing states of the measure it comments on, each quoted exactly, with its
+    amount, currency and period; none where the filing states none."""
+
+    impacts: Sequence[ImpactDraft]

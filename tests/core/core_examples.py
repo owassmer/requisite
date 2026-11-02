@@ -121,6 +121,15 @@ DIAG = c.QuestionDiagnostic(question=REF, resolved=H, s_arg=1.0, s_prob=0.93, pr
                             regret=F(50), informational=False)  # fmt: skip
 
 
+FAMILY = c.EventFamily(id="overtime", name="Overtime pay", channel="labor", mechanism="a higher overtime threshold",
+                       dockets=["DOCKET-1"])  # fmt: skip
+READ = c.RatioRead(estimate=0.4, interval=[(0.2, 0.6)], interval_kind="interval", fieller=[(None, -3.0), (0.18, None)],
+                   fieller_kind="two_rays")  # fmt: skip
+IMPACT_Q = c.QuantifiedImpact(claim=CLM, amount=F(80000), currency="USD", period="year", annual=F(80000))
+LEAD = c.Lead(rank=1, tier=1, item="COMMENT-1", docket="DOCKET-1", family="overtime", submitter="A landscaping company",
+              basis="judged", probability=0.72, answers={"seeks_certainty": "asks"}, judgments=[H], impact=[IMPACT_Q])  # fmt: skip
+
+
 def examples() -> list[c.Record]:
     return [
         c.Ref(id="x", version=1),
@@ -404,6 +413,19 @@ def examples() -> list[c.Record]:
                 searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART])],
                 dockets=[c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120, artifacts=[ART])],
                 items=[c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0, withdrawn=False)]),  # fmt: skip
+        FAMILY,
+        c.EventFamilies(frame="frame1", families=[FAMILY]),
+        READ,
+        c.ScopeEstimate(scope="overall", lowest=READ, highest=READ, read=(0.2, 0.6), reason="the two completions' hull"),
+        c.WideEstimate(objective=c.Ref(id="objective", version=1), frame="frame1", design=c.Ref(id="two_phase", version=1),
+                       draws=(H, H), families="event_families-1", gold_labels=[H], judgments=[H], level=0.95, interval_method="score", phase1_items=1200,
+                       unreadable_items=3, gold_items=130, unresolved_gold_labels=2,
+                       scopes=[c.ScopeEstimate(scope="overall", lowest=READ, highest=READ, read=(0.2, 0.6),
+                                               reason="the two completions' hull")]),  # fmt: skip
+        IMPACT_Q,
+        LEAD,
+        c.LeadList(estimate="estimate-1", leads=[LEAD]),
+        c.LeadPromotion(leads="leads-1", lead=LEAD, case="deep-1"),
         c.AgentRun(id="run1", role="objective_drafter", model="claude-opus-5-5", effort="high", input_hash=H,
                    output_hash=H, response=H, proposals=["pr1"], at=T0),  # fmt: skip
         PARAM,

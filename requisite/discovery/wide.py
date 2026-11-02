@@ -440,6 +440,16 @@ def unreadable(store: Store) -> dict[str, str]:
     return _states(store, [d.item for d in drawn(store, 1).items])[1]
 
 
+def phase1_judgments(store: Store) -> list[str]:
+    """The content hashes of the phase-1 judgments the predictions read, in a stable order."""
+    spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
+    phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
+                              paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
+    asked = {q for q in labels.OBJECTIVE_TEMPLATES}
+    return sorted(j.content_hash() for j in store.all("judgment", core.Judgment)
+                  if j.config == phase1 and j.question.id.split(".")[0] in asked)  # fmt: skip
+
+
 def predictions(store: Store) -> dict[str, tuple[float, float]]:
     """Each readable phase-1 item's judged P(in_population) and P(exposure in EXPOSED), from its phase-1 judgments
     (decisions, "F4 from the labels to the leads"): a question the judge refused takes the mean of that question's

@@ -32,6 +32,8 @@ ProposalKind = Literal[
     "contract",  # a whole filed contract read into the IR (spec §9.3, WP12)
     "objective",  # a wide run's objective an agent drafts for G1 (spec §2.4 G1; §7.2; decisions, "Discovery finds ...")
     "entity_model",  # a deep case's driver tree and liquidity profile an agent proposes for G1 (spec §7.1 step 1)
+    "event_families",  # a wide run's event families an agent proposes (the approved objective: "defined by the run")
+    "lead",  # a lead promoted into a deep case at G1 (spec §7.2 step 6: "Promote top leads into deep cases at gate G1")
 ]
 ProposalStatus = Literal["proposed", "validated", "active", "promoted", "rejected", "retired"]
 
@@ -116,6 +118,8 @@ REQUIRED_GATES: Mapping[str, tuple[Gate, ...]] = {
     "contract": ("schema", "tests"),
     "objective": ("schema", "human"),
     "entity_model": ("schema", "human"),
+    "event_families": ("schema", "tests"),
+    "lead": ("schema", "human"),
 }
 # A question proposed to replace a parent (a split) passes stability (spec §2.1: "A proposed split yields stable
 # sub-questions") and relevance (spec §2.2: "A split is admitted only if it raises relevance or is needed for
@@ -602,6 +606,189 @@ class Frame(Record):
         if len(set(ids)) != len(ids):
             raise ValueError("a frame lists each item once")
         return self
+
+
+# ---------------------------------------------------------------- a wide run's results (spec §7.2 steps 5-6)
+
+
+class EventFamily(Record):
+    """One event family of a wide run. The objective approved at G1 defines it: "An event family is a group of events
+    that share a cost channel (labor or input) and a mechanism ... Families are defined by the run from what it finds."
+    It holds the kept dockets whose pending measures it groups; an item's family is its docket's (decisions, "F4 from
+    the labels to the leads"). The channel is free text here, since which channels a run's loss counts is its
+    objective's (an objective over energy costs names energy); the agent is given them."""
+
+    id: str
+    name: str
+    channel: str  # the cost channel, among those the run's objective defines its loss over (for F4's: labor, inputs)
+    mechanism: str
+    dockets: Sequence[str]
+
+    @model_validator(mode="after")
+    def _dockets(self) -> EventFamily:
+        if not self.dockets or len(set(self.dockets)) != len(self.dockets):
+            raise ValueError("a family groups one or more dockets, each once")
+        if not self.channel.strip() or not self.mechanism.strip():
+            raise ValueError("a family states its cost channel and its mechanism")
+        return self
+
+
+class EventFamilies(Record):
+    """A wide run's event families over its frame's kept dockets, proposed by an agent (kind "event_families"; spec I1).
+    Every kept docket is in exactly one family, so the estimate can be reported for each family (the objective: "reported
+    overall and separately for each event family"); the proposal's tests gate checks this against the frame."""
+
+    frame: str
+    families: Sequence[EventFamily]
+
+    @model_validator(mode="after")
+    def _partition(self) -> EventFamilies:
+        ids = [f.id for f in self.families]
+        if not ids or len(set(ids)) != len(ids):
+            raise ValueError("a run's families have distinct ids, and there is at least one")
+        dockets = [d for f in self.families for d in f.dockets]
+        if len(set(dockets)) != len(dockets):
+            raise ValueError("a docket is in one family only")
+        return self
+
+
+Pieces = Sequence[tuple[float, float]]  # a set of shares: closed intervals in increasing order, possibly none
+
+
+Rays = Sequence[tuple[float | None, float | None]]  # a set of reals: closed intervals, None an unbounded end
+
+
+class RatioRead(Record):
+    """One completion's estimate of a share (core.WideEstimate): the point estimate (None where the denominator's
+    estimate is 0), the score set to read, within [0, 1], and Fieller's set as it is over the real line, an unbounded
+    end None (decisions, "F4's estimand is a ratio": "Fieller's set is reported raw (two rays or the whole line where
+    theta_den is not distinguishable from zero)")."""
+
+    estimate: float | None
+    interval: Pieces
+    interval_kind: str
+    fieller: Rays
+    fieller_kind: str
+
+    @model_validator(mode="after")
+    def _ordered(self) -> RatioRead:
+        ends = [x for lo, hi in self.interval for x in (lo, hi)]
+        if any(not 0.0 <= x <= 1.0 for x in ends) or ends != sorted(ends):
+            raise ValueError("a share's score set is ordered closed intervals within [0, 1]")
+        return self
+
+
+class ScopeEstimate(Record):
+    """The share for one scope ("overall", or a family's id) under the two completions that bound the unresolved gold
+    labels (decisions, "F4 from the labels to the leads": never read as 0): `read` runs from the lowest completion's
+    lower bound to the highest's upper bound, None where either set is empty, and then `reason` says why."""
+
+    scope: str
+    lowest: RatioRead
+    highest: RatioRead
+    read: tuple[float, float] | None
+    reason: str
+
+    @model_validator(mode="after")
+    def _read(self) -> ScopeEstimate:
+        empty = not self.lowest.interval or not self.highest.interval
+        hull = None if empty else (self.lowest.interval[0][0], self.highest.interval[-1][1])
+        if self.read != hull:
+            raise ValueError("a scope's read runs from the lowest completion's lower bound to the highest completion's "
+                             "upper bound, None exactly where either set is empty")  # fmt: skip
+        return self
+
+
+class WideEstimate(Record):
+    """A wide run's estimate (spec §7.2 step 5; §7.4): the share the objective defines, overall and per family, under the
+    run's two-phase design, from its committed phase-1 judgments and gold labels. The scope is the frame's items with
+    readable text, and how many had none is stated (decisions, "F4 from the labels to the leads"). Every number
+    recomputes from the records it names by their content hashes (the draws, the families' proposal, the gold labels,
+    the phase-1 judgments) (addendum A11 §11.2: a versioned derivation)."""
+
+    objective: Ref
+    frame: str
+    design: Ref
+    draws: tuple[str, str]  # the content hashes of the phase-1 draw and the gold draw it reads
+    families: str
+    gold_labels: Sequence[str]  # the content hashes of the gold labels it reads
+    judgments: Sequence[str]  # the content hashes of the phase-1 judgments its predictions are read from
+    level: float
+    interval_method: str
+    phase1_items: int
+    unreadable_items: int
+    gold_items: int
+    unresolved_gold_labels: int
+    scopes: Sequence[ScopeEstimate]
+
+    @model_validator(mode="after")
+    def _scopes(self) -> WideEstimate:
+        names = [x.scope for x in self.scopes]
+        if not names or names[0] != "overall" or len(set(names)) != len(names):
+            raise ValueError("an estimate reports the overall share first, then each family once")
+        return self
+
+
+class QuantifiedImpact(Record):
+    """A cost impact a lead's filing states, extracted by an agent as a claim (spec §7.2: "a number with units,
+    extracted by an agent as a Claim proposal"): the claim quoting it, the amount, its currency and period, and its
+    amount per year where the period gives one (code: a month's x 12; a one-time or other amount has none)."""
+
+    claim: ClaimId
+    amount: Rational
+    currency: str
+    period: Literal["year", "month", "one_time", "other"]
+    annual: Rational | None
+
+
+class Lead(Record):
+    """A business a wide run found (spec §7.2 step 5: "ranked leads"): a phase-1 item in the estimand's numerator, by its
+    gold labels where it has them, otherwise by the phase-1 judge (P(in the population) x P(exposed) >= 0.5), with the
+    item templates' answers (each the judge's most probable answer, not_established on a tie: ours), its phase-1
+    prediction whichever the basis (the one the estimate used: a question the judge refused takes its stratum's mean,
+    decisions, "F4 from the labels to the leads"), and its quantified impact, ranked by the rule
+    fixed before any lead was seen (decisions, "F4 from the labels to the leads")."""
+
+    rank: int
+    tier: Literal[1, 2, 3]
+    item: str
+    docket: str
+    family: str
+    submitter: str | None
+    basis: Literal["gold", "judged"]
+    probability: float  # the phase-1 prediction P(in the population) x P(exposed) the estimate used: judged, not exact
+    answers: Mapping[str, str]
+    judgments: Sequence[str]
+    impact: Sequence[QuantifiedImpact]
+
+    @model_validator(mode="after")
+    def _probability(self) -> Lead:
+        if not 0.0 <= self.probability <= 1.0:
+            raise ValueError("a lead's judged probability lies in [0, 1]")
+        if self.basis == "judged" and self.probability < 0.5:
+            raise ValueError("a lead by the judge alone has probability at least 0.5 (decisions, F4 to the leads)")
+        return self
+
+
+class LeadList(Record):
+    """A wide run's ranked leads, from its estimate's records."""
+
+    estimate: str
+    leads: Sequence[Lead]
+
+    @model_validator(mode="after")
+    def _ranked(self) -> LeadList:
+        if [x.rank for x in self.leads] != list(range(1, len(self.leads) + 1)):
+            raise ValueError("leads are ranked 1, 2, ... in order")
+        return self
+
+
+class LeadPromotion(Record):
+    """A lead proposed for promotion into a deep case (kind "lead"), decided by a human at G1 (spec §7.2 step 6)."""
+
+    leads: str
+    lead: Lead
+    case: str
 
 
 # ---------------------------------------------------------------- agent runs (spec §13 WP15)
