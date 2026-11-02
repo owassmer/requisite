@@ -56,7 +56,11 @@ EASTERN = ZoneInfo("America/New_York")  # the API reads a lastModifiedDate filte
 WINDOW_S = 3600.0  # api.data.gov's rolling hour
 RESERVE = 10  # requests left unused beyond those in flight, so responses that arrive out of order cannot overdraw the key
 PROBE_S = 60.0  # how long a waiting run goes before one request reads the key's count afresh (others spend it too)
-RETRIES = 6  # attempts after the first, for a failure that may pass (a dropped connection, a 5xx)
+RETRIES = 6  # attempts after the first, for a server error (a 5xx) that may pass
+# A request that gets no response at all (the network down, a handshake timing out) is retried, with backoff, for this
+# long before the run stops: a frame reads for hours, and on November 2 a handshake timeout lasting a couple of minutes
+# ended one after 3,600 requests. Longer than any network blip, short enough that a lost connection is said.
+NETWORK_WAIT_S = 30 * 60.0
 PASSES = 3  # listings of one query, where the record changes under the first (Listing)
 LIMIT_WAIT_S = 2 * WINDOW_S  # a 429 lasting longer than this is no rate limit the rolling hour explains: it raises
 TRANSIENT = frozenset({500, 502, 503, 504})
@@ -271,6 +275,8 @@ class RegulationsGov:
         failures = 0
         refusals = 0
         first_refusal: float | None = None
+        first_unreached: float | None = None
+        unreached = 0
         while True:
             sent_at = self.pacer.acquire() if api else None
             try:
@@ -279,10 +285,12 @@ class RegulationsGov:
             except httpx.TransportError as e:
                 if api:
                     self.pacer.settle(None)
-                failures += 1
-                if failures > RETRIES:
-                    raise RegulationsGovError(f"{url}: no response after {RETRIES} retries: {e!r}") from e
-                self.pacer.sleep(_backoff(failures))
+                now = self.pacer.clock()
+                first_unreached = now if first_unreached is None else first_unreached
+                if now - first_unreached > NETWORK_WAIT_S:
+                    raise RegulationsGovError(f"{url}: no response for {now - first_unreached:.0f}s: {e!r}") from e
+                unreached += 1
+                self.pacer.sleep(_backoff(unreached))
                 continue
             if api:
                 self.pacer.settle(_remaining(response), _stated(response, "x-ratelimit-limit"))

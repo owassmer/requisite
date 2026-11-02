@@ -47,7 +47,7 @@ from typing import Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy import optimize, stats
+from scipy import stats
 
 FloatArray = NDArray[np.float64]
 

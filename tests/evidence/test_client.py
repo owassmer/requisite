@@ -186,3 +186,21 @@ def test_two_documents_the_source_lists_under_one_id_are_both_kept_and_the_listi
     same = [e for e in listing.entries if e.id == proposal["id"]]
     assert sorted(e.attributes["documentType"] for e in same) == ["Proposed Rule", "Supporting & Related Material"]
     assert len(requests_to(api, "documents")) == 1  # one pass: nothing changed under it
+
+
+def test_a_network_outage_is_waited_out_and_one_that_lasts_raises(live, make_client):
+    # A frame reads for hours: a request that gets no response at all is retried with backoff for NETWORK_WAIT_S, so a
+    # network blip of a few minutes does not end the run; an outage longer than that raises, with nothing recorded.
+    from requisite.evidence.regulations_gov import NETWORK_WAIT_S
+
+    time = FakeTime()
+    api = fixture_world(FakeAPI(time=time))
+    api.unreachable = 8  # about four minutes of backoff: longer than the six retries that once ended a frame
+    record = make_client(api, live / "a", live, time).comment(f"{DOCKET}-0005")
+    assert record.status == 200 and sum(time.slept) > 120
+    api.unreachable = 10_000
+    waited = FakeTime()
+    with pytest.raises(RegulationsGovError, match="no response for"):
+        make_client(api, live / "b", live, waited).comment(f"{DOCKET}-0004")
+    assert NETWORK_WAIT_S <= sum(waited.slept) <= NETWORK_WAIT_S + 60  # it waited the whole window, and no longer
+    assert not list((live / "b").rglob("*.json"))

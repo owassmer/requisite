@@ -74,6 +74,7 @@ class FakeAPI:
     files: dict[str, bytes] = field(default_factory=dict)
     script: dict[str, list[int]] = field(default_factory=dict)  # a path or URL -> statuses served before it answers
     retry_after: str | None = None
+    unreachable: int = 0  # the next this-many requests get no response (the network down)
     after: list[Callable[[httpx.Request], None]] = field(default_factory=list)  # changes to the record, after a request
     requests: list[httpx.Request] = field(default_factory=list)
     served: list[int] = field(default_factory=list)
@@ -87,6 +88,10 @@ class FakeAPI:
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         with self._lock:
+            if self.unreachable > 0:  # the network down: no response at all, for this many requests
+                self.unreachable -= 1
+                self.time.now += self.latency
+                raise httpx.ConnectTimeout("The handshake operation timed out", request=request)
             self.requests.append(request)
             response = self._answer(request)
             self.served.append(response.status_code)
