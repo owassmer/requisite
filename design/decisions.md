@@ -219,6 +219,18 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     stated annual cost impact in one currency (larger first; none stated last), then item id. Reason: a business that
     states what the rule would cost it and asks for certainty is the one for whom protection is both sizable and
     wanted, which is what construction needs; the order is fixed before any lead is seen.
+  - A stated impact (amended November 2, 17:50 ET, before any lead question was asked; Owen: "source quote validated
+    (not numerical), agent translates unstructured -> a standard structured formatting, that structured formatting is
+    validated"). Its quote is the filer's words: code finds it, exactly, in one part of the filing's text, a check of
+    text against text. Its amount, currency and period are the impact extractor's reading of those words, in the
+    answer's structured form (an exact decimal in units of the currency, an ISO 4217 code, a period from a closed set),
+    which the answer type validates; code never matches figures against the words. The runner gives the extractor's
+    answer type the texts it read, so a quote not found there goes back to it with the reason (runner.run's context),
+    and one still not found is an error, never a skipped impact. An amount of money only: a percentage, hours or a
+    headcount is not one unless the filing states the money it comes to (a percentage had been taken as an amount in
+    dollars, and any impact moves a lead's tier). Cause: results._impacts matched the amount's digits against the quote,
+    which refused every round amount (str() of 120000 normalized is 1.2E+5) and passed 114 for "$11,400"; a better
+    pattern would still be code reading words. No `wide leads` had run, so nothing is re-run.
 - What each record means, from the external evaluation (coordinator, November 2, 14:30 ET; Owen: "patterns and proxies
   standing in for meaning ... segments standing in for the curve"). The evaluation found records that claimed more than
   the operation that filled them, each verified in the code before this change. F4's are fixed here, at the definition,
@@ -379,6 +391,21 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   every strike type over the harvest as a whole. The IR grammar comes from spec §8.1 and the definition, never fitted to
   a drawn contract: a filed construct the IR cannot express is a finding about the grammar, fixed there when the
   construct is general, and the contract is otherwise unsupported or supported with explicit assumptions (A05 §5.5).
+
+- A deep case opens from a lead approved at G1 (003-2, `requisite deep open`; coordinator, November 2). Its evidence is
+  the lead's filing exactly as the wide case committed it (item, artifacts, extractions, its claims and the lead's
+  quoted impacts, each checked equal to the wide record) and the ItemMeasure of the document it addresses; nothing else
+  is gathered (spec §7.1 names no gathering step). Its event is that measure taking effect within the approved
+  objective's horizon. The entity model's horizon and loss definition are the objective's, set by code; the decomposer
+  cites each sourced number's claim with the words that state it (provenance, checked as text against the claims it was
+  given; the number is its reading) or states the assumption and why. The decision time is the first instant everything
+  the case holds is observable, never before the frame's as_of: the filing is read after the frame is taken and a
+  fetched text is evidenced only from its retrieval (I3; A11 §11.3), so at the frame's as_of none of the business's
+  words would be evidence. Objective, alpha, tolerance (not negative: core.DecisionSpec), floor, actions, information,
+  recourse and currency are the human's, as given, never defaulted. The judges read each of the evidence's words once:
+  a claim within another held claim of the same extraction (a lead's quote, within its part) stays a claim of the case
+  and is not shown to them again (deep._evidence). Only `wide objective`, `market f1-retrieve` and `contract read` begin a case; every other
+  command opens the case committed at --case-dir or is refused, so a mistyped path is never a new empty case.
 
 ## No escape routes, loud or quiet
 

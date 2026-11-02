@@ -71,7 +71,10 @@ findings is almost always one cause, usually two copies of one thing disagreeing
 ## Meaning, judgment and uncertainty
 
 Words become structured state only through a decision model answering a typed question over a canonically rendered
-state, never through a pattern. Agreement among judges is a perturbation diagnostic, not proof that a question is atomic,
+state, never through a pattern. Each check is of the kind of thing it checks: text is checked as text (a quote is found in
+its source, which is provenance, not meaning), an agent or a decision model reads the words into a structured form, and the
+structured form is checked as structure. Code never checks deterministically what is inherently unstructured, since a
+pattern can neither confirm nor refute what words mean (Owen, November 2). Agreement among judges is a perturbation diagnostic, not proof that a question is atomic,
 adequate or correct (addendum A01): stable judges can share a bias, and a stable coarse answer can hide a distinction a
 decision needs (A02). Disagreement is diagnosed and routed, never averaged away. An interpretation's distribution, a
 future event's probability and an evidence status are three different objects (A04). Configurations are not independent

@@ -5,13 +5,26 @@ no field is defined twice."""
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationInfo, model_validator
 
-from requisite.core import ContractFamily, ContractIR, HarvestedContract, ListingBinding, SettlementBinding, TimeWindow
+from requisite.core import (
+    Assumption,
+    ContractFamily,
+    ContractIR,
+    Driver,
+    EntityModel,
+    HarvestedContract,
+    LiquidityProfile,
+    ListingBinding,
+    Parameter,
+    SettlementBinding,
+    TimeWindow,
+)
+from requisite.core.base import Money
 from requisite.core.contract import Support
 from requisite.core.governance import CommentStatus, DocumentType
 
@@ -141,9 +154,13 @@ class FamiliesDraft(_Answer):
 
 
 class ImpactDraft(_Answer):
+    """One cost impact a filing states (core.QuantifiedImpact): the filer's words that state it, and the amount of money
+    they state, read from those words as an exact decimal in units of the currency ("$2.5 million a year" is 2500000,
+    per year)."""
+
     quote: str
-    amount: str
-    currency: str
+    amount: Money
+    currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
     period: Literal["year", "month", "one_time", "other"]
 
 
@@ -152,6 +169,22 @@ class ImpactsDraft(_Answer):
     amount, currency and period; none where the filing states none."""
 
     impacts: Sequence[ImpactDraft]
+
+    @model_validator(mode="after")
+    def _quoted(self, info: ValidationInfo) -> ImpactsDraft:
+        texts = (info.context or {}).get("texts")
+        if texts is not None:
+            self.check_quotes(texts)
+        return self
+
+    def check_quotes(self, texts: Sequence[str]) -> None:
+        """Each quote is the filer's words: copied exactly from one part of the comment's text the extractor was given
+        (provenance, checked as text; the amount is the extractor's reading of those words, never matched by code). The
+        runner gives the texts as context, so a quote that is not there goes back to the extractor with this reason."""
+        missing = [i.quote for i in self.impacts if not (i.quote and any(i.quote in t for t in texts))]
+        if missing:
+            raise ValueError(f"each quote is copied character for character from one part of the comment; not found: "
+                             f"{missing}")  # fmt: skip
 
 
 class DraftAnswer(_Answer):
@@ -193,3 +226,138 @@ class MarketsDraft(_Answer):
 
     tickers: Sequence[str]
     rationale: str
+
+
+class StatedBy(_Answer):
+    """A claim that states a number: its id, as given, and the words of its text that state the number, exactly as they
+    appear there. The id is checked as the definition's ClaimId when the number is built (NumberDraft.parameter), not by a
+    schema pattern: structured outputs refuse complex quantifiers such as a 64-digit hash's (research/sources/
+    anthropic-claude-platform-docs-structured-outputs-json-schem.md)."""
+
+    id: str
+    words: str
+
+
+class Assumed(_Answer):
+    """An assumed number's assumption: what is assumed, and the reason no claim states it."""
+
+    text: str
+    reason: str
+
+
+class NumberDraft(_Answer):
+    """One number of the entity model (core.Parameter): its name, its value as an exact decimal and its unit, and either
+    the claims that state it (each with the words that state it) or an assumption with its reason; never both, never
+    neither."""
+
+    name: str
+    value: Money
+    unit: str
+    claims: Sequence[StatedBy]
+    assumption: Assumed | None
+
+    @model_validator(mode="after")
+    def _basis(self) -> NumberDraft:
+        self.parameter()  # the definition's rule: sourced by claims or assumed, exactly one (core.Parameter)
+        if self.assumption is not None and not (self.assumption.text.strip() and self.assumption.reason.strip()):
+            raise ValueError(f"{self.name}: an assumption states what it assumes and the reason no claim states it")
+        if any(not c.words.strip() for c in self.claims):
+            raise ValueError(f"{self.name}: each claim cited gives the words of its text that state the number")
+        return self
+
+    def parameter(self) -> Parameter:
+        """The number as the definition's record. An entity model's assumption fixes a number, not a proposition, so it
+        binds none (core.Assumption.binds)."""
+        a = self.assumption
+        return Parameter(name=self.name, value=self.value, unit=self.unit, claims=[c.id for c in self.claims],
+                         assumption=None if a is None else Assumption(text=a.text, binds={}, reason=a.reason))  # fmt: skip
+
+
+class DriverDraft(_Answer):
+    """One revenue or cost line (core.Driver): quantity times price, each per `period`. id: a short name of the line,
+    lowercase letters, digits and underscores, distinct among the drivers (it names the line in every question and
+    computation of the case)."""
+
+    id: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
+    line: Literal["revenue", "cost"]  # core.Driver.line
+    name: str
+    quantity: NumberDraft
+    price: NumberDraft
+    period: Literal["month", "quarter", "year"]  # core.Driver.period
+
+    def driver(self) -> Driver:
+        return Driver(id=self.id, line=self.line, name=self.name, quantity=self.quantity.parameter(),
+                      price=self.price.parameter(), period=self.period)  # fmt: skip
+
+
+class LiquidityDraft(_Answer):
+    """The business's liquidity (core.LiquidityProfile): cash on hand, its credit line, receivable and payable days, and
+    twelve calendar-month seasonality factors, January first, averaging exactly one."""
+
+    cash: NumberDraft
+    credit_line: NumberDraft
+    receivable_days: NumberDraft
+    payable_days: NumberDraft
+    seasonality: Sequence[NumberDraft]
+
+    @model_validator(mode="after")
+    def _profile(self) -> LiquidityDraft:
+        self.profile()
+        return self
+
+    def profile(self) -> LiquidityProfile:
+        return LiquidityProfile(cash=self.cash.parameter(), credit_line=self.credit_line.parameter(),
+                                receivable_days=self.receivable_days.parameter(),
+                                payable_days=self.payable_days.parameter(),
+                                seasonality=[s.parameter() for s in self.seasonality])  # fmt: skip
+
+
+class EntityModelDraft(_Answer):
+    """decomposer: a business's driver tree and liquidity profile (core.EntityModel's fields that are the agent's; its id,
+    version and entity are code's, and its horizon and loss definition are the case's objective's, approved at G1).
+    currency: the ISO 4217 code of the currency the business's amounts are in. rationale: why these lines and no others,
+    for the human who confirms the model at G1. Validated as the model it drafts, so an answer the definition refuses is
+    refused here, with the definition's reasons."""
+
+    drivers: Sequence[DriverDraft]
+    liquidity: LiquidityDraft
+    currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
+    rationale: str
+
+    @model_validator(mode="after")
+    def _model(self, info: ValidationInfo) -> EntityModelDraft:
+        unbounded = TimeWindow(start=None, end=None, start_closed=True, end_closed=False)
+        self.model(id="draft", version=1, entity="draft", horizon=unbounded, loss_definition="draft")
+        claims = (info.context or {}).get("claims")
+        if claims is not None:
+            self.check_quotes(claims)
+        return self
+
+    def numbers(self) -> list[tuple[str, NumberDraft]]:
+        """Every number of the draft with where it sits."""
+        out: list[tuple[str, NumberDraft]] = []
+        for d in self.drivers:
+            out += [(f"driver {d.id} quantity", d.quantity), (f"driver {d.id} price", d.price)]
+        liq = self.liquidity
+        out += [("cash", liq.cash), ("credit line", liq.credit_line), ("receivable days", liq.receivable_days),
+                ("payable days", liq.payable_days)]  # fmt: skip
+        out += [(f"seasonality month {m}", s) for m, s in enumerate(liq.seasonality, 1)]
+        return out
+
+    def check_quotes(self, claims: Mapping[str, str]) -> None:
+        """Every sourced number cites claims of the case (id to text), each containing, exactly, the words quoted from it
+        (provenance, checked as text; the number is the decomposer's reading of those words, never matched by code).
+        The runner gives the claims as context, so a citation that fails goes back to the decomposer with this reason."""
+        for where, n in self.numbers():
+            for c in n.claims:
+                if c.id not in claims:
+                    raise ValueError(f"{where} ({n.name} = {n.value} {n.unit}) cites claim {c.id}, which this case does "
+                                     "not hold: its claims are the lead's filing")  # fmt: skip
+                if c.words not in claims[c.id]:
+                    raise ValueError(f"{where} ({n.name} = {n.value} {n.unit}) quotes {c.words!r} from claim {c.id}, "
+                                     "whose text does not contain those words")  # fmt: skip
+
+    def model(self, *, id: str, version: int, entity: str, horizon: TimeWindow, loss_definition: str) -> EntityModel:
+        return EntityModel(id=id, version=version, entity=entity, drivers=[d.driver() for d in self.drivers],
+                           liquidity=self.liquidity.profile(), horizon=horizon, loss_definition=loss_definition,
+                           currency=self.currency)  # fmt: skip

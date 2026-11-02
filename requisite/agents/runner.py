@@ -127,11 +127,13 @@ ATTEMPTS = 3
 
 
 def run[O: BaseModel](
-    role: str, input: Mapping[str, Any], output: type[O], *, effort: str = "high", root: Path | None = None
+    role: str, input: Mapping[str, Any], output: type[O], *, effort: str = "high", root: Path | None = None,
+    context: Mapping[str, Any] | None = None,
 ) -> AgentResult[O]:
     """One agent call: the role's prompt, the input as canonical JSON, an answer of type `output`. An answer that its
     type refuses is returned to the agent with the validator's errors, as spec §13 has agents run the checks before they
-    submit, up to ATTEMPTS times; each attempt is its own recorded call, so a replay takes the same path."""
+    submit, up to ATTEMPTS times; each attempt is its own recorded call, so a replay takes the same path. context: what
+    the type checks the answer against beyond its own fields (the texts its quotes are copied from), never sent."""
     system = prompt(role)
     schema = json_schema(output)
     feedback: list[dict[str, Any]] = []
@@ -147,7 +149,7 @@ def run[O: BaseModel](
         try:
             # JSON mode, as the answer arrived: a record's tuple fields take JSON arrays there (strict Python mode
             # refuses a list for a tuple).
-            value = output.model_validate_json(json.dumps(answer))
+            value = output.model_validate_json(json.dumps(answer), context=context)
         except ValidationError as e:
             errors = [{"at": ".".join(str(x) for x in err["loc"]), "error": err["msg"]} for err in e.errors()]
             feedback.append({"answer": answer, "refused_because": errors})

@@ -185,7 +185,14 @@ def _evidence(store: Store, as_of: datetime) -> tuple[core.JudgmentState, dict[s
             claims[c.id], artifacts[a.id] = c, a
     if not claims:
         raise Refused(f"no observed claim of this case is observable as of {as_of.isoformat()} (spec I3)")
-    return core.JudgmentState(as_of=as_of, observed=sorted(claims)), claims, artifacts
+    # The judges read each of the evidence's words once: a claim whose span lies within another held claim of the same
+    # extraction (a lead's quoted impact, within its filing's part: requisite/discovery/lead.py) adds no words, and
+    # shown again beside it would put the quote before the judges twice. It stays a claim of the case, citable by a
+    # number of the entity model (ours, November 2).
+    shown = [c for c in claims.values() if not any(
+        o.id != c.id and o.artifact == c.artifact and o.extraction == c.extraction and o.span[0] <= c.span[0]
+        and c.span[1] <= o.span[1] and o.span != c.span for o in claims.values())]  # fmt: skip
+    return core.JudgmentState(as_of=as_of, observed=sorted(c.id for c in shown)), claims, artifacts
 
 
 # ---------------------------------------------------------------- questions

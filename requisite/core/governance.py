@@ -258,6 +258,10 @@ class DecisionSpec(Record):
             raise ValueError("a CVaR objective states its alpha, and only it does")
         if self.alpha is not None and not self.alpha < 1:
             raise ValueError("alpha lies in [0, 1)")
+        # The acceptable actions are those within the tolerance of optimal (A02 §3.2; A03 §3.3): a negative one admits
+        # none, not even the optimum, so it is no tolerance (ours; QuestionDiagnostic holds the same of its copy).
+        if self.tolerance < 0:
+            raise ValueError("the tolerance is not negative: actions within it of optimal count as equally good")
         return self
 
 
@@ -768,8 +772,11 @@ class WideEstimate(Record):
 
 class QuantifiedImpact(Record):
     """A cost impact a lead's filing states, extracted by an agent as a claim (spec §7.2: "a number with units,
-    extracted by an agent as a Claim proposal"): the claim quoting it, the amount, its currency and period, and its
-    amount per year where the period gives one (code: a month's x 12; a one-time or other amount has none)."""
+    extracted by an agent as a Claim proposal"). claim: the filer's words that state it, a span of the filing's text
+    (code finds the quote there, so the words are the filer's). amount, currency, period: the amount of money those
+    words state, as the impact extractor read it from them (an agent's reading, shown beside the quote, never a pattern
+    matched by code: decisions, F4 from the labels to the leads). annual: the amount per year where the period gives one
+    (code: a month's x 12; a one-time or other amount has none)."""
 
     claim: ClaimId
     amount: Rational

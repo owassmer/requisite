@@ -19,10 +19,18 @@ def _registry(args: argparse.Namespace) -> int:
     return 1 if bad else 0
 
 
-def _store(args: argparse.Namespace):  # noqa: ANN202
-    from requisite.store import Store
+def _store(args: argparse.Namespace, *, begins: bool = False):  # noqa: ANN202
+    """The case the command works on. A command that begins a case (`wide objective`, `market f1-retrieve`, `contract
+    read`) creates it where none is committed; any other opens the case committed at --case-dir, refused where none is or it is another case,
+    so a mistyped path is never a new empty case."""
+    from requisite.store import Refused, Store, open_case
 
-    return Store(Path(args.case_dir), case=args.case)
+    if begins:
+        return Store(Path(args.case_dir), case=args.case)
+    store = open_case(Path(args.case_dir))
+    if store.case != args.case:
+        raise Refused(f"{args.case_dir} holds case {store.case}, not {args.case}")
+    return store
 
 
 def _show_proposal(p) -> None:  # noqa: ANN001
@@ -39,7 +47,7 @@ def _wide_objective(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
     today = date.fromisoformat(args.today) if args.today else date.today()
-    _show_proposal(wide.draft_objective(_store(args), args.brief, today))
+    _show_proposal(wide.draft_objective(_store(args, begins=True), args.brief, today))
     return 0
 
 
@@ -226,7 +234,7 @@ def _f1_retrieve(args: argparse.Namespace) -> int:
     from requisite.market import f1
     from requisite.market.kalshi import Kalshi
 
-    store = _store(args)
+    store = _store(args, begins=True)
     at = args.as_of or f1.INSTANT
     if args.as_of is None:
         print(f"F1's draw, pinned at {at.isoformat()} (requisite.market.f1.INSTANT)")
@@ -300,7 +308,7 @@ def _approve(args: argparse.Namespace) -> int:
 def _contract_read(args: argparse.Namespace) -> int:
     from requisite.contract import harvest
 
-    print(harvest.render(harvest.read(_store(args), args.series, as_of=args.as_of)))
+    print(harvest.render(harvest.read(_store(args, begins=True), args.series, as_of=args.as_of)))
     return 0
 
 
@@ -316,6 +324,39 @@ def _deep_store(args: argparse.Namespace):  # noqa: ANN202
     from requisite.store import open_case
 
     return open_case(Path(args.case))
+
+
+def _floor_point(value: str) -> tuple[str, str] | None:
+    """A liquidity floor point given as DAY=AMOUNT, or `none` for no floor."""
+    if value == "none":
+        return None
+    day, sep, amount = value.partition("=")
+    if not sep or not day or not amount:
+        raise argparse.ArgumentTypeError(f"{value!r} is not DAY=AMOUNT (for example 2026-11-01=0) or none")
+    return day, amount
+
+
+def _deep_open(args: argparse.Namespace) -> int:
+    from requisite.discovery import lead
+    from requisite.store import Refused
+
+    points = list(args.floor)
+    if None in points and len(points) > 1:
+        print("requisite deep open: --floor none states there is no floor; it is not given beside floor points",
+              file=sys.stderr)  # fmt: skip
+        return 2
+    choices = lead.Choices(
+        objective=args.objective, alpha=None if args.alpha == "none" else args.alpha, tolerance=args.tolerance,
+        floor=tuple(p for p in points if p is not None), actions=tuple(args.actions), information=tuple(args.information),
+        recourse=args.recourse, currency=args.currency,
+    )  # fmt: skip
+    try:
+        opened = lead.open_lead(Path(args.case_dir), args.case, args.lead, choices)
+    except Refused as e:
+        print(f"requisite deep open: refused: {e}", file=sys.stderr)
+        return 1
+    print(lead.render(opened))
+    return 0
 
 
 def _deep_sensitivities(args: argparse.Namespace) -> int:
@@ -444,8 +485,41 @@ def main(argv: list[str] | None = None) -> int:
         if parallel:
             w.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
         w.set_defaults(run=run)
-    dp = sub.add_parser("deep", help="deep discovery after G1 (spec §7.1 steps 3-5, the requisite loop over them)")
+    dp = sub.add_parser("deep", help="deep discovery (spec §7.1): a case opened from a lead approved at G1, then steps "
+                        "3-5 and the requisite loop over them")  # fmt: skip
     dsub = dp.add_subparsers(dest="step", required=True)
+    d = dsub.add_parser(
+        "open", help="open the deep case of a lead approved at G1: its filing as evidence, its measure as the event, "
+        "the entity model and the decision spec proposed for G1",
+        description="Open the deep case of a lead approved at G1, in <case-dir>/deep/<its case>: the lead's filing, "
+        "copied as the wide case committed it, is its evidence; the measure the filing addresses, taking effect within "
+        "the approved objective's horizon, is its event; the decomposer proposes the entity model from the filing's "
+        "claims (each number quoted from a claim or assumed with its reason); and the decision spec takes its horizon "
+        "and loss from the approved objective and every other choice from the flags below, as given. Both await G1.",
+    )  # fmt: skip
+    d.add_argument("--case-dir", required=True, help="the wide case's directory (its store)")
+    d.add_argument("--case", required=True, help="the wide case's name")
+    d.add_argument("--lead", required=True, help="the lead proposal's id (requisite wide promote), approved at G1")
+    from typing import get_args
+
+    from requisite import core
+
+    d.add_argument("--objective", required=True, choices=get_args(core.DecisionSpec.model_fields["objective"].annotation),
+                   help="the decision's risk functional (spec §8.3; addendum §12)")  # fmt: skip
+    d.add_argument("--alpha", required=True, help="the tail level, an exact probability below 1 (9/10 or 0.9) where the "
+                   "objective is liquidity_cvar; none for another objective")  # fmt: skip
+    d.add_argument("--tolerance", required=True, help="the economic tolerance within which actions count as equally "
+                   "good, an amount in --currency (addendum A02 §3.2, A03 §3.3)")  # fmt: skip
+    d.add_argument("--floor", required=True, action="append", type=_floor_point, metavar="DAY=AMOUNT",
+                   help="a liquidity floor point, from that day on, an amount in --currency; repeat for each point, or "
+                   "none for no floor")  # fmt: skip
+    d.add_argument("--actions", required=True, nargs="+", help="the candidate actions of the decision")
+    d.add_argument("--information", required=True, nargs="*", help="what is observable before the decision time "
+                   "(addendum A03 §3.6); give the flag with nothing after it where nothing is")  # fmt: skip
+    d.add_argument("--recourse", required=True, help="the permissible recourse after the decision")
+    d.add_argument("--currency", required=True, help="the ISO 4217 currency the tolerance and the floor are in, which is "
+                   "the entity model's")  # fmt: skip
+    d.set_defaults(run=_deep_open)
     deep_steps = (
         ("sensitivities", "the sensitivity questions and each event's forecast, judged and resolved", _deep_sensitivities, False),
         ("materiality", "dated cash impacts, expected and tail impact and breach flags, computed by registered nodes",

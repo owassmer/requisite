@@ -128,8 +128,9 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     assert [(s.name, s.phase1_count, s.sample_size) for s in design.phase2] == [("under_100.bin1", n, n)]
 
 
-def agent_double(role, agent_input, output, *, effort):
-    """The family_drafter and impact_extractor answering as a test's own input (never a cassette)."""
+def agent_double(role, agent_input, output, *, effort, context=None):
+    """The family_drafter and impact_extractor answering as a test's own input (never a cassette), validated as the
+    runner validates an answer, against the context the caller gives."""
     if role == "family_drafter":
         measures = [m["document"] for m in agent_input["measures"]]
         draft = {"families": [{"id": "airline_labor", "name": "Airline labor", "channel": "labor",
@@ -137,7 +138,7 @@ def agent_double(role, agent_input, output, *, effort):
                                "measures": measures}], "rationale": "one measure, one family"}  # fmt: skip
     else:
         draft = {"impacts": []}
-    return AgentResult(role, output.model_validate(draft), "run-" + core.sha256(core.canonical_json(agent_input)),
+    return AgentResult(role, output.model_validate(draft, context=context), "run-" + core.sha256(core.canonical_json(agent_input)),
                        "test-double", effort, True)
 
 

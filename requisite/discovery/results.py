@@ -11,10 +11,8 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from typing import Any, Literal, cast
 
@@ -234,23 +232,21 @@ def _lead_asks(st: labels.ItemState) -> list[providers.Ask]:
 def _extract(st: labels.ItemState, measure: str, agent: Callable[..., Any]) -> tuple[Any, dict[str, Any]]:
     """The impact_extractor's answer for one filing (an agent call, safe on a worker thread: it touches no store)."""
     agent_input = {"comment": "\n\n".join(c.text for c in st.claims.values()), "measure": measure}
-    return agent("impact_extractor", agent_input, ImpactsDraft, effort="medium"), agent_input
+    texts = [c.text for c in st.claims.values()]
+    return agent("impact_extractor", agent_input, ImpactsDraft, effort="medium", context={"texts": texts}), agent_input
 
 
 def _impacts(store: Store, st: labels.ItemState, result: Any, agent_input: Mapping[str, Any]) -> list[core.QuantifiedImpact]:
-    """The impact_extractor's quotes of the cost impacts the filing states, each checked by code (the quote is in the
-    filing's text and states the amount) and committed as a claim; a quote that fails is not a claim."""
+    """The cost impacts the filing states, as the impact_extractor read them: each quote, the filer's own words, is
+    committed as a claim where code finds it in the filing's text (a quote that is not there is not the filer's), with
+    the amount, currency and period the extractor read from it (core.QuantifiedImpact)."""
     texts = {cid: c.text for cid, c in st.claims.items()}
     record_run(store, result, agent_input, [])
     out = []
-    for imp in cast(ImpactsDraft, result.output).impacts:
-        try:
-            amount = Decimal(imp.amount)
-        except InvalidOperation:
-            continue
-        digits = re.sub(r"[^0-9.]", "", imp.quote.replace(",", ""))
-        if not imp.quote or str(amount.normalize()).rstrip("0").rstrip(".") not in digits.rstrip("0").rstrip(".") + digits:
-            continue
+    answer = cast(ImpactsDraft, result.output)
+    answer.check_quotes(list(texts.values()))  # the runner refused any other answer; here an error, never a skip
+    for imp in answer.impacts:
+        amount = imp.amount
         for cid, text in texts.items():
             at = text.find(imp.quote)
             if at < 0:
@@ -262,7 +258,7 @@ def _impacts(store: Store, st: labels.ItemState, result: Any, agent_input: Mappi
                                extraction=base.extraction, span=span, text=imp.quote, authority=base.authority)  # fmt: skip
             store.commit_claim(claim)
             annual = Fraction(amount) * 12 if imp.period == "month" else Fraction(amount) if imp.period == "year" else None
-            out.append(core.QuantifiedImpact(claim=claim.id, amount=Fraction(amount), currency=imp.currency.upper(),
+            out.append(core.QuantifiedImpact(claim=claim.id, amount=Fraction(amount), currency=imp.currency,
                                              period=imp.period, annual=annual))  # fmt: skip
             break
     return out

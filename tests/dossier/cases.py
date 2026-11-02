@@ -13,6 +13,7 @@ would not write.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -89,10 +90,12 @@ def _approve(store: Store, kind: str, payload: dict) -> core.Proposal:
     return p
 
 
-def wide_case(monkeypatch: pytest.MonkeyPatch, tmp: Path) -> Path:
+def wide_case(monkeypatch: pytest.MonkeyPatch, tmp: Path, *, objective: core.WideObjective = OBJECTIVE,
+              world: Callable[[FakeAPI], FakeAPI] = fixture_world) -> Path:  # fmt: skip
+    """`objective`: the objective approved at G1; `world`: the public record the fake API serves."""
     root = recording(monkeypatch, tmp)
     monkeypatch.setattr(providers, "_send", stand_in)
-    api = fixture_world(FakeAPI())
+    api = world(FakeAPI())
     time = FakeTime()
 
     def client() -> RegulationsGov:
@@ -103,7 +106,7 @@ def wide_case(monkeypatch: pytest.MonkeyPatch, tmp: Path) -> Path:
 
     case_dir = tmp / "wide"
     store = Store(case_dir, case="wide")
-    _approve(store, "objective", OBJECTIVE.model_dump(mode="json"))
+    _approve(store, "objective", objective.model_dump(mode="json"))
     for t in labels.OBJECTIVE_TEMPLATES:
         tpl = library.template(t)
         o = library.original(tpl)
