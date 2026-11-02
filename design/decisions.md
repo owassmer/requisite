@@ -107,6 +107,26 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     130/H gold items (H the nonempty phase-1 strata, rounded down, the remainder one each in band order) split 80/20 by
     the decision above, each phase-2 stratum at least two. Every gold item gets both questions. measure_coverage on the
     actual phase-1 predictions is run and reported before the draw.
+- The evaluator's semantics where the definition is silent (worker on 001-1, accepted by the coordinator, November 1).
+  A value is "for" an instant; At and ValueAt read exactly that instant; By and Throughout range over the published
+  instants within their bounds. By, Throughout, CountTrue and DurationIn stay open until the observation cutoff, and a
+  By or Throughout over no published instant is unknown; precedence_first_available is decided at the cutoff. Reason: a
+  known truth never reverses as publications arrive, and nothing resolves on a provisional value (property-tested).
+  extension_days counts in Timing.lag_days, and an extension moves both the expiration and the observation cutoff;
+  final_fallback applies at max(expiration, observation_cutoff). A payout quantity still an interval at settlement leaves
+  its transfer unresolved, naming the quantity. Per-period payments are made per period only on YES; binary or capped
+  strips, and strips with early expiration, are refused until the definition says what they mean. A threshold over a
+  reading, duration or computed number is stepped at the precision it is written to; the IR's constraints over an
+  observable's values use an exact region-by-class encoding (A09 §10.2: no impossible history is a witness). A.T06 is
+  covered by tests/contract/test_timing_gap.py (the evaluator's dates fed to the optimizer).
+- Ten grammar findings from expressing the Western Grazers terms (001-1, November 1) are the coordinator's to settle in
+  the definition, each where the construct is general (decisions, F1: never fitted to one contract): an existential over
+  instruments ("a Qualifying Action") with interpretations keyed per instrument; a single-value band anywhere in a
+  ReadValue; an unknown-at-expiry rule that defers to an exchange rule, and the split between "not documented, so NO"
+  and "cannot be determined"; a source hierarchy for the evidence of interpretive conditions ("the official records of
+  the body that took the action govern"); a settlement lag stated as a deadline; VoidTransfer optional where no void
+  path exists; a date read from text; a CashTransfer with a known amount and an unresolved date; a missing-data rule for
+  a payout quantity (A05 §5.3); and what a binary or capped payout pays per period.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
