@@ -533,13 +533,26 @@ class FrameSearch(Record):
 class FrameDocket(Record):
     """A docket the searches reached, kept in the frame or dropped, with why (its comment status, its comment count).
     artifacts: the listings of its documents and of its comments that the decision rests on, in order (spec I2; ours: the
-    status and the count recompute from them)."""
+    status and the count recompute from them).
+
+    comments: the public comments posted by as_of, or None for a docket its comment status drops before its comments
+    are listed. Its status is decided from its documents alone, and a dropped docket's count decides nothing, so its
+    comments are not retrieved; the count is then not known and is not stated, never zero (spec I6). A kept docket
+    always has its count (the frame's items are its comments). (Coordinator, November 1: listing every reached docket's
+    comments costs more requests than the source's hourly limit allows in a run, most of them for dockets the status
+    test drops.)"""
 
     docket: str
     kept: bool
     reason: str
-    comments: int
+    comments: int | None
     artifacts: Sequence[ArtifactId]
+
+    @model_validator(mode="after")
+    def _counted(self) -> FrameDocket:
+        if self.kept and self.comments is None:
+            raise ValueError("a kept docket's comments are listed and counted: they are the frame's items")
+        return self
 
 
 class FrameItem(Record):

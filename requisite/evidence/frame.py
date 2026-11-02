@@ -57,13 +57,6 @@ class _Search:
     listing: Listing
 
 
-@dataclass(frozen=True)
-class _Docket:
-    id: str
-    documents: Listing
-    comments: Listing
-
-
 def _day_bound(criteria: FrameCriteria) -> str:
     """The last posting day a request asks for: the window's end, and never past the day after as_of."""
     bound = criteria.as_of.astimezone(UTC).date() + timedelta(days=1)
@@ -90,10 +83,8 @@ def _searches(client: RegulationsGov, criteria: FrameCriteria) -> list[_Search]:
     return out
 
 
-def _docket(client: RegulationsGov, docket: str, bound: str) -> _Docket:
-    """A docket's documents and its comments, each listed whole up to the posting bound."""
-    filters = {"filter[docketId]": docket, "filter[postedDate][le]": bound}
-    return _Docket(docket, client.documents(filters), client.comments(filters))
+def _docket_filters(docket: str, bound: str) -> dict[str, str]:
+    return {"filter[docketId]": docket, "filter[postedDate][le]": bound}
 
 
 class _Evidence:
@@ -105,7 +96,9 @@ class _Evidence:
 
     def pages(self, listing: Listing) -> list[Artifact]:
         if id(listing) not in self._pages:
-            self._pages[id(listing)] = [commit(self.store, p, published_at=None, basis=LISTING_BASIS) for p in listing.pages]
+            self._pages[id(listing)] = [
+                commit(self.store, p, published_at=None, basis=LISTING_BASIS) for p in listing.pages
+            ]
         return self._pages[id(listing)]
 
     def posted(self, listing: Listing, as_of: datetime, evaluated: datetime, mode: str) -> list[Entry]:
@@ -158,58 +151,67 @@ def _status(asked: str, documents: Sequence[Entry], as_of: datetime) -> tuple[bo
 
 
 def take_frame(criteria: FrameCriteria, client: RegulationsGov, store: Store, *, workers: int = WORKERS) -> Frame:
-    """Run the criteria, freeze what they return as a core.Frame, and commit it with every response it rests on."""
+    """Run the criteria, freeze what they return as a core.Frame, and commit it with every response it rests on.
+
+    Two stages: the searches and each candidate docket's documents, then the comments. Where as_of is already past when
+    the first stage ends, the membership test's instant is fixed, and only the dockets the searches reached by as_of and
+    whose comment status passes are listed for comments (core.FrameDocket: a dropped docket's count decides nothing).
+    Otherwise as_of is the end of the retrieval, not yet known, and every candidate's comments are listed."""
     if criteria.source != "regulations.gov":
         raise ValueError(f"no adapter reads {criteria.source}")
     searches = _searches(client, criteria)
     candidates = sorted({str(e.attributes["docketId"]) for s in searches for e in s.listing.entries
                          if e.attributes.get("docketId")})  # fmt: skip
     bound = _day_bound(criteria)
+    evidence = _Evidence(store)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        dockets = list(pool.map(lambda d: _docket(client, d, bound), candidates))
-    responses = [p for s in searches for p in s.listing.pages]
-    responses += [p for d in dockets for p in (*d.documents.pages, *d.comments.pages)]
-    if not responses:
-        raise ValueError("the criteria made no request")
+        documents = dict(zip(candidates, pool.map(lambda d: client.documents(_docket_filters(d, bound)), candidates),
+                             strict=True))  # fmt: skip
+        first = [p for s in searches for p in s.listing.pages] + [p for x in documents.values() for p in x.pages]
+        if not first:
+            raise ValueError("the criteria made no request")
+        first_ended = max(p.retrieved_at for p in first)
+        if criteria.as_of < first_ended:
+            decided = _decide(criteria, searches, documents, evidence, criteria.as_of, first_ended)
+            listed = [d for d, (status, _, _) in decided.items() if status]
+        else:
+            listed = candidates
+        comments = dict(
+            zip(listed, pool.map(lambda d: client.comments(_docket_filters(d, bound)), listed), strict=True)
+        )
+    responses = first + [p for x in comments.values() for p in x.pages]
     started = min(p.retrieved_at for p in responses)
     ended = max(p.retrieved_at for p in responses)
     as_of = min(criteria.as_of, ended)
     mode: Literal["prospective", "retrospective_reconstruction"] = (
         "prospective" if ended <= as_of else "retrospective_reconstruction"
     )
-    evidence = _Evidence(store)
-    for listing in (*(s.listing for s in searches), *(x for d in dockets for x in (d.documents, d.comments))):
+    for listing in (*(s.listing for s in searches), *documents.values(), *comments.values()):
         evidence.pages(listing)  # every response the retrieval made is kept, so its times recompute from artifacts
 
-    frame_searches = []
-    reached: set[str] = set()
-    for s in searches:
-        pages = evidence.pages(s.listing)
-        frame_searches.append(FrameSearch(term=s.term, request=s.listing.request, documents=len(s.listing.entries),
-                                          artifacts=[a.id for a in pages]))  # fmt: skip
-        reached |= {str(e.attributes["docketId"]) for e in evidence.posted(s.listing, as_of, ended, mode)
-                    if e.attributes.get("docketId")}  # fmt: skip
-
+    frame_searches = [FrameSearch(term=s.term, request=s.listing.request, documents=len(s.listing.entries),
+                                  artifacts=[a.id for a in evidence.pages(s.listing)]) for s in searches]  # fmt: skip
     frame_dockets: list[FrameDocket] = []
     items: list[FrameItem] = []
-    for d in dockets:
-        if d.id not in reached:
-            continue  # reached only by documents posted after as_of: not reached as of as_of
-        documents = evidence.posted(d.documents, as_of, ended, mode)
-        withdrawn = [e for e in documents if e.attributes.get("withdrawn")]
-        documents = [e for e in documents if not e.attributes.get("withdrawn")]
-        comments = evidence.posted(d.comments, as_of, ended, mode)
-        status, why = _status(criteria.comment_status, documents, as_of)
-        enough = len(comments) >= criteria.min_comments
-        count = (f"{len(comments)} public comments posted by as_of"
+    for d, (status, why, withdrawn) in _decide(criteria, searches, documents, evidence, as_of, ended).items():
+        set_aside = f"; {withdrawn} withdrawn document(s) not counted as posted" if withdrawn else ""
+        doc_artifacts = [a.id for a in evidence.pages(documents[d])]
+        if d not in comments:  # dropped by its comment status before its comments were listed (core.FrameDocket)
+            assert not status, f"{d} passed its status at as_of but its comments were not listed"
+            frame_dockets.append(FrameDocket(docket=d, kept=False, artifacts=doc_artifacts, comments=None,
+                                             reason=f"{why}; its comments were not listed, since its status drops it"
+                                                    f"{set_aside}"))  # fmt: skip
+            continue
+        posted = evidence.posted(comments[d], as_of, ended, mode)
+        enough = len(posted) >= criteria.min_comments
+        count = (f"{len(posted)} public comments posted by as_of"
                  f"{'' if enough else f', fewer than the {criteria.min_comments} asked'}")  # fmt: skip
-        set_aside = f"; {len(withdrawn)} withdrawn document(s) not counted as posted" if withdrawn else ""
-        artifacts = [a.id for a in (*evidence.pages(d.documents), *evidence.pages(d.comments))]
-        frame_dockets.append(FrameDocket(docket=d.id, kept=status and enough, reason=f"{why}; {count}{set_aside}",
-                                         comments=len(comments), artifacts=artifacts))  # fmt: skip
+        frame_dockets.append(FrameDocket(docket=d, kept=status and enough, reason=f"{why}; {count}{set_aside}",
+                                         comments=len(posted),
+                                         artifacts=doc_artifacts + [a.id for a in evidence.pages(comments[d])]))  # fmt: skip
         if status and enough:
-            items += [FrameItem(id=c.id, docket=d.id, posted_at=instant(str(c.attributes["postedDate"])),
-                                withdrawn=bool(c.attributes.get("withdrawn"))) for c in comments]  # fmt: skip
+            items += [FrameItem(id=c.id, docket=d, posted_at=instant(str(c.attributes["postedDate"])),
+                                withdrawn=bool(c.attributes.get("withdrawn"))) for c in posted]  # fmt: skip
     items.sort(key=lambda i: (i.docket, i.posted_at, i.id))
     stamp = ended.astimezone(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
     frame = Frame(
@@ -225,6 +227,29 @@ def take_frame(criteria: FrameCriteria, client: RegulationsGov, store: Store, *,
     )
     store.commit("frame", frame.id, frame)
     return frame
+
+
+def _decide(
+    criteria: FrameCriteria,
+    searches: Sequence[_Search],
+    documents: Mapping[str, Listing],
+    evidence: _Evidence,
+    as_of: datetime,
+    evaluated: datetime,
+) -> dict[str, tuple[bool, str, int]]:
+    """Each docket the searches reached by as_of, with whether its comment status passes, why, and how many of its
+    documents posted by as_of are withdrawn (and so not counted as posted). A docket reached only by documents posted
+    after as_of is not reached as of as_of."""
+    mode = "prospective" if evaluated <= as_of else "retrospective_reconstruction"
+    reached = {str(e.attributes["docketId"]) for s in searches for e in evidence.posted(s.listing, as_of, evaluated, mode)
+               if e.attributes.get("docketId")}  # fmt: skip
+    out = {}
+    for d in sorted(reached & set(documents)):
+        posted = evidence.posted(documents[d], as_of, evaluated, mode)
+        withdrawn = [e for e in posted if e.attributes.get("withdrawn")]
+        status, why = _status(criteria.comment_status, [e for e in posted if not e.attributes.get("withdrawn")], as_of)
+        out[d] = (status, why, len(withdrawn))
+    return out
 
 
 def frames(store: Store) -> list[Frame]:
@@ -259,7 +284,9 @@ def frame_gate(client: Callable[[], RegulationsGov]) -> Callable[[Store, core.Pr
         kept = sum(d.kept for d in frame.dockets)
         detail = (f"frame {frame.id} ({frame.mode}, as of {frame.as_of.isoformat()}): {len(frame.dockets)} dockets "
                   f"reached, {kept} kept, {len(frame.items)} items")  # fmt: skip
-        return GateResult(gate="tests", passed=bool(frame.items), detail=detail if frame.items else f"{detail}: none to sample")
+        return GateResult(
+            gate="tests", passed=bool(frame.items), detail=detail if frame.items else f"{detail}: none to sample"
+        )
 
     return check
 
@@ -272,7 +299,9 @@ def summary(frame: Frame) -> Mapping[str, Any]:
         "mode": frame.mode,
         "retrieval": [frame.retrieval_started.isoformat(), frame.retrieval_ended.isoformat()],
         "searches": [{"term": s.term, "request": s.request, "documents": s.documents} for s in frame.searches],
-        "dockets": [{"docket": d.docket, "kept": d.kept, "comments": d.comments, "reason": d.reason} for d in frame.dockets],
+        "dockets": [
+            {"docket": d.docket, "kept": d.kept, "comments": d.comments, "reason": d.reason} for d in frame.dockets
+        ],
         "items": len(frame.items),
         "withdrawn": sum(i.withdrawn for i in frame.items),
     }

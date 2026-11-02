@@ -1,5 +1,5 @@
 """A frame from its criteria, frozen (spec §7.2 step 1): every test taken as of as_of with only what was posted by then
-(spec I3), the comment status and count of each docket reached, the comments of the kept dockets listed by as_of, a
+(spec I3), the comment status of each docket reached and the count of each its status does not drop, the comments of the kept dockets listed by as_of, a
 withdrawn comment kept and marked, and every count recomputing from the artifacts the frame names."""
 
 import copy
@@ -78,12 +78,17 @@ def test_a_final_rule_posted_after_as_of_is_not_known_then(live, make_client, st
     final = take_frame(criteria(datetime(2026, 10, 15, 12, tzinfo=UTC), "closed_pending_final"),
                        make_client(world(), live / "b", live), store)  # fmt: skip
     d = docket(final, DOCKET)
-    assert not d.kept and d.comments == 4
+    assert not d.kept and d.comments is None  # its status drops it before its comments are listed: no count is stated
+    assert d.reason.endswith("its comments were not listed, since its status drops it")
     assert d.reason.startswith(f"not pending a final rule: {DOCKET}-0006 (Rule) was posted 2026-10-01T04:00:00Z")
     assert docket(final, "FAA-2026-3487").reason.startswith("not closed pending a final rule: no proposed rule posted")
     assert docket(final, "FAA-2026-11796").reason.startswith("not closed: FAA-2026-11796-0001's comment period ends")
     assert all(not d.kept for d in final.dockets) and final.items == ()
-    assert "0 public comments posted by as_of, fewer than the 2 asked" in docket(final, "FAA-2026-3487").reason
+
+    few = take_frame(criteria(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final", min_comments=5),
+                     make_client(world(), live / "e", live), store)  # fmt: skip
+    d = docket(few, DOCKET)
+    assert not d.kept and d.comments == 4 and "4 public comments posted by as_of, fewer than the 5 asked" in d.reason
 
 
 def test_a_frame_asked_for_a_later_instant_is_prospective_as_of_the_end_of_its_retrieval(live, make_client, store):
@@ -92,6 +97,8 @@ def test_a_frame_asked_for_a_later_instant_is_prospective_as_of_the_end_of_its_r
     assert frame.retrieval_ended <= datetime.now(UTC)
     # Its proposal's period ended in June and a Rule followed in October: neither open nor pending, at any later date.
     assert not docket(frame, DOCKET).kept
+    # Its as_of was not fixed before the comments were listed, so every docket reached was counted.
+    assert all(d.comments is not None for d in frame.dockets)
 
 
 def test_every_count_of_a_frame_recomputes_from_the_artifacts_it_names(live, make_client, store):
@@ -101,6 +108,9 @@ def test_every_count_of_a_frame_recomputes_from_the_artifacts_it_names(live, mak
         assert len(found) == s.documents
     for d in frame.dockets:
         listed = {e["id"]: e for a in d.artifacts for e in json.loads(store.content(a))["data"] if e["type"] == "comments"}
+        if d.comments is None:  # dropped by its status before its comments were listed: none were retrieved
+            assert not d.kept and not listed
+            continue
         assert sum(instant(e["attributes"]["postedDate"]) <= frame.as_of for e in listed.values()) == d.comments
     stamps = [store.get("artifact", a, core.Artifact).observed_at for s in frame.searches for a in s.artifacts]
     assert min(stamps) >= frame.retrieval_started and max(stamps) <= frame.retrieval_ended

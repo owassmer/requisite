@@ -216,3 +216,10 @@ def test_informational_is_scoped_to_its_decision_and_tolerance():
         c.QuestionDiagnostic(**{**d, "s_prob": 1.2})
     with pytest.raises(ValidationError, match="non-negative"):
         c.QuestionDiagnostic(**{**d, "regret": F(-1), "tolerance": D("0"), "informational": True})
+
+
+def test_a_kept_docket_has_its_comment_count():
+    d = one(c.FrameDocket).model_dump()
+    with pytest.raises(ValidationError, match="kept docket"):
+        c.FrameDocket(**{**d, "comments": None})
+    assert c.FrameDocket(**{**d, "kept": False, "comments": None}).comments is None
