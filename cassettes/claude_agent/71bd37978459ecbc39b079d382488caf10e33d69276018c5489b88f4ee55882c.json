@@ -1,0 +1,170 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "scenario_renderer",
+ "latency_ms": 19564,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T04:06:35.181199+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "conditions": [
+    {
+     "condition": "For the instant 2026-11-01T23:00:00+00:00: Spot price of one Ether in U.S. dollars at <time>: simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks [eth_usd_erti_60s] is greater than 1449.99 USD. Values of Spot price of one Ether in U.S. dollars at <time>: simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks [eth_usd_erti_60s], in USD, published to a precision of 0.01: for each instant, the value CF Benchmarks [cf_benchmarks] publishes; of one source's values for an instant, the latest value published by the expiration, 2026-11-08T23:00:00+00:00, counts; values published after 2026-11-08T23:00:00+00:00 are not considered.",
+     "value": "the documents do not establish whether the condition holds"
+    }
+   ],
+   "contract_observables": [
+    {
+     "description": "Spot price of one Ether in U.S. dollars at <time>: simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks",
+     "id": "eth_usd_erti_60s",
+     "precision": "0.01",
+     "schedule": "real-time",
+     "sources": [
+      {
+       "id": "cf_benchmarks",
+       "name": "CF Benchmarks",
+       "rank": 1,
+       "role": "Source Agency",
+       "url": "https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI"
+      }
+     ],
+     "unit": "USD",
+     "value_type": "number"
+    }
+   ],
+   "every_document_published_by": "2026-11-08T23:00:00+00:00",
+   "evidence_as_of": "2026-11-08T23:00:00+00:00",
+   "published_values": [],
+   "stress_class": "evidence missing at expiry"
+  },
+  "model": "claude-opus-5-5",
+  "role": "scenario_renderer",
+  "schema": {
+   "$defs": {
+    "PacketDocument": {
+     "additionalProperties": false,
+     "properties": {
+      "published_at": {
+       "format": "date-time",
+       "title": "Published At",
+       "type": "string"
+      },
+      "source": {
+       "title": "Source",
+       "type": "string"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      },
+      "title": {
+       "title": "Title",
+       "type": "string"
+      }
+     },
+     "required": [
+      "title",
+      "source",
+      "published_at",
+      "text"
+     ],
+     "title": "PacketDocument",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "scenario_renderer: one scenario's synthetic evidence packet (quarantined: spec I4).",
+   "properties": {
+    "documents": {
+     "items": {
+      "$ref": "#/$defs/PacketDocument"
+     },
+     "title": "Documents",
+     "type": "array"
+    }
+   },
+   "required": [
+    "documents"
+   ],
+   "title": "PacketDraft",
+   "type": "object"
+  },
+  "system": "You render one abstract fuzzing scenario as a synthetic evidence packet: the documents a resolver would see in a world\nwhere exactly that scenario holds. The packet is synthetic and quarantined (it never stands as real evidence), and its\npurpose is to test whether a contract's prose resolves as its formal representation does. So the packet must make the\nscenario's assignment recoverable from the documents alone, as real records would, and nothing else.\n\nYou are given the contract's observables and sources, and the scenario: the value of each atomic condition (true or\nfalse), the published values it fixes (a measurement on a day, a publication date, an instrument's terms), and its\nstress class where it has one (conflicting sources, a revised value, a renamed or recodified instrument, partial scope,\na stay or injunction, evidence missing at expiry).\n\nWrite one to four documents, each with a title, the issuing source (one of the contract's sources, or a source the\nscenario names), a publication date and time with its zone, and the text: an enrolled-bill excerpt, an agency notice, a\nstation data table, an order. Write them as such records are written, in their register and format. Every condition the\nscenario fixes is established, or left unestablished where the scenario says it is unknown, by what the documents say.\nDo not state the contract's outcome, mention the contract, or explain the scenario. Do not add facts that would bear on\nany other condition of the contract; where a document must mention something incidental, keep it neutral.\n"
+ },
+ "response": {
+  "duration_ms": 17863,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 2399,
+    "cacheReadInputTokens": 0,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.055220000000000005,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 1801,
+    "provider": "firstParty",
+    "thinkingTokens": 286,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "documents": [
+    {
+     "published_at": "2026-11-01T23:41:00+00:00",
+     "source": "CF Benchmarks",
+     "text": "CF BENCHMARKS LTD\nINDEX OPERATIONS \u2013 INCIDENT NOTICE\n\nIndex affected: CF Ethereum Real-Time Index (ERTI), ticker ETHUSD_RTI\nIncident reference: OPS-2026-1101-03\nStatus: Investigating\n\nAt approximately 22:51:20 UTC on 1 November 2026, the calculation engine for the CF Ethereum Real-Time Index stopped disseminating index values. The interruption is linked to a fault in the ingestion of order book data from constituent exchanges. Dissemination resumed at approximately 23:07:45 UTC.\n\nNo ETHUSD_RTI values were published for the interval 22:51:20 UTC to 23:07:45 UTC. Values disseminated for this interval through data feeds, the website and the API show as null.\n\nIndex Operations is reviewing whether the index can be recalculated for the affected interval from archived constituent data, in line with the CF Benchmarks Methodology Change and Exceptional Event Policy. Clients should not treat any value for the affected interval as published until CF Benchmarks issues a further notice.\n\nA further update will follow.\n\nCF Benchmarks Index Operations\nindexops@cfbenchmarks.com",
+     "title": "Incident Notice: CF Ethereum Real-Time Index (ETHUSD_RTI) \u2013 Calculation Interruption"
+    },
+    {
+     "published_at": "2026-11-02T09:15:00+00:00",
+     "source": "CF Benchmarks",
+     "text": "CF BENCHMARKS \u2013 DATA SERVICES\nIndex: CF Ethereum Real-Time Index (ETHUSD_RTI)\nCurrency: USD | Precision: 0.01\nExport generated: 2026-11-02 09:15:00 UTC\n\nInterval (UTC)              | Values published | Status\n----------------------------|------------------|---------------------------------\n2026-11-01 22:49:00\u201322:51:19 | Yes              | Normal\n2026-11-01 22:51:20\u201323:07:44 | No               | NULL \u2013 calculation interruption (OPS-2026-1101-03)\n2026-11-01 23:07:45\u201323:10:00 | Yes              | Normal\n\nNotes:\n1. Index levels are not shown in this summary. Full tick data is available to licensed users via the CF Benchmarks API.\n2. The interval marked NULL contains no published index values. Its status is under review by Index Operations. See incident OPS-2026-1101-03.",
+     "title": "ETHUSD_RTI \u2013 Historical Data Export, 1 November 2026, 22:49\u201323:10 UTC (1-second values, summarized)"
+    },
+    {
+     "published_at": "2026-11-08T17:30:00+00:00",
+     "source": "CF Benchmarks",
+     "text": "CF BENCHMARKS LTD\nINDEX OPERATIONS \u2013 INCIDENT UPDATE\n\nIncident reference: OPS-2026-1101-03\nIndex affected: CF Ethereum Real-Time Index (ETHUSD_RTI)\nStatus: Under review \u2013 no restatement issued\n\nThis update follows the notice of 1 November 2026 about the interruption to ETHUSD_RTI dissemination between 22:51:20 UTC and 23:07:45 UTC on 1 November 2026.\n\nIndex Operations has finished its initial review of archived constituent data for the affected interval. Data from one or more constituent exchanges for part of the interval could not be fully validated. The matter has been referred to the CF Benchmarks Oversight Function.\n\nAs of this update, CF Benchmarks has not published any recalculated or restated ETHUSD_RTI values for the affected interval. The interval stays NULL in all CF Benchmarks data products. CF Benchmarks cannot yet say whether or when values for the interval will be published.\n\nCF Benchmarks will announce any decision on the affected interval through a further notice.\n\nCF Benchmarks Index Operations\nindexops@cfbenchmarks.com",
+     "title": "Incident Update: OPS-2026-1101-03 \u2013 ETHUSD_RTI Interruption of 1 November 2026"
+    }
+   ]
+  },
+  "total_cost_usd": 0.055220000000000005,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 2399,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 2399,
+   "cache_read_input_tokens": 0,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 2399,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 2399,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 2,
+     "output_tokens": 1801,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 1801,
+   "output_tokens_details": {
+    "thinking_tokens": 286
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}
