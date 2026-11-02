@@ -20,7 +20,11 @@
 // October 26 run: Renee's session died on three "fetch failed" in fifteen seconds, and the clock stood for three hours).
 // Then the run waits and prompts again, with growing waits, up to about forty minutes in all, and ends only if the
 // failure outlasts them. A failure that is not transient (a refused request, a bad model name) ends the run as before.
-import { spawn } from "node:child_process";
+// A model call that goes silent (no event from Pi for STALL_MS while a reply is being streamed) is a hung stream, not a
+// slow one: its claude process is ended, and the claude-cli provider starts another and resumes the reply (November 2:
+// two workers' streams hung without an error for over two hours, and nothing noticed; ending the process resumed both).
+// A tool that runs long (a test suite) is not a model call, and is never interrupted.
+import { spawn, spawnSync } from "node:child_process";
 import { closeSync, existsSync, openSync, readSync, statSync, watch, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -55,6 +59,10 @@ let retries = 0;
 const RETRY_WAITS_MS = [15_000, 30_000, 60_000, 120_000, 300_000, 600_000, 600_000, 600_000];
 const TRANSIENT = /fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|EPIPE|socket hang up|network|timed? ?out|\b(500|502|503|504|529)\b|overloaded|rate.?limit|too many requests|temporarily unavailable|server error/i;
 const pending = new Map(); // command id -> inbox entry awaiting Pi's response
+const STALL_MS = Number(process.env.RUN_STALL_MS ?? 15 * 60_000); // RUN_STALL_MS: a shorter wait, for its test
+let inModelCall = false; // between a message_start and its message_end: a reply is being streamed
+let lastEvent = Date.now();
+let unstalls = 0;
 
 function end() {
   if (ending) return;
@@ -116,6 +124,9 @@ function handle(rec, text) {
     return;
   }
   process.stdout.write(text + "\n");
+  lastEvent = Date.now();
+  if (rec.type === "message_start") inModelCall = true;
+  if (rec.type === "message_end" || rec.type === "agent_end") inModelCall = false;
   if (rec.type === "agent_end") {
     const last = Array.isArray(rec.messages) ? rec.messages.at(-1) : undefined;
     lastError = last?.stopReason === "error" ? String(last.errorMessage ?? "error") : null;
@@ -182,7 +193,25 @@ let watcher;
 try {
   watcher = watch(dirname(inbox), () => readInbox());
 } catch {}
-const poll = setInterval(readInbox, 1000);
+const poll = setInterval(() => {
+  readInbox();
+  unstall();
+}, 1000);
+
+// ---- a hung model stream ----
+function unstall() {
+  if (!running || ending || !inModelCall || Date.now() - lastEvent < STALL_MS) return;
+  const found = spawnSync("pgrep", ["-P", String(pi.pid), "-f", "claude"], { encoding: "utf8" });
+  const pids = String(found.stdout ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
+  unstalls += 1;
+  note(`the model call has been silent for ${Math.round((Date.now() - lastEvent) / 60_000)} minutes; ending its claude process (${pids.join(", ") || "none found"}) so the provider resumes the reply (${unstalls})`);
+  for (const pid of pids) {
+    try {
+      process.kill(Number(pid), "SIGTERM");
+    } catch {}
+  }
+  lastEvent = Date.now(); // the next check is another STALL_MS from now
+}
 
 // ---- lifecycle ----
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => pi.kill(sig));
