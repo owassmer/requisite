@@ -187,6 +187,32 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   it over-covers in F4's shape (0.983) because the stratum holding 65% of the frame expects 0.64 numerator items in its
   gold, which is valid and wide for that reason. Each family's interval is marginal. The gold-draw's coverage report
   measures this ratio (sampling.measure_ratio_coverage), not the numerator's frame share.
+- F4 from the labels to the leads (coordinator, November 2, 12:05 ET, before any phase-1 label, gold label or lead
+  question exists; every rule below is over data not yet seen).
+  - Scope: the estimate is over the frame's items with readable text. A phase-1 item with none (nothing the reader
+    could extract, labels.item_state) is outside what the run reads, so for the estimate its indicators are known 0 and
+    its prediction 0; it is not drawn for gold (nothing would be labelled), and the estimate states how many there were
+    beside the scope. Its labels are not guessed: the claim is about readable items only.
+  - A question the phase-1 judge refused has no probability; its prediction is the mean of that question's probability
+    over the answered items of the same phase-1 stratum. Any prediction fixed from phase-1 data keeps the difference
+    estimator unbiased (the gold corrects it); this one uses only the judge's own answers.
+  - A gold answer of "unsure" or not_established is unresolved, never read as 0 (A07 §8.1). The estimate is computed
+    under the two completions that bound it: the lowest ratio (each unresolved label set to put the item in the
+    denominator and out of the numerator where it can be) and the highest (into the numerator where it can be, and out
+    of the denominator otherwise). The interval read is from the lower completion's lower bound to the upper
+    completion's upper bound, and the number of unresolved labels is shown beside it.
+  - Event families: the clause the objective approved ("Families are defined by the run from what it finds"). An agent
+    proposes families over the kept dockets' measures, each a cost channel (labor, inputs, or both) and a mechanism;
+    every kept docket is in exactly one family (the proposal's tests gate). An item's family is its docket's.
+  - Leads (spec §7.2 step 5): a lead is a phase-1 item in the estimand's numerator: by its gold labels where it has
+    them, otherwise by the phase-1 judge's probability P(in_population) x P(exposed) >= 0.5. Each lead is asked the
+    spec's item templates cost_driver, direction and seeks_certainty (phase-1 configuration), and an agent extracts its
+    quantified impact as claims (spec §7.2: "extracted by an agent as a Claim proposal"). Ranked in three tiers:
+    (1) it asks for relief, protection or predictability and states a quantified cost impact; (2) one of the two;
+    (3) neither. Within a tier: gold-confirmed before judged, then the judge's probability (higher first), then the
+    stated annual cost impact in one currency (larger first; none stated last), then item id. Reason: a business that
+    states what the rule would cost it and asks for certainty is the one for whom protection is both sizable and
+    wanted, which is what construction needs; the order is fixed before any lead is seen.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
