@@ -370,9 +370,48 @@ class SamplingDesign(Record):
         return self
 
 
+class DrawnItem(Record):
+    """One item a sample drew, with its stratum and its inclusion probability, exact (A07 §8.2: pi_i > 0)."""
+
+    item: str
+    stratum: str
+    inclusion_prob: Probability
+
+    @model_validator(mode="after")
+    def _positive(self) -> DrawnItem:
+        if self.inclusion_prob == 0:
+            raise ValueError("a drawn item has a positive inclusion probability")
+        return self
+
+
+class SampleDraw(Record):
+    """A phase of a wide run's sample as drawn: which items, from which strata, with what chance, under which design and
+    seed, so the draw is reproducible and the estimator reads the probabilities it assumes (addendum A07 §8.4: "Store
+    the design, strata, cluster IDs and any required joint-inclusion or replicate-weight information"). Each item's
+    inclusion_prob is its chance in this phase as drawn: in phase 1, its chance of selection from the frame; in phase 2
+    of a two-phase design (decisions, "two-phase": standard survey sampling, Särndal, Swensson and Wretman 1992, ch. 9,
+    ours and not the addendum's), its chance of a gold label given the realized phase-1 sample. The two-phase estimator
+    uses the two separately; their product is not the item's marginal chance of a gold label when phase-2 strata depend
+    on the phase-1 sample, and no record calls it that. In an independent two-sample design (A07 §8.2: "an unlabeled
+    sample and a separate labeled correction sample"), phase 2's is the labelled sample's own chance of drawing the item
+    from the frame."""
+
+    design: Ref
+    phase: Literal[1, 2]
+    seed: int
+    items: Sequence[DrawnItem]
+
+    @model_validator(mode="after")
+    def _items(self) -> SampleDraw:
+        ids = [i.item for i in self.items]
+        if len(set(ids)) != len(ids):
+            raise ValueError("a draw lists each item once")
+        return self
+
+
 class GoldLabel(Record):
-    """A human label of one sampled item (spec §4; amended by addendum A07). The design and stratum give its inclusion
-    probability, exact; `outcome` keeps an explicit unresolved category, never dropped or read as zero (A07 §8.1).
+    """A human label of one sampled item (spec §4; amended by addendum A07). inclusion_prob is the item's phase-2 chance
+    as its SampleDraw records it, exact (in a two-phase design, given the realized phase-1 sample); `outcome` keeps an explicit unresolved category, never dropped or read as zero (A07 §8.1).
     `blind`: the labeller did not see any model's answer (ours: a label that saw the model's answer measures agreement
     with it, not truth)."""
 

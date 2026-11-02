@@ -328,6 +328,9 @@ def examples() -> list[c.Record]:
             predictor=[c.Ref(id="t.exposure", version=1)],
             gold_policy="single labeller; unresolved kept as its own category",
         ),
+        c.DrawnItem(item="i1", stratum="all", inclusion_prob=F(2, 5)),
+        c.SampleDraw(design=c.Ref(id="design1", version=1), phase=2, seed=7,
+                     items=[c.DrawnItem(item="i1", stratum="all.pos", inclusion_prob=F(1))]),  # fmt: skip
         c.GoldLabel(
             item="i1",
             question=REF,
