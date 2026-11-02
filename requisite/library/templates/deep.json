@@ -1,0 +1,83 @@
+{
+  "source": "Deep discovery's sensitivity judgments and hedgeability screen (spec §7.1 steps 3 and 5): for each driver-event pair, direction, mechanism, magnitude band, lag band and conditionality; for each exposure, whether an authoritative observable tracks the loss, whether the client could influence it, and whether a listed market is close. Bands are closed sets so code maps them into intervals, never midpoints (addendum A04 §4.1). Ours, November 1, in spec §7.1's words.",
+  "templates": [
+    {
+      "id": "sensitivity_direction", "version": 1, "task": "interpret",
+      "slots": ["driver", "event", "horizon"],
+      "target": "If the event below happens, what does it do to the business's driver below during the horizon, according to the evidence under OBSERVED?\nDriver: {driver}\nEvent: {event}\nHorizon: {horizon}",
+      "answers": [
+        {"value": "increase", "meaning": "the driver increases", "status": "affirmative"},
+        {"value": "decrease", "meaning": "the driver decreases", "status": "affirmative"},
+        {"value": "none", "meaning": "the driver does not change", "status": "negative"},
+        {"value": "not_established", "meaning": "the evidence does not establish the effect on the driver", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "sensitivity_mechanism", "version": 1, "task": "classify",
+      "slots": ["driver", "event"],
+      "target": "Through which mechanism does the event below act on the business's driver below, according to the evidence under OBSERVED?\nDriver: {driver}\nEvent: {event}",
+      "answers": [
+        {"value": "cost", "meaning": "it changes what the business pays", "status": "affirmative"},
+        {"value": "revenue", "meaning": "it changes what the business earns", "status": "affirmative"},
+        {"value": "timing", "meaning": "it changes when cash moves, not how much", "status": "affirmative"},
+        {"value": "capacity", "meaning": "it changes how much the business can do", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the evidence does not establish the mechanism", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "sensitivity_magnitude", "version": 1, "task": "score",
+      "slots": ["driver", "event"],
+      "target": "If the event below happens, by how much does it change the business's driver below per period, as a share of the driver's current amount, according to the evidence under OBSERVED?\nDriver: {driver}\nEvent: {event}",
+      "answers": [
+        {"value": "under_1pct", "meaning": "by less than 1%", "status": "affirmative"},
+        {"value": "1_to_5pct", "meaning": "by at least 1% and less than 5%", "status": "affirmative"},
+        {"value": "5_to_15pct", "meaning": "by at least 5% and less than 15%", "status": "affirmative"},
+        {"value": "15_to_40pct", "meaning": "by at least 15% and less than 40%", "status": "affirmative"},
+        {"value": "40pct_or_more", "meaning": "by 40% or more", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the evidence does not establish the size of the change", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "sensitivity_lag", "version": 1, "task": "score",
+      "slots": ["driver", "event"],
+      "target": "After the event below happens, how long until it changes the business's driver below, according to the evidence under OBSERVED?\nDriver: {driver}\nEvent: {event}",
+      "answers": [
+        {"value": "under_1_month", "meaning": "within a month", "status": "affirmative"},
+        {"value": "1_to_3_months", "meaning": "in one to three months", "status": "affirmative"},
+        {"value": "3_to_12_months", "meaning": "in three to twelve months", "status": "affirmative"},
+        {"value": "over_12_months", "meaning": "after more than twelve months", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the evidence does not establish when", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "sensitivity_conditionality", "version": 1, "task": "classify",
+      "slots": ["driver", "event"],
+      "target": "Does the effect of the event below on the business's driver below depend on a further condition (a threshold, an exemption, a phase-in, a choice the business makes), according to the evidence under OBSERVED?\nDriver: {driver}\nEvent: {event}",
+      "answers": [
+        {"value": "unconditional", "meaning": "no: the effect follows from the event alone", "status": "negative"},
+        {"value": "conditional", "meaning": "yes: it depends on a further condition", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the evidence does not establish whether it does", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "observable_tracks_loss", "version": 1, "task": "interpret",
+      "slots": ["loss", "observable"],
+      "target": "Does the published observable below track the business's loss below closely enough that a payment settled on the observable would arrive when and as the loss does, according to the evidence under OBSERVED?\nLoss: {loss}\nObservable: {observable}",
+      "answers": [
+        {"value": "tracks", "meaning": "yes: the observable moves when and as the loss does", "status": "affirmative"},
+        {"value": "does_not_track", "meaning": "no: the loss can occur without the observable moving, or the reverse", "status": "negative"},
+        {"value": "not_established", "meaning": "the evidence does not establish whether it does", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "client_can_influence", "version": 1, "task": "interpret",
+      "slots": ["observable"],
+      "target": "Could the business described under OBSERVED influence the published observable below by its own actions?\nObservable: {observable}",
+      "answers": [
+        {"value": "can_influence", "meaning": "yes: its own actions could move the observable", "status": "affirmative"},
+        {"value": "cannot_influence", "meaning": "no: the observable is outside its control", "status": "negative"},
+        {"value": "not_established", "meaning": "the evidence does not establish whether it could", "status": "not_established"}
+      ]
+    }
+  ]
+}
