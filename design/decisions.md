@@ -70,10 +70,17 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   extraction, so a scanned business letter is read rather than counted as silent (coordinator's reasoning: an item the
   judges cannot read would be labelled not_established for a reason of ours, not the world's). Extractions are committed
   state, so a replay reads them from the frozen case rather than re-running OCR on another machine.
-- The same reason holds for F1, by the coordinator's reasoning: the filed contracts are drawn by a rule over the filed
-  record (spec §9.3; one per strike type where they exist), plus the Western Grazers specimen the spec names, and the IR
-  grammar comes from spec §8.1, never fitted to them. A filed construct the IR cannot express is a finding about the
-  grammar, fixed there if the construct is general.
+- F1's filed contracts are drawn by a rule over the filed record, fixed here before the draw runs (coordinator,
+  November 1). The Western Grazers contract is in by name: spec §9.3 names it as the reference specimen, and it is
+  Kalshi's series KXCAGOAT, "California goat herder wage obligations" (its product certification and contract terms
+  are filed PDFs; found November 1 through the read-only Kalshi API). The others: among Kalshi series with filed contract
+  terms (contract_terms_url) and at least one market that has settled, as of a pinned instant, one series per strike
+  type present among those settled markets, the one whose ticker has the smallest sha256("requisite-F1|" + ticker);
+  where more than four strike types are present, the four with the most settled markets. The hash makes the choice
+  independent of anyone's view of which contracts are interesting; spec §12 asks for 2–5 contracts and spec §9.3 for
+  every strike type over the harvest as a whole. The IR grammar comes from spec §8.1 and the definition, never fitted to
+  a drawn contract: a filed construct the IR cannot express is a finding about the grammar, fixed there when the
+  construct is general, and the contract is otherwise unsupported or supported with explicit assumptions (A05 §5.5).
 
 ## No escape routes, loud or quiet
 
