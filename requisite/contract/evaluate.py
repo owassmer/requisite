@@ -26,9 +26,14 @@ its window. Until the observation cutoff more instants can still be published, s
 its condition and otherwise unknown, and a Throughout false once some instant breaks its condition and otherwise unknown.
 After the cutoff the set is closed; a By or a Throughout over no instant at all is unknown, since nothing established
 it (I6), and the procedure's rule for an unknown at expiry says what that means. CountTrue counts the calendar days of
-its window, in the window's zone, wholly inside it: a day holds when some instant that day shows the condition, fails
-when instants that day show it fails, and is unknown when no value for it is published. DurationIn measures the time a
-condition holds, each value holding from its instant until the next one, as an interval over unknown stretches.
+its window, in the window's zone, wholly inside it: a day holds when some instant that day shows the condition; it fails
+when, the instants closed, the instants that day show it fails; and it is unknown otherwise, so with no value for it, or
+before the cutoff with none yet showing it (another value for the day may still be published). DurationIn measures the
+time a condition holds, each value holding from its instant until the next one, as an interval over unknown stretches;
+before the cutoff a value for any instant may still be published and split any stretch, so it is [0, the window].
+These choices keep the trigger's truth monotone as information arrives: once true or false, a publication cannot reverse
+it, except by a revision as_of_expiry selects before expiration. For the same reason precedence settles on a lower-ranked
+source's value only once the cutoff has passed: before it, a source ranked above may still publish.
 
 Numbers are exact (Fractions), so a third of a day or of a dollar is never rounded on the way. A numeric observable's
 values are compared at its declared precision: a value not stated at that precision is refused, not rounded. A reading's
@@ -55,8 +60,11 @@ leaves to a rule outside the IR.
 
 Lowering for coverage (spec §8.6 step 1; A09 §10.2-10.3). `lower` gives the trigger's boolean skeleton in the coverage
 kernel's form (requisite.fuzz.coverage): And, Or and Not over one variable per atomic condition, named by its IR node id,
-with the boundary points of each comparison and the constraints the IR itself places between conditions over one
-quantity (a linked threshold or a repeated predicate). The kernel then works on abstract condition values only; a
+with the boundary points of each comparison and the constraints the IR itself places between its conditions (a linked
+threshold, a repeated predicate, one observable read at related instants and ranges; `_implied`). A threshold over a
+numeric observable is stepped at its declared precision, a count at k - 1, k and k + 1, a cutoff instant at the
+comparison's resolution; a reading, a duration or a computed number declares no precision, so its threshold is stepped
+at the precision it is stated to (0.00 steps by a cent). The kernel then works on abstract condition values only; a
 scenario's outcome is always this module's `evaluate`.
 """
 
@@ -87,13 +95,11 @@ from requisite.core import (
     ContractIR,
     CountTrue,
     DurationIn,
-    Expr,
     Flag,
     Interpretive,
     Not,
     Number,
     NumCmp,
-    NumExpr,
     Observable,
     Observation,
     OnDay,
@@ -341,6 +347,11 @@ def _check_ir(ir: ContractIR) -> None:
             raise IRError(f"{getattr(n, 'id', n)!r} is not a number")
 
     expr(ir.trigger, False)
+    consulted, _ = _consulted(ir)
+    roots = [ir.trigger] + ([ir.payout.quantity] if ir.payout.quantity is not None else [])
+    for o in dict.fromkeys(n.observable for r in roots for n in walk(r) if isinstance(n, Cmp | ValueAt)):
+        if not consulted[o]:
+            raise IRError(f"{o} is read by the contract, but the procedure consults none of its sources")
     payout = ir.payout
     if payout.quantity is not None:
         number(payout.quantity)
@@ -355,6 +366,26 @@ def _check_ir(ir: ContractIR) -> None:
                           "after an early expiration pay")  # fmt: skip
         for p in payout.periods:
             _bounded(p, "a payment period")
+
+
+def _consulted(ir: ContractIR) -> tuple[dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
+    """Each observable's sources the procedure consults, in order, and those that must agree. Under require_agreement
+    the named sources of the observable must agree (where it has two or more of them); otherwise the procedure's
+    precedence orders its sources, and a source the precedence does not name is never consulted."""
+    proc = ir.resolution
+    consulted: dict[str, tuple[str, ...]] = {}
+    agree: dict[str, tuple[str, ...]] = {}
+    for o in ir.observables:
+        own = {s.id for s in o.sources}
+        named = [s for s in proc.conflict_policy.sources if s in own]
+        if proc.conflict_policy.procedure == "require_agreement" and len(named) >= 2:
+            agree[o.id] = tuple(named)
+            consulted[o.id] = tuple(named)
+        elif named:
+            consulted[o.id] = tuple(named)
+        else:
+            consulted[o.id] = tuple(s for s in proc.precedence if s in own)
+    return consulted, agree
 
 
 def _strip_ids(value: Any) -> Any:
@@ -378,7 +409,7 @@ class _Inputs:
         _check_ir(ir)
         self.ir = ir
         self.observables: dict[str, Observable] = {o.id: o for o in ir.observables}
-        self.observations = tuple(observations)
+        self.observations: tuple[Observation | SyntheticObservation, ...] = tuple(observations)
         kinds = {type(o) for o in self.observations}
         if not kinds <= {Observation, SyntheticObservation}:
             raise TypeError("observations are core.Observation records, or core.SyntheticObservation in a synthetic case")
@@ -390,19 +421,7 @@ class _Inputs:
         self._interpretations(interpretations)
 
     def _consult_order(self) -> None:
-        proc = self.ir.resolution
-        self.consulted: dict[str, tuple[str, ...]] = {}
-        self.agree: dict[str, tuple[str, ...]] = {}
-        for o in self.ir.observables:
-            own = {s.id for s in o.sources}
-            named = [s for s in proc.conflict_policy.sources if s in own]
-            if proc.conflict_policy.procedure == "require_agreement" and len(named) >= 2:
-                self.agree[o.id] = tuple(named)
-                self.consulted[o.id] = tuple(named)
-            elif named:
-                self.consulted[o.id] = tuple(named)
-            else:
-                self.consulted[o.id] = tuple(s for s in proc.precedence if s in own)
+        self.consulted, self.agree = _consulted(self.ir)
 
     def _index(self) -> None:
         self.records: dict[tuple[str, str], dict[datetime, list[_Vintage]]] = {}
@@ -597,9 +616,15 @@ class _View:
                 return _ABSENT
             waiting = [f"{s} ({p.why or 'none published'})" for s, p in picks if p.kind != "value"]
             return _Pick("unknown", why=f"agreement of {', '.join(agree)} not established: {'; '.join(waiting)}")
-        for s in self.inp.consulted[o]:
+        order = self.inp.consulted[o]
+        for k, s in enumerate(order):
             p = self.pick(o, s, t)
             if p.kind != "absent":
+                if k and not self.closed:
+                    # The highest-ranked source that has published is decided at the observation cutoff: until then a
+                    # source ranked above this one may still publish, and would settle instead.
+                    return _Pick("unknown", why=f"{s} has published, but {', '.join(order[:k])}, ranked above it, may "
+                                                f"still publish until the observation cutoff, {_iso(self.clock.cutoff)}")  # fmt: skip
                 return p
         return _ABSENT
 
@@ -724,6 +749,12 @@ class _View:
             elif not day:
                 values.append(Kleene.UNKNOWN)
                 unknown_days.append(f"{d.isoformat()} (no value published)")
+            elif not self.closed:
+                # Another value for the day may still be published, before the observation cutoff, and show it.
+                values.append(Kleene.UNKNOWN)
+                unknown_days.append(f"{d.isoformat()} (not shown so far; values may be published until the observation "
+                                    f"cutoff, {_iso(self.clock.cutoff)})")  # fmt: skip
+                why.extend(w for x in day if x.value is Kleene.UNKNOWN for w in x.why)
             else:
                 v = disj(x.value for x in day)
                 values.append(v)
@@ -748,6 +779,12 @@ class _View:
             start, end = max(start, _utc(r.start)), min(end, _utc(r.end))
         if end <= start:
             return _N(Interval.point(Fraction(0)))
+        if not self.closed:
+            # A value for any instant may still be published, before the observation cutoff, and split any stretch.
+            total = _measure(start, end, e.unit, w.tz)
+            return _N(Interval(Fraction(0), total), (_Why(f"{e.id}: values may be published until the observation "
+                                                         f"cutoff, {_iso(self.clock.cutoff)}, for any instant of its "
+                                                         "window, so any stretch may still change"),))  # fmt: skip
         insts = self.level_instants(e.expr)
         prior = [t for t in insts if t <= start]
         inside = [t for t in insts if start < t < end]
@@ -761,10 +798,6 @@ class _View:
             a, b = points[i], points[i + 1]
             length = _measure(a, b, e.unit, w.tz)
             value = v.value
-            if i == len(values) - 1 and not self.closed:
-                value = Kleene.UNKNOWN
-                why.append(_Why(f"{e.id}: open from {a.isoformat()}; values may be published until the observation "
-                                f"cutoff, {_iso(self.clock.cutoff)}"))  # fmt: skip
             if value is Kleene.TRUE:
                 low += length
                 high += length
@@ -975,11 +1008,17 @@ def _procedure(inp: _Inputs, at: datetime) -> _Outcome:
 
 def _first_true(inp: _Inputs, clock: _Clock, *, after: datetime | None, until: datetime) -> _Early | None:
     """The first instant, after `after` and by `until`, at which the trigger is true on the information then
-    available. Information changes when a record is published and when the observation cutoff closes the instants; the
-    interpretations are given as of the evaluation, so before it the trigger is evaluated both without them (an upper
+    available. Information changes when a record is published, when the observation cutoff closes the instants, and when
+    a "final" policy's deadline passes; the interpretations are given as of the evaluation, so before it the trigger is evaluated both without them (an upper
     bound on the first instant: true whatever they were then) and with them (a lower bound: true if they held then)."""
     cands = {p for p in inp.publications if p <= until and p <= clock.cutoff}
     cands |= {clock.cutoff} if clock.cutoff <= until else set()
+    # A "final" policy's value changes, with no publication, when its deadline passes and its fallback applies.
+    for o in inp.ir.observables:
+        if o.revision_policy == "final":
+            by = _utc(o.final_deadline) if o.final_deadline is not None else clock.determination
+            if min(by, clock.cutoff) <= until:
+                cands.add(min(by, clock.cutoff))
     cands.add(until)
     lower: datetime | None = None
     for tau in sorted(c for c in cands if after is None or c > after):
@@ -1293,8 +1332,10 @@ class Comparison:
 @dataclass(frozen=True)
 class Lowered:
     """The trigger as the coverage kernel's expression form. conditions: each atomic condition's IR node kind.
-    constraints: what the IR itself makes impossible among conditions over one quantity (linked thresholds, repeated
-    predicates), keyed by an id naming the quantity. comparisons: every comparison's boundary points."""
+    constraints: what the IR itself makes impossible among its conditions (linked thresholds, repeated predicates, one
+    observable's values at instants and over ranges), keyed by ids naming what each says; those over an observable's
+    values mention other conditions of the kernel, "ir:<observable>:region<i>:class<k>", whose values the kernel's
+    completions give. comparisons: every comparison's boundary points."""
 
     trigger: cov.Expr
     conditions: Mapping[str, str]
@@ -1437,48 +1478,27 @@ def _at_precision(op: str, v: Fraction, p: Fraction) -> tuple[str, Fraction] | N
 # ---- constraints the IR places between its conditions
 
 
-def _range_key(lo: datetime | None, lo_closed: bool | None, hi: datetime | None, hi_closed: bool | None) -> str:
-    return canonical_json([_iso(lo) if lo else None, bool(lo_closed), _iso(hi) if hi else None, bool(hi_closed)])
-
-
 def _implied(atoms: Mapping[str, Any], kinds: Mapping[str, Observable]) -> dict[str, cov.Expr]:
-    """For conditions over one quantity, the truth assignments the quantity's values allow; where not every assignment
-    is possible, a constraint listing the possible ones (A09 §10.2: linked thresholds and repeated predicates leave
-    some states impossible, and no witness may be fabricated from one)."""
+    """What the IR itself makes impossible among its conditions (A09 §10.2: linked thresholds and repeated predicates
+    leave some states impossible, and no witness may be fabricated from one), as constraints for the coverage kernel.
+
+    - Comparisons of one number (a count, a duration, a reading, a computed value): the truth assignments its values
+      allow, where not every assignment is possible.
+    - Comparisons of one observable's values at instants (At, By and Throughout over a single comparison, and a
+      published value compared): `_readings`, exactly.
+    - Repeated predicates: two conditions with one meaning are equal in every state."""
     lines: dict[str, list[tuple[str, str, Fraction]]] = {}
     domains: dict[str, tuple[str, Any]] = {}
-    ranges: dict[str, list[tuple[str, str, str, Fraction]]] = {}
-    range_steps: dict[str, Fraction] = {}
-    categories: dict[str, list[tuple[str, str, object]]] = {}
+    readings: dict[str, list[tuple[str, Any]]] = {}
     for cid, a in atoms.items():
-        if isinstance(a, NumCmp):
-            e = a.expr
-            key = "num:" + _content(e)
+        if isinstance(a, NumCmp) and isinstance(a.expr, ValueAt):
+            readings.setdefault(a.expr.observable, []).append((cid, a))
+        elif isinstance(a, NumCmp):
+            key = "num:" + _content(a.expr)
             lines.setdefault(key, []).append((cid, a.op, Fraction(a.value)))
-            domains[key] = _num_domain(e, kinds)
-            continue
-        c = _single_cmp(getattr(a, "expr", None))
-        if c is None:
-            continue
-        obs = kinds[c.observable]
-        if isinstance(a, At):
-            key = f"at:{c.observable}:{_iso(a.at)}"
-            if isinstance(c.value, Number | OnDay):
-                lines.setdefault(key, []).append((cid, c.op, _ordinal(c.value)))
-                domains[key] = ("grid", Fraction(obs.precision)) if isinstance(c.value, Number) else ("integer", None)
-            else:
-                categories.setdefault(key, []).append((cid, c.op, c.value.value))
-        elif isinstance(a, By | Throughout) and c.op in ORDERED and isinstance(c.value, Number | OnDay):
-            if isinstance(a, By):
-                rng = _range_key(a.since, a.since_closed, a.deadline, a.closed)
-                extreme = "max" if c.op in (">", ">=") else "min"
-            else:
-                w = a.window
-                rng = _range_key(w.start, w.start_closed, w.end, w.end_closed)
-                extreme = "min" if c.op in (">", ">=") else "max"
-            key = f"range:{c.observable}:{rng}"
-            ranges.setdefault(key, []).append((cid, extreme, c.op, _ordinal(c.value)))
-            range_steps[key] = Fraction(obs.precision) if isinstance(c.value, Number) else Fraction(1)
+            domains[key] = _num_domain(a.expr, kinds)
+        elif isinstance(a, At | By | Throughout) and (c := _single_cmp(a.expr)) is not None:
+            readings.setdefault(c.observable, []).append((cid, a))
     out: dict[str, cov.Expr] = {}
     for key, conds in lines.items():
         dom = domains[key]
@@ -1492,29 +1512,124 @@ def _implied(atoms: Mapping[str, Any], kinds: Mapping[str, Observable]) -> dict[
             reps = _representatives([t for _, _, t in conds], dom)
             vectors = {tuple(_holds(x, op, t) for _, op, t in conds) for x in reps}
         _constrain(out, key, [cid for cid, _, _ in conds], vectors)
-    for key, rconds in ranges.items():
-        reps = _representatives([t for _, _, _, t in rconds], ("grid", range_steps[key]))
-        vectors = {
-            tuple(_holds(lo if ext == "min" else hi, op, t) for _, ext, op, t in rconds)
-            for lo in reps for hi in reps if lo <= hi
-        }  # fmt: skip
-        _constrain(out, key, [cid for cid, _, _, _ in rconds], vectors)
-    for key, cconds in categories.items():
-        values: list[object] = list(dict.fromkeys(v for _, _, v in cconds))
-        if all(isinstance(v, bool) for v in values):
-            values = [True, False]
-        else:
-            values.append(object())  # a value none of the comparisons names
-        vectors = {tuple((x == v) == (op == "==") for _, op, v in cconds) for x in values}
-        _constrain(out, key, [cid for cid, _, _ in cconds], vectors)
+    for o, group in readings.items():
+        out.update(_readings(o, group, kinds[o], set(atoms)))
     # Repeated predicates: two atomic conditions with one meaning (different ids) are equal in every state.
     same: dict[str, list[str]] = {}
     for cid, a in atoms.items():
         same.setdefault(a.kind + ":" + _content(a), []).append(cid)
-    for key, ids in same.items():
+    for ids in same.values():
         for x, y in zip(ids, ids[1:], strict=False):
-            out[f"same:{x}={y}"] = cov.And(cov.Or(cov.Not(cov.Var(x)), cov.Var(y)), cov.Or(cov.Var(x), cov.Not(cov.Var(y))))
+            out[f"same:{x}={y}"] = _iff(cov.Var(x), cov.Var(y))
     return out
+
+
+def _iff(a: cov.Expr, b: cov.Expr) -> cov.Expr:
+    return cov.And(cov.Or(cov.Not(a), b), cov.Or(a, cov.Not(b)))
+
+
+Region = tuple[datetime | None, datetime | None]  # (t, t) an instant; (a, b) the open interval between, None unbounded
+
+
+def _readings(o: str, group: list[tuple[str, Any]], obs: Observable, taken: set[str]) -> dict[str, cov.Expr]:
+    """Exactly which truth assignments the conditions reading observable `o` at instants allow.
+
+    Time is cut at every instant the conditions name (At's instant, a published value's instant, a By's bounds, a
+    Throughout's window) into regions: those instants, and the open intervals between them. Instants in one interval
+    belong to the same bounds, so a condition's truth depends only on which classes of value appear in each region, a
+    class being a run of values every comparison treats alike. An "other" condition of the coverage kernel says whether
+    some instant of a region has a value of a class; an instant has one value, so a region that is an instant has at most
+    one class. Each condition is then a formula over them: At (and a compared published value) is the class at its
+    instant, which has a value; By, that some instant within its bounds has a satisfying value; Throughout, that some
+    instant within its window has a value and none fails. The kernel states are two-valued, so each condition is
+    established: a By or Throughout has some instant within its bounds. Any assignment satisfying these is realized by
+    placing one instant per class in each region, and every set of observations gives one, so the constraint is exact. A
+    group of one condition needs no other conditions: it is constrained only where its comparisons make it constant."""
+    def bounds(a: Any) -> tuple[datetime | None, bool, datetime | None, bool]:
+        if isinstance(a, At):
+            return (_utc(a.at), True, _utc(a.at), True)
+        if isinstance(a, NumCmp):
+            e = a.expr
+            assert isinstance(e, ValueAt)  # _implied groups only a compared published value here
+            return (_utc(e.at), True, _utc(e.at), True)
+        if isinstance(a, By):
+            return (_utc(a.since) if a.since else None, bool(a.since_closed), _utc(a.deadline), a.closed)
+        w = a.window
+        return (_utc(w.start) if w.start else None, w.start_closed, _utc(w.end) if w.end else None, w.end_closed)
+
+    def comparison(a: Any) -> tuple[str, Any]:
+        if isinstance(a, NumCmp):
+            return (a.op, Fraction(a.value))
+        c = a.expr
+        return (c.op, _ordinal(c.value) if isinstance(c.value, Number | OnDay) else c.value.value)
+
+    numeric = obs.value_type in ("number", "date")
+    thresholds = [comparison(a)[1] for _, a in group]
+    classes: list[Any]
+    if numeric:
+        domain = ("grid", _precision(obs)) if obs.value_type == "number" else ("integer", None)
+        classes = _representatives(thresholds, domain)
+    elif obs.value_type == "bool":
+        classes = [True, False]
+    else:
+        classes = [*dict.fromkeys(thresholds), object()]  # each named value, and one none of them names
+
+    def sat(a: Any, x: Any) -> bool:
+        op, t = comparison(a)
+        if numeric:
+            return _holds(x, op, t)
+        return (x == t) == (op == "==")
+
+    if len(group) == 1:
+        cid, a = group[0]
+        values = {sat(a, x) for x in classes}
+        if len(values) == 2:
+            return {}
+        return {f"ir:{o}:{cid}:constant": cov.Var(cid) if True in values else cov.Not(cov.Var(cid))}
+
+    instants = sorted({t for _, a in group for t in bounds(a)[0::2] if t is not None})
+    regions: list[Region] = [(None, instants[0])]
+    for i, t in enumerate(instants):
+        regions += [(t, t), (t, instants[i + 1] if i + 1 < len(instants) else None)]
+
+    def within(r: Region, b: tuple[datetime | None, bool, datetime | None, bool]) -> bool:
+        lo, lo_closed, hi, hi_closed = b
+        a, z = r
+        if a is not None and a == z:
+            return _in(a, lo, lo_closed, hi, hi_closed)
+        return (lo is None or (a is not None and a >= lo)) and (hi is None or (z is not None and z <= hi))
+
+    def var(i: int, k: int) -> cov.Var:
+        name = f"ir:{o}:region{i}:class{k}"
+        if name in taken:
+            raise IRError(f"an IR node id, {name!r}, is the name of a coverage variable the lowering needs")
+        return cov.Var(name)
+
+    out: dict[str, cov.Expr] = {}
+    used = sorted({i for _, a in group for i, r in enumerate(regions) if within(r, bounds(a))})
+    for i in used:
+        if regions[i][0] is not None and regions[i][0] == regions[i][1]:
+            for k in range(len(classes)):
+                for m in range(k + 1, len(classes)):
+                    out[f"ir:{o}:region{i}:one:{k}:{m}"] = cov.Or(cov.Not(var(i, k)), cov.Not(var(i, m)))
+    for cid, a in group:
+        inside = [i for i in used if within(regions[i], bounds(a))]
+        some = [var(i, k) for i in inside for k in range(len(classes))]
+        out[f"ir:{o}:{cid}:established"] = cov.Or(*some)
+        if isinstance(a, Throughout):
+            failing = [var(i, k) for i in inside for k, x in enumerate(classes) if not sat(a, x)]
+            out[f"ir:{o}:{cid}"] = _iff(cov.Var(cid), cov.Not(cov.Or(*failing)))
+        else:
+            holding = [var(i, k) for i in inside for k, x in enumerate(classes) if sat(a, x)]
+            out[f"ir:{o}:{cid}"] = _iff(cov.Var(cid), cov.Or(*holding))
+    return out
+
+
+def _precision(obs: Observable) -> Fraction:
+    """A numeric observable's published precision, which the definition requires it to state."""
+    if obs.precision is None:
+        raise IRError(f"{obs.id} is compared as a number but states no precision")
+    return Fraction(obs.precision)
 
 
 def _ordinal(v: CmpValue) -> Fraction:
@@ -1538,7 +1653,7 @@ def _num_domain(e: Any, kinds: Mapping[str, Observable]) -> tuple[str, Any]:
     if isinstance(e, ReadValue):
         return ("bands", tuple(_band(e, (lo, hi))[0] for lo, hi in e.bands))
     if isinstance(e, ValueAt):
-        return ("grid", Fraction(kinds[e.observable].precision))
+        return ("grid", _precision(kinds[e.observable]))
     return ("real", (None, None))
 
 

@@ -190,9 +190,9 @@ def test_the_oracle_check_9_dual_guided_candidate():
 # ------------------------------------------------------------------ the addendum's fixtures (addendum §13)
 
 
-@pytest.mark.covers("A.T06")
 def test_a_perfect_payout_after_the_cash_loss_leaves_the_timing_gap():
-    # Addendum §6.6: cash 100, a loss of 120 at day 30, a hedge costing 10 at day 0 that pays the whole 120.
+    # Addendum §6.6: cash 100, a loss of 120 at day 30, a hedge costing 10 at day 0 that pays the whole 120. (A.T06 is
+    # covered by tests/contract/test_timing_gap.py, where the payout's dates are the settlement evaluator's.)
     unhedged = business([1], 100, [[0, 120, 0]], alpha="0.9", budget=10)
     late = instrument("late", 10, [[0, 0, 120]], 1)
     early = instrument("early", 10, [[0, 120, 0]], 1)
