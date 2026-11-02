@@ -50,56 +50,88 @@ def _wide_frame(args: argparse.Namespace) -> int:
     return 0
 
 
-def _evidence_frame(args: argparse.Namespace) -> int:
-    import json
+def _print_item(item) -> None:  # noqa: ANN001
+    files = len(item.artifacts) - 1
+    print(f"{item.id}  {item.container}  {item.posted_at.isoformat()}  {item.submitter or '(no name published)'}  "
+          f"{files} file(s)  {len(item.text)} chars")  # fmt: skip
+    for u in item.unreadable:
+        print(f"  unreadable: {u}")
 
-    from requisite.core import FrameCriteria
-    from requisite.evidence.frame import summary, take_frame
-    from requisite.evidence.regulations_gov import RegulationsGov
 
-    criteria = FrameCriteria.model_validate_json(Path(args.criteria).read_text())
-    client = RegulationsGov()
-    try:
-        frame = take_frame(criteria, client, _store(args))
-    finally:
-        client.close()
-    print(json.dumps(summary(frame), indent=2))
+def _progress(done: int, total: int) -> None:
+    if done == total or done % 100 == 0:
+        print(f"  {done} of {total} judgments", file=sys.stderr, flush=True)
+
+
+def _wide_sample(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
+
+    store = _store(args)
+    draw = wide.draw_sample(store)
+    sizes = {k: len(v) for k, v in wide.phase1_strata(wide.the_frame(store)).items()}
+    print(f"design {draw.design.id}  phase 1  seed {draw.seed}")
+    for k, n in sizes.items():
+        drawn = [d for d in draw.items if d.stratum == k]
+        print(f"  stratum {k}: {len(drawn)} of {n} items, each with probability {drawn[0].inclusion_prob}")
+    print(f"{len(draw.items)} items drawn")
     return 0
 
 
-def _sample_ids(path: Path) -> list[str]:
-    """A sample file: a JSON array of comment ids, or one id per line."""
-    import json
+def _wide_read(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
 
-    text = path.read_text()
-    try:
-        value = json.loads(text)
-    except json.JSONDecodeError:
-        return [line.strip() for line in text.splitlines() if line.strip()]
-    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
-        raise SystemExit(f"{path}: a sample is a JSON array of comment ids, or one id per line")
-    return value
+    items = wide.read_sample(_store(args), workers=args.workers)
+    for item in items:
+        _print_item(item)
+    print(f"{len(items)} items read")
+    return 0
 
 
-def _evidence_read(args: argparse.Namespace) -> int:
-    from requisite.evidence.frame import entries
-    from requisite.evidence.items import read_items
-    from requisite.evidence.regulations_gov import RegulationsGov
+def _show_labelled(done) -> None:  # noqa: ANN001
+    refused = sum(1 for j in done.judgments if j.distribution is None)
+    print(f"{len(done.judgments)} judgments, {refused} refused")
+    for item, why in done.unreadable.items():
+        print(f"  no judge asked about {item}: {why}")
+
+
+def _wide_label(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
+
+    _show_labelled(wide.label_phase1(_store(args), workers=args.workers, on_done=_progress))
+    return 0
+
+
+def _wide_stability(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
+
+    stability, unreadable = wide.test_stability(_store(args), workers=args.workers, on_done=_progress)
+    for t, st in stability.items():
+        print(f"{t}: {st.items} items, {st.stable_share:.0%} stable (S_arg >= 0.9 and S_prob >= 0.85), mean S_arg "
+              f"{st.mean_s_arg:.3f}, mean S_prob {st.mean_s_prob:.3f}, {st.refusals} refusals")  # fmt: skip
+    for item, why in unreadable.items():
+        print(f"  no judge asked about {item}: {why}")
+    return 0
+
+
+def _wide_gold_draw(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
 
     store = _store(args)
-    wanted = entries(store, _sample_ids(Path(args.sample)))
-    client = RegulationsGov()
-    try:
-        items = read_items(client, store, wanted, workers=args.workers)
-    finally:
-        client.close()
-    for item in items:
-        files = len(item.artifacts) - 1
-        print(f"{item.id}  {item.container}  {item.posted_at.isoformat()}  {item.submitter or '(no name published)'}  "
-              f"{files} file(s)  {len(item.text)} chars")  # fmt: skip
-        for u in item.unreadable:
-            print(f"  unreadable: {u}")
-    print(f"{len(items)} items read")
+    gold = wide.draw_gold(store)
+    print(f"design {gold.design.id}  phase 2 (gold)  seed {gold.seed}")
+    for stratum in dict.fromkeys(d.stratum for d in gold.items):
+        drawn = [d for d in gold.items if d.stratum == stratum]
+        print(f"  {stratum}: {len(drawn)} drawn, each with probability {drawn[0].inclusion_prob}")
+    print(f"{len(gold.items)} items drawn for gold labels")
+    return 0
+
+
+def _gold(args: argparse.Namespace) -> int:
+    from requisite.discovery import gold, wide
+
+    store = _store(args)
+    gold.label_session(store, wide.drawn(store, 2), wide.approved_objective(store), wide.measures(store),
+                       labeler=args.labeler)  # fmt: skip
     return 0
 
 
@@ -182,17 +214,23 @@ def main(argv: list[str] | None = None) -> int:
     case_args(w)
     w.add_argument("--as-of", required=True, help="the instant the frame is taken at, with its zone")
     w.set_defaults(run=_wide_frame)
-    ev = sub.add_parser("evidence", help="the public record retrieved and frozen (spec §7.2 step 1): a frame, its items")
-    esub = ev.add_subparsers(dest="step", required=True)
-    e = esub.add_parser("frame", help="run frame criteria against regulations.gov and freeze the frame they return")
-    case_args(e)
-    e.add_argument("--criteria", required=True, help="a FrameCriteria as JSON")
-    e.set_defaults(run=_evidence_frame)
-    e = esub.add_parser("read", help="read a sample of a frame's comments whole into items")
-    case_args(e)
-    e.add_argument("--sample", required=True, help="comment ids of this case's frame: a JSON array, or one per line")
-    e.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
-    e.set_defaults(run=_evidence_read)
+    steps = (
+        ("sample", "draw the phase-1 sample of the frozen frame, by the design's rule", _wide_sample, False),
+        ("read", "read the phase-1 sample's items whole and freeze them", _wide_read, True),
+        ("label", "the phase-1 judge's labels on every phase-1 item", _wide_label, True),
+        ("stability", "every judge configuration on the stability subsample (spec §2.1)", _wide_stability, True),
+        ("gold-draw", "draw the gold sample from phase 1, by the judge's probabilities", _wide_gold_draw, False),
+    )
+    for name, text, run, parallel in steps:
+        w = wsub.add_parser(name, help=text)
+        case_args(w)
+        if parallel:
+            w.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
+        w.set_defaults(run=run)
+    g = sub.add_parser("gold", help="label the gold sample blind, one item at a time (stop and resume at will)")
+    case_args(g)
+    g.add_argument("--labeler", required=True, help="who is labelling")
+    g.set_defaults(run=_gold)
     mk = sub.add_parser("market", help="the market lens, read-only (spec §10): Kalshi's filed record, F1's contracts")
     msub = mk.add_subparsers(dest="step", required=True)
     m = msub.add_parser("f1-draw", help="draw F1's filed contracts at an instant and print the rule's evidence")

@@ -224,3 +224,13 @@ def read_items(client: RegulationsGov, store: Store, entries: Sequence[FrameItem
     with ThreadPoolExecutor(max_workers=workers) as pool:
         reads = list(pool.map(lambda e: _fetch(client, once, e), entries))
     return [_item(store, r) for r in reads]
+
+
+def committed(store: Store, ids: Sequence[str]) -> dict[str, Item]:
+    """The items read for these frame entries, by id, each as first read. An item read again is a new record (its key
+    carries its content hash), and a sample's item is the one read and frozen when the sample was read."""
+    wanted, out = set(ids), {}
+    for item in store.all("item", Item):  # oldest first
+        if item.id in wanted and item.id not in out:
+            out[item.id] = item
+    return out

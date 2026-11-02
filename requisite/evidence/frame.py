@@ -27,6 +27,7 @@ rests on (searches, listings) is committed as an artifact, and the frame names t
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -113,10 +114,17 @@ def _when(value: Any) -> datetime | None:
     return instant(str(value)) if value else None
 
 
+def _runs(d: Entry, as_of: datetime) -> bool:
+    """Whether a document's comment period runs at as_of: it has started, where a start is given, and ends after."""
+    end, start = _when(d.attributes.get("commentEndDate")), _when(d.attributes.get("commentStartDate"))
+    return end is not None and end > as_of and (start is None or start <= as_of)
+
+
 def _open(documents: Sequence[Entry], as_of: datetime) -> tuple[bool, str]:
     for d in documents:
-        end, start = _when(d.attributes.get("commentEndDate")), _when(d.attributes.get("commentStartDate"))
-        if end is not None and end > as_of and (start is None or start <= as_of):
+        if _runs(d, as_of):
+            end = _when(d.attributes.get("commentEndDate"))
+            assert end is not None  # _runs
             return True, f"open: {d.id}'s comment period ends {end.isoformat()}, after as_of"
     return False, "not open: no document posted by as_of has a comment period running at as_of"
 
@@ -251,6 +259,33 @@ def _decide(
         status, why = _status(criteria.comment_status, [e for e in posted if not e.attributes.get("withdrawn")], as_of)
         out[d] = (status, why, len(withdrawn))
     return out
+
+
+def docket_documents(store: Store, frame: Frame, docket: FrameDocket) -> list[Entry]:
+    """A frame docket's documents posted by the frame's as_of, withdrawn ones set aside, rebuilt from the listing
+    artifacts the frame names for it, each as the last page that served it gave it (decided as take_frame decides)."""
+    pages: list[Artifact] = []
+    seen: dict[str, Entry] = {}
+    for art_id in docket.artifacts:
+        artifact = store.get("artifact", art_id, Artifact)
+        if artifact is None:
+            raise ValueError(f"frame {frame.id} names artifact {art_id}, which is not committed")
+        for e in json.loads(store.content(art_id)).get("data") or []:
+            if e.get("type") == "documents":
+                seen[str(e["id"])] = Entry(e, len(pages))
+        pages.append(artifact)
+    return [e for e in seen.values() if not e.attributes.get("withdrawn")
+            and observable_at(listed(pages[e.page], instant(str(e.attributes["postedDate"])), POSTED), frame.as_of,
+                              frame.retrieval_ended, frame.mode)]  # fmt: skip
+
+
+def measure_document(documents: Sequence[Entry], as_of: datetime) -> Entry | None:
+    """The pending measure a kept docket's comments answer (decisions, "F4's sample design"): its latest Proposed Rule
+    posted by as_of, or where it has none, the latest-posted document whose comment period runs at as_of. `documents`
+    are the docket's documents posted by as_of, withdrawn ones set aside (docket_documents)."""
+    proposals = [d for d in documents if d.attributes.get("documentType") == "Proposed Rule"]
+    pool = proposals or [d for d in documents if _runs(d, as_of)]
+    return max(pool, key=lambda d: (instant(str(d.attributes["postedDate"])), d.id)) if pool else None
 
 
 def frames(store: Store) -> list[Frame]:

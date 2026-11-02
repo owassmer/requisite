@@ -1,9 +1,8 @@
 """The frame and its read replay from cassettes alone: recorded once over the fixture transport into a fresh cassette
 directory (as the coordinator's live run records), then run again with the transport removed, into a fresh case, with no
-network and no OCR tool, giving the same frame, artifacts, extractions and items; and the CLI commands do the same, each
-run a second time reading everything from cassettes."""
+network and no OCR tool, giving the same frame, artifacts, extractions and items; and the flow's CLI steps do the same,
+each run a second time reading everything from cassettes."""
 
-import json
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -11,11 +10,12 @@ import pytest
 from fake_api import DOCKET, FakeAPI, comment_entry, fixture_world
 from test_frame import criteria
 
-from requisite import cassettes, cli
+from requisite import cassettes, cli, core
 from requisite.core import Artifact, Item
 from requisite.evidence import extract
-from requisite.evidence.frame import take_frame
+from requisite.evidence.frame import frame_gate, take_frame
 from requisite.evidence.items import read_items
+from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.store import Store
 
 CRITERIA = criteria(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final")
@@ -63,25 +63,31 @@ def test_a_frame_and_its_items_replay_from_cassettes_with_the_transport_removed(
     assert again.retrieval_ended - again.retrieval_started < timedelta(minutes=5)
 
 
-def test_the_cli_freezes_a_frame_and_reads_its_sample_from_cassettes_the_same_each_time(live, make_client, scan,
-                                                                                        monkeypatch, capsys, request):  # fmt: skip
+def test_the_flow_freezes_its_frame_through_the_gate_and_reads_its_sample_from_cassettes_the_same_each_time(
+    live, make_client, scan, monkeypatch, capsys, request
+):
+    # The frame is taken only by a frame proposal's tests gate, and the sample read is the design's draw: the CLI has no
+    # command that freezes hand-written criteria or reads hand-picked ids (decisions, "Discovery finds what it analyzes").
     frame, items, _ = record(live, make_client, scan)
     request.getfixturevalue("offline")
     monkeypatch.setattr(cassettes, "CASSETTES", live / "cassettes")
-    (live / "criteria.json").write_text(CRITERIA.model_dump_json())
-    (live / "sample.json").write_text(json.dumps([i.id for i in frame.items]))
-    case = ["--case-dir", str(live / "cli-case"), "--case", "wide"]
     runs = []
-    for _ in range(2):
-        assert cli.main(["evidence", "frame", *case, "--criteria", str(live / "criteria.json")]) == 0
-        assert cli.main(["evidence", "read", *case, "--sample", str(live / "sample.json")]) == 0
+    for n in range(2):
+        store = Store(live / f"cli-case-{n}", case="wide")
+        store.register_gate("frame", "tests", frame_gate(RegulationsGov))
+        proposal = store.submit_proposal(core.Proposal(
+            id="frame-fixture", case="wide", kind="frame", payload=CRITERIA.model_dump(mode="json"), author="fixture",
+            rationale="the fixture's criteria", status="proposed",
+        ))  # fmt: skip
+        assert proposal.status == "active"
+        case = ["--case-dir", str(live / f"cli-case-{n}"), "--case", "wide"]
+        assert cli.main(["wide", "sample", *case]) == 0
+        assert cli.main(["wide", "read", *case]) == 0
         runs.append(capsys.readouterr().out)
+        assert Store(live / f"cli-case-{n}", case="wide").all("item", Item) == items
     assert runs[0] == runs[1]
-    summary = json.loads(runs[0][: runs[0].index("\n}\n") + 2])
-    assert summary["frame"] == frame.id and summary["mode"] == "retrospective_reconstruction"
-    assert summary["items"] == 4 and summary["withdrawn"] == 1
+    assert f"design two_phase.{frame.id}  phase 1  seed " in runs[0]
+    assert "  stratum under_100: 4 of 4 items, each with probability 1" in runs[0]  # a frame this small is a census
     assert runs[0].rstrip().endswith("4 items read")
     assert f"{DOCKET}-0005  {DOCKET}  2026-05-19T04:00:00+00:00  United Airlines, Inc  1 file(s)" in runs[0]
     assert "unreadable: the comment's record: regulations.gov answered 404 for it" in runs[0]  # 0002 is listed, not served
-    shown = Store(live / "cli-case", case="wide")
-    assert shown.all("item", Item) == items

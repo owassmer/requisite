@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 
 from requisite import core
 from requisite.discovery import labels
+from requisite.evidence.items import committed as read_items_of
 from requisite.store import Refused, Store
 
 UNSURE, QUIT = "u", "q"
@@ -29,9 +30,10 @@ def pending(store: Store, draw: core.SampleDraw, question_ids: Callable[[core.It
     }
     order = list(draw.items)
     random.Random(draw.seed).shuffle(order)  # noqa: S311 (an order, not a secret)
+    have = read_items_of(store, [d.item for d in order])
     out = []
     for d in order:
-        item = store.get("item", d.item, core.Item)
+        item = have.get(d.item)
         if item is None:
             raise Refused(f"drawn item {d.item} is not committed")
         if any((d.item, q) not in done for q in question_ids(item)):
@@ -62,9 +64,9 @@ def label_session(
     write("\nPopulation definition (the first question refers to it):\n" + textwrap.fill(objective.population, 110))
     committed = 0
     labelled = {(g.item, g.question.id) for g in store.all("gold_label", core.GoldLabel) if g.design == draw.design}
+    have = read_items_of(store, [d.item for d in todo])
     for n, drawn in enumerate(todo, 1):
-        item = store.get("item", drawn.item, core.Item)
-        assert item is not None  # pending() checked
+        item = have[drawn.item]  # pending() checked
         write("\n" + "=" * 110)
         write(f"Item {n} of {len(todo)}  ·  {item.id}  ·  docket {item.container}  ·  posted {item.posted_at.date()}")
         write(f"Measure: {measures[item.container]}")
