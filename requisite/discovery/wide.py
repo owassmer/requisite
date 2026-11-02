@@ -434,27 +434,60 @@ def test_stability(
     return {t: labels.template_stability(t, js) for t, js in by_template.items()}, done.unreadable
 
 
+def unreadable(store: Store) -> dict[str, str]:
+    """The phase-1 items with no readable text, each with why: outside the run's readable scope (decisions, "F4 from the
+    labels to the leads")."""
+    return _states(store, [d.item for d in drawn(store, 1).items])[1]
+
+
 def predictions(store: Store) -> dict[str, tuple[float, float]]:
-    """Each phase-1 item's judged P(in_population) and P(exposure in EXPOSED), from its phase-1 judgments. An item
-    with no readable text, or a question the judge refused, has no prediction and is not in the result."""
+    """Each readable phase-1 item's judged P(in_population) and P(exposure in EXPOSED), from its phase-1 judgments
+    (decisions, "F4 from the labels to the leads"): a question the judge refused takes the mean of that question's
+    probability over the answered items of its phase-1 stratum. An item with no readable text is not in the result
+    (unreadable); a question not yet asked is an error, since the labels are a step of their own."""
     objective, ms = approved_objective(store), measures(store)
-    states, _ = _states(store, [d.item for d in drawn(store, 1).items])
+    draw = drawn(store, 1)
+    stratum = {d.item: d.stratum for d in draw.items}
+    states, _ = _states(store, [d.item for d in draw.items])
     spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
     phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
                               paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
     found: dict[tuple[str, str], core.Judgment] = {
         (j.question.id, j.state_hash): j for j in store.all("judgment", core.Judgment) if j.config == phase1
     }
-    out = {}
+    answered: dict[str, list[float | None]] = {}
+    unasked = []
     for st in states:
         qs = labels.questions(objective, ms, st.item)
         h = st.state.content_hash()
-        voice = found.get((qs["voice_in_population"].id, h))
-        exposure = found.get((qs["exposure_to_measure"].id, h))
-        if voice is None or exposure is None or voice.distribution is None or exposure.distribution is None:
-            continue
-        out[st.item.id] = (float(voice.distribution["in_population"]),
-                           float(sum(exposure.distribution.get(a, 0) for a in EXPOSED)))  # fmt: skip
+        pair: list[float | None] = []
+        for template, answers in (("voice_in_population", ("in_population",)), ("exposure_to_measure", EXPOSED)):
+            j = found.get((qs[template].id, h))
+            if j is None:
+                unasked.append(st.item.id)
+                break
+            pair.append(None if j.distribution is None else float(sum(j.distribution.get(a, 0) for a in answers)))
+        else:
+            answered[st.item.id] = pair
+    if unasked:
+        raise Refused(f"{len(unasked)} phase-1 item(s) are not labelled yet: run `wide label` ({', '.join(unasked[:5])})")
+    means: dict[tuple[str, int], float] = {}
+    for q in (0, 1):
+        for h in set(stratum.values()):
+            vals = [x for i, v in answered.items() if stratum[i] == h and (x := v[q]) is not None]
+            if vals:
+                means[(h, q)] = sum(vals) / len(vals)
+    out = {}
+    for item, pair in answered.items():
+        filled = []
+        for q in (0, 1):
+            v = pair[q]
+            if v is None:
+                if (stratum[item], q) not in means:
+                    raise Refused(f"the judge refused every item of stratum {stratum[item]} on one question")
+                v = means[(stratum[item], q)]
+            filled.append(v)
+        out[item] = (filled[0], filled[1])
     return out
 
 
@@ -482,13 +515,10 @@ def gold_coverage(store: Store) -> sampling.RatioCoverageReport:
     each phase-2 stratum's expected gold, denominator and numerator items, and the ratio interval's coverage if the
     judge were calibrated. It is a statement about the design under that label model, not about the frame's truth."""
     draw = drawn(store, 1)
-    f = predictions(store)
-    missing = [d.item for d in draw.items if d.item not in f]
-    if missing:
-        raise Refused(f"{len(missing)} phase-1 item(s) have no phase-1 prediction: {', '.join(missing[:10])}")
+    f = predictions(store)  # readable items: an unreadable one is known outside the scope, not drawn for gold
     rng = np_random.default_rng(seed(draw.content_hash(), "coverage"))
     cols: dict[str, tuple[list[int], list[float], list[int], list[float], list[float]]] = {}
-    for d in draw.items:
+    for d in (d for d in draw.items if d.item in f):
         voice, exposed = f[d.item]
         yd, fd, yn, fn, st = cols.setdefault(d.stratum, ([], [], [], [], []))
         in_voice = int(rng.random() < voice)
@@ -506,25 +536,22 @@ def gold_coverage(store: Store) -> sampling.RatioCoverageReport:
 
 
 def draw_gold(store: Store) -> core.SampleDraw:
-    """Step 8: the gold sample (sampling.draw_phase2), stratified within each phase-1 stratum by the judge's probability
-    that the item is in the estimand's numerator, cut at PHASE2_CUT. Every phase-1 item needs that probability."""
+    """Step 8: the gold sample (sampling.draw_phase2) of the readable phase-1 items, stratified within each phase-1
+    stratum by the judge's probability that the item is in the estimand's numerator, cut at PHASE2_CUT."""
     draw = drawn(store, 1)
     f = predictions(store)
-    missing = [d.item for d in draw.items if d.item not in f]
-    if missing:
-        raise Refused(f"{len(missing)} phase-1 item(s) have no phase-1 prediction (unread, unreadable or refused), so "
-                      f"the phase-2 strata are undefined for them: {', '.join(missing[:10])}")  # fmt: skip
-    strata = list(dict.fromkeys(d.stratum for d in draw.items))
+    readable = [d for d in draw.items if d.item in f]  # an unreadable item's labels are known: nothing to draw
+    strata = list(dict.fromkeys(d.stratum for d in readable))
     allocation = gold_allocation(strata)
-    stratifier = [f[d.item][0] * f[d.item][1] for d in draw.items]
+    stratifier = [f[d.item][0] * f[d.item][1] for d in readable]
     s = seed(draw.content_hash(), "phase2")
-    mask = sampling.draw_phase2(phase1_stratum=[d.stratum for d in draw.items], stratifier=stratifier,
+    mask = sampling.draw_phase2(phase1_stratum=[d.stratum for d in readable], stratifier=stratifier,
                                 phase2_cuts=[PHASE2_CUT], phase2_allocation=allocation, seed=s)  # fmt: skip
-    cell = [(d.stratum, int(v >= PHASE2_CUT)) for d, v in zip(draw.items, stratifier, strict=True)]
+    cell = [(d.stratum, int(v >= PHASE2_CUT)) for d, v in zip(readable, stratifier, strict=True)]
     held = {c: cell.count(c) for c in set(cell)}
     items = [core.DrawnItem(item=d.item, stratum=f"{c[0]}.bin{c[1]}",
                             inclusion_prob=Fraction(min(allocation[c], held[c]), held[c]))
-             for d, c, chosen in zip(draw.items, cell, mask, strict=True) if chosen]  # fmt: skip
+             for d, c, chosen in zip(readable, cell, mask, strict=True) if chosen]  # fmt: skip
     gold = core.SampleDraw(design=draw.design, phase=2, seed=s, items=items)
     store.commit("sample_draw", f"{gold.design.id}.phase2", gold)
     return gold
