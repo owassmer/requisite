@@ -24,6 +24,7 @@ def test_a_small_stratum_is_taken_whole_and_what_it_leaves_is_shared():
     assert allocate({"a": 10, "b": 5_000, "c": 5_001}, 1200) == {"a": 10, "b": 595, "c": 595}
     assert allocate({"a": 3, "b": 4}, 1200) == {"a": 3, "b": 4}  # a frame this small is a census
     assert allocate({"a": 500, "b": 500, "c": 500}, 1001) == {"a": 334, "b": 334, "c": 333}  # remainder in order
+    assert allocate({"a": 28, "b": 29, "c": 29}, 82) == {"a": 28, "b": 27, "c": 27}  # the remainder completes a
 
 
 @given(st.dictionaries(st.sampled_from("abcd"), st.integers(1, 3_000), min_size=1), st.integers(4, 2_000))
@@ -33,8 +34,9 @@ def test_an_allocation_fits_every_stratum_and_spends_the_budget(sizes, total):
     assert sum(n.values()) == min(total, sum(sizes.values()))
     partial = [n[k] for k in sizes if n[k] < sizes[k]]
     assert not partial or max(partial) - min(partial) <= 1  # every stratum not read whole gets an equal share
-    if partial:  # a stratum is read whole only where it is no bigger than the others' share
-        assert all(sizes[k] <= min(partial) for k in sizes if n[k] == sizes[k])
+    if partial:  # a stratum is read whole only where it is no bigger than the others' share, or than that share and
+        # the one item of the indivisible remainder it takes in band order (decisions, "F4's sample design")
+        assert all(sizes[k] <= min(partial) + 1 for k in sizes if n[k] == sizes[k])
 
 
 def test_the_gold_is_split_80_20_in_each_stratum_and_sums_to_its_budget():

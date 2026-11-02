@@ -1,5 +1,5 @@
 {
-  "source": "Resolvability fuzzing's two questions (spec §8.6 steps 4 and 5): the rendering check asks each atomic condition of a rendered packet, and resolution asks whether the contract resolves under its rules and that evidence. Ours, November 1, in spec §8.6's words.",
+  "source": "Resolvability fuzzing's two questions (spec §8.6 steps 4 and 5): the rendering check asks each atomic condition of a rendered packet, and resolution asks whether the contract resolves under its rules and that evidence. Ours, November 1, in spec §8.6's words. A contract whose procedure can end otherwise than YES or NO at expiration is asked with those outcomes among the answers (addendum A09 §10.3: YES, NO, contractual VOID, EXTENDED/PENDING and interpreter AMBIGUOUS are tested separately; A05 §5.1: AMBIGUOUS is the judge's, never the contract's VOID or EXTENDED): void where its rule for an unknown at expiry is void, extended where it is an extension, disputed where its conflict rule requires sources to agree. Each answer set is a template of its own, with its own frozen paraphrase set (the resolve_contract_* templates: worker on 001-3, November 1).",
   "templates": [
     {
       "id": "condition_holds", "version": 1, "task": "classify",
@@ -19,6 +19,63 @@
         {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
         {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
         {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine whether it resolves YES or NO", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract_void", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, is it void under its own rules, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "void", "meaning": "the contract's own rules make it void", "status": "not_established"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine the contract's outcome", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract_extended", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, is it extended under its own rules, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "extended", "meaning": "the contract's own rules extend it beyond its expiration", "status": "not_established"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine the contract's outcome", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract_disputed", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, is its result disputed under its own rules, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "disputed", "meaning": "the contract's own rules make the result disputed, because sources they require to agree disagree", "status": "contested"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine the contract's outcome", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract_void_disputed", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, is it void under its own rules, is its result disputed under its own rules, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "void", "meaning": "the contract's own rules make it void", "status": "not_established"},
+        {"value": "disputed", "meaning": "the contract's own rules make the result disputed, because sources they require to agree disagree", "status": "contested"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine the contract's outcome", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract_extended_disputed", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, is it extended under its own rules, is its result disputed under its own rules, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "extended", "meaning": "the contract's own rules extend it beyond its expiration", "status": "not_established"},
+        {"value": "disputed", "meaning": "the contract's own rules make the result disputed, because sources they require to agree disagree", "status": "contested"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine the contract's outcome", "status": "not_established"}
       ]
     }
   ]

@@ -188,6 +188,16 @@ def _f1_retrieve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _fuzz(args: argparse.Namespace) -> int:
+    from requisite.fuzz import run as fuzz
+
+    result, store = fuzz.from_case(Path(args.case), args.contract, prose=Path(args.prose) if args.prose else None,
+                                   reference=Path(args.reference) if args.reference else None,
+                                   providers=args.providers, workers=args.workers)  # fmt: skip
+    print(fuzz.summary(result, store))
+    return 0
+
+
 def _approve(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
@@ -280,6 +290,16 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--series", required=True, help="the harvested series' ticker")
     m.add_argument("--as-of", type=_instant, help="the draw's instant, where the series is harvested at more than one")
     m.set_defaults(run=_contract_read)
+    fz = sub.add_parser("fuzz", help="resolvability fuzzing (spec §8.6): a contract's prose tested against its IR")
+    fz.add_argument("contract", help="an active contract in the case (id, or id@version), or a ContractIR JSON file")
+    fz.add_argument("--case", required=True, help="the case's directory; the run's synthetic case is kept beside it")
+    fz.add_argument("--prose", help="a ProseDraft JSON file to test (default: the clause drafter's prose of the IR)")
+    fz.add_argument("--reference", help="a JSON list of observations for values the IR reads only through a "
+                                         "computation (default: a hundred steps of each one's precision)")
+    fz.add_argument("--providers", nargs="+", default=["openai_decisions", "clef", "jev"],
+                    choices=["openai_decisions", "clef", "jev"], help="the judges (default: all three)")
+    fz.add_argument("--workers", type=int, default=8, help="scenarios worked at once (default 8)")
+    fz.set_defaults(run=_fuzz)
     a = sub.add_parser("approve", help="a human decides at a gate (G1-G4) on one proposal, as it stands")
     case_args(a)
     a.add_argument("proposal")

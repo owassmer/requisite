@@ -64,14 +64,17 @@ with the boundary points of each comparison and the constraints the IR itself pl
 threshold, a repeated predicate, one observable read at related instants and ranges; `_implied`). A threshold over a
 numeric observable is stepped at its declared precision, a count at k - 1, k and k + 1, a cutoff instant at the
 comparison's resolution; a reading, a duration or a computed number declares no precision, so its threshold is stepped
-at the precision it is stated to (0.00 steps by a cent). The kernel then works on abstract condition values only; a
-scenario's outcome is always this module's `evaluate`.
+at the precision it is stated to (0.00 steps by a cent), and a duration's threshold within the window's length. The
+lowering also gives, for each observable its conditions compare at instants, the layout its constraints are over
+(`Layout`: the regions time is cut into and the classes of value), from which the fuzzer realizes any state the kernel
+finds as observations. The kernel then works on abstract condition values only; a scenario's outcome is always this
+module's `evaluate`.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_CEILING, ROUND_FLOOR, Context, Decimal, Inexact, localcontext
 from fractions import Fraction
@@ -1357,12 +1360,15 @@ class Lowered:
     constraints: what the IR itself makes impossible among its conditions (linked thresholds, repeated predicates, one
     observable's values at instants and over ranges), keyed by ids naming what each says; those over an observable's
     values mention other conditions of the kernel, "ir:<observable>:region<i>:class<k>", whose values the kernel's
-    completions give. comparisons: every comparison's boundary points."""
+    completions give. comparisons: every comparison's boundary points. layouts: for each observable whose values
+    conditions compare at instants, the regions and classes those constraints are over, from which a completion is
+    realized as observations (`Layout`)."""
 
     trigger: cov.Expr
     conditions: Mapping[str, str]
     constraints: Mapping[str, cov.Expr]
     comparisons: tuple[Comparison, ...]
+    layouts: Mapping[str, Layout] = field(default_factory=dict)
 
     def rounds(self) -> tuple[tuple[cov.BoundaryPoint, ...], ...]:
         """The boundary points split so that each round gives a condition one comparison, as the coverage kernel takes
@@ -1405,7 +1411,26 @@ def lower(ir: ContractIR, *, resolution: timedelta = timedelta(microseconds=1)) 
         conditions={k: a.kind for k, a in atoms.items()},
         constraints=_implied(atoms, kinds),
         comparisons=tuple(comparisons),
+        layouts={o: _layout(o, group, kinds[o]) for o, group in _reading_groups(atoms).items()},
     )
+
+
+def counted_days(window: TimeWindow) -> list[tuple[date, datetime, datetime]]:
+    """The calendar days a CountTrue over `window` counts, each with its start and end instants (as the evaluator
+    counts them)."""
+    _bounded(window, "a counted window")
+    return _days(window)
+
+
+def duration(a: datetime, b: datetime, unit: str, tz: str) -> Fraction:
+    """The length of [a, b) in a DurationIn's unit, as the evaluator measures it."""
+    return _measure(_utc(a), _utc(b), unit, tz)
+
+
+def determination(ir: ContractIR) -> datetime:
+    """The instant the contract's rule for an unknown at expiry can apply: its expiration, once its observation cutoff has
+    passed too; evaluated then, a contract is never pending (`_Clock.determination`)."""
+    return _Clock(_utc(ir.timing.expiration), _utc(ir.timing.observation_cutoff)).determination
 
 
 def _single_cmp(e: Any) -> Cmp | None:
@@ -1456,6 +1481,13 @@ def _comparisons(a: Any, kinds: Mapping[str, Observable], step: timedelta) -> li
             domain: tuple[Any, Any] = (None, None)
             if isinstance(e, ReadValue):
                 domain = (e.bands[0][0], e.bands[-1][1])
+            elif isinstance(e, DurationIn):
+                # A duration lies between zero and its window's whole length, in its unit (A09 §10.3: a boundary point
+                # outside the values the quantity can take is infeasible, never a scenario).
+                w = e.window
+                assert w.start is not None and w.end is not None
+                whole = _measure(_utc(w.start), _utc(w.end), e.unit, w.tz)
+                domain = (Decimal(0), _to_decimal(whole, ROUND_FLOOR))
             threshold(a.op, a.value, None, f"{e.id} {a.op} {a.value}", domain)
     elif isinstance(a, At):
         c = _single_cmp(a.expr)
@@ -1511,16 +1543,11 @@ def _implied(atoms: Mapping[str, Any], kinds: Mapping[str, Observable]) -> dict[
     - Repeated predicates: two conditions with one meaning are equal in every state."""
     lines: dict[str, list[tuple[str, str, Fraction]]] = {}
     domains: dict[str, tuple[str, Any]] = {}
-    readings: dict[str, list[tuple[str, Any]]] = {}
     for cid, a in atoms.items():
-        if isinstance(a, NumCmp) and isinstance(a.expr, ValueAt):
-            readings.setdefault(a.expr.observable, []).append((cid, a))
-        elif isinstance(a, NumCmp):
+        if isinstance(a, NumCmp) and not isinstance(a.expr, ValueAt):
             key = "num:" + _content(a.expr)
             lines.setdefault(key, []).append((cid, a.op, Fraction(a.value)))
             domains[key] = _num_domain(a.expr, kinds)
-        elif isinstance(a, At | By | Throughout) and (c := _single_cmp(a.expr)) is not None:
-            readings.setdefault(c.observable, []).append((cid, a))
     out: dict[str, cov.Expr] = {}
     for key, conds in lines.items():
         dom = domains[key]
@@ -1534,8 +1561,8 @@ def _implied(atoms: Mapping[str, Any], kinds: Mapping[str, Observable]) -> dict[
             reps = _representatives([t for _, _, t in conds], dom)
             vectors = {tuple(_holds(x, op, t) for _, op, t in conds) for x in reps}
         _constrain(out, key, [cid for cid, _, _ in conds], vectors)
-    for o, group in readings.items():
-        out.update(_readings(o, group, kinds[o], set(atoms)))
+    for o, group in _reading_groups(atoms).items():
+        out.update(_readings(_layout(o, group, kinds[o]), set(atoms)))
     # Repeated predicates: two atomic conditions with one meaning (different ids) are equal in every state.
     same: dict[str, list[str]] = {}
     for cid, a in atoms.items():
@@ -1551,28 +1578,110 @@ def _iff(a: cov.Expr, b: cov.Expr) -> cov.Expr:
 
 
 Region = tuple[datetime | None, datetime | None]  # (t, t) an instant; (a, b) the open interval between, None unbounded
+Bounds = tuple[datetime | None, bool, datetime | None, bool]  # low, low included, high, high included; None unbounded
 
 
-def _readings(o: str, group: list[tuple[str, Any]], obs: Observable, taken: set[str]) -> dict[str, cov.Expr]:
-    """Exactly which truth assignments the conditions reading observable `o` at instants allow.
+def _reading_groups(atoms: Mapping[str, Any]) -> dict[str, list[tuple[str, Any]]]:
+    """The atomic conditions that compare one observable's value at instants, by observable: At, By and Throughout over
+    a single comparison, and a published value compared (a NumCmp over a ValueAt)."""
+    groups: dict[str, list[tuple[str, Any]]] = {}
+    for cid, a in atoms.items():
+        if isinstance(a, NumCmp) and isinstance(a.expr, ValueAt):
+            groups.setdefault(a.expr.observable, []).append((cid, a))
+        elif isinstance(a, At | By | Throughout) and (c := _single_cmp(a.expr)) is not None:
+            groups.setdefault(c.observable, []).append((cid, a))
+    return groups
+
+
+@dataclass(frozen=True)
+class Layout:
+    """How the conditions comparing one observable's values at instants are cut, for the exact constraint `_readings`
+    states and for realizing any state it allows.
 
     Time is cut at every instant the conditions name (At's instant, a published value's instant, a By's bounds, a
-    Throughout's window) into regions: those instants, and the open intervals between them. Instants in one interval
+    Throughout's window) into `regions`: those instants, and the open intervals between them. Instants in one interval
     belong to the same bounds, so a condition's truth depends only on which classes of value appear in each region, a
-    class being a run of values every comparison treats alike. An "other" condition of the coverage kernel says whether
-    some instant of a region has a value of a class; an instant has one value, so a region that is an instant has at most
-    one class. Each condition is then a formula over them: At (and a compared published value) is the class at its
-    instant, which has a value; By, that some instant within its bounds has a satisfying value; Throughout, that some
-    instant within its window has a value and none fails. The kernel states are two-valued, so each condition is
-    established: a By or Throughout has some instant within its bounds. Any assignment satisfying these is realized by
-    placing one instant per class in each region, and every set of observations gives one, so the constraint is exact. A
-    group of one condition needs no other conditions: it is constrained only where its comparisons make it constant."""
-    def bounds(a: Any) -> tuple[datetime | None, bool, datetime | None, bool]:
+    class being a run of values every comparison treats alike, standing for the run by one of its values (`keys`, as the
+    comparisons read it; `classes`, as an observation states it). The kernel variable `variable(i, k)` says that some
+    instant of region i has class k's value; `used` are the regions within some condition's bounds, the only ones with
+    variables, and a group of one condition has none. A state is realized by one observation per true variable: class
+    k's value at `instant(i)`."""
+
+    observable: str
+    value_type: str
+    conditions: tuple[str, ...]
+    bounds: Mapping[str, Bounds]
+    comparisons: Mapping[str, tuple[str, Any]]
+    every: frozenset[str]  # the Throughout conditions: some instant of the window has a value, and none fails
+    regions: tuple[Region, ...]
+    used: tuple[int, ...]
+    keys: tuple[Any, ...]
+    classes: tuple[CmpValue, ...]
+
+    def variable(self, i: int, k: int) -> str:
+        return f"ir:{self.observable}:region{i}:class{k}"
+
+    def within(self, i: int, condition: str) -> bool:
+        """Whether region i lies within the condition's bounds."""
+        lo, lo_closed, hi, hi_closed = self.bounds[condition]
+        a, z = self.regions[i]
+        if a is not None and a == z:
+            return _in(a, lo, lo_closed, hi, hi_closed)
+        return (lo is None or (a is not None and a >= lo)) and (hi is None or (z is not None and z <= hi))
+
+    def satisfies(self, condition: str, k: int) -> bool:
+        """Whether class k's value satisfies the condition's comparison."""
+        op, t = self.comparisons[condition]
+        x = self.keys[k]
+        if self.value_type in ("number", "date"):
+            return _holds(x, op, t)
+        return (x == t) == (op == "==")
+
+    def region_of(self, t: datetime) -> int:
+        t = _utc(t)
+        for i, (a, z) in enumerate(self.regions):
+            if a is not None and a == z:
+                if t == a:
+                    return i
+            elif (a is None or t > a) and (z is None or t < z):
+                return i
+        raise AssertionError("the regions partition time")
+
+    def instant(self, i: int) -> datetime:
+        """An instant of region i (the first of `instants`)."""
+        return self.instants(i, 1)[0]
+
+    def instants(self, i: int, m: int) -> tuple[datetime, ...]:
+        """m distinct instants of region i, one for each class placed there: the instant itself (a region that is an
+        instant holds one value), m points spread evenly across an interval (each at a whole second where that keeps
+        it inside and distinct), or whole days beyond an unbounded end."""
+        a, z = self.regions[i]
+        if a is not None and a == z:
+            if m > 1:
+                raise IRError(f"region {i} of {self.observable} is an instant, which has one value, not {m}")
+            return (a,)
+        if a is None:
+            assert z is not None  # the first region ends at the first instant
+            return tuple(z - timedelta(days=j + 1) for j in range(m))
+        if z is None:
+            return tuple(a + timedelta(days=j + 1) for j in range(m))
+        out: list[datetime] = []
+        for j in range(m):
+            t = a + (z - a) * (j + 1) / (m + 1)
+            whole = t.replace(microsecond=0)
+            out.append(whole if a < whole < z and whole not in out else t)
+        if len(set(out)) != m or not all(a < t < z for t in out):
+            raise IRError(f"region {i} of {self.observable} is too short for {m} distinct instants")
+        return tuple(out)
+
+
+def _layout(o: str, group: list[tuple[str, Any]], obs: Observable) -> Layout:
+    def bounds(a: Any) -> Bounds:
         if isinstance(a, At):
             return (_utc(a.at), True, _utc(a.at), True)
         if isinstance(a, NumCmp):
             e = a.expr
-            assert isinstance(e, ValueAt)  # _implied groups only a compared published value here
+            assert isinstance(e, ValueAt)  # _reading_groups groups only a compared published value here
             return (_utc(e.at), True, _utc(e.at), True)
         if isinstance(a, By):
             return (_utc(a.since) if a.since else None, bool(a.since_closed), _utc(a.deadline), a.closed)
@@ -1585,64 +1694,86 @@ def _readings(o: str, group: list[tuple[str, Any]], obs: Observable, taken: set[
         c = a.expr
         return (c.op, _ordinal(c.value) if isinstance(c.value, Number | OnDay) else c.value.value)
 
-    numeric = obs.value_type in ("number", "date")
     thresholds = [comparison(a)[1] for _, a in group]
-    classes: list[Any]
-    if numeric:
-        domain = ("grid", _precision(obs)) if obs.value_type == "number" else ("integer", None)
-        classes = _representatives(thresholds, domain)
+    keys: list[Any]
+    classes: list[CmpValue]
+    if obs.value_type == "number":
+        keys = _representatives(thresholds, ("grid", _precision(obs)))
+        assert obs.precision is not None
+        classes = [Number(value=_to_decimal(x).quantize(obs.precision)) for x in keys]
+    elif obs.value_type == "date":
+        keys = _representatives(thresholds, ("integer", None))
+        classes = [OnDay(value=date.fromordinal(int(x))) for x in keys]
     elif obs.value_type == "bool":
-        classes = [True, False]
+        keys = [True, False]
+        classes = [Flag(value=True), Flag(value=False)]
     else:
-        classes = [*dict.fromkeys(thresholds), object()]  # each named value, and one none of them names
-
-    def sat(a: Any, x: Any) -> bool:
-        op, t = comparison(a)
-        if numeric:
-            return _holds(x, op, t)
-        return (x == t) == (op == "==")
-
-    if len(group) == 1:
-        cid, a = group[0]
-        values = {sat(a, x) for x in classes}
-        if len(values) == 2:
-            return {}
-        return {f"ir:{o}:{cid}:constant": cov.Var(cid) if True in values else cov.Not(cov.Var(cid))}
-
+        named = list(dict.fromkeys(thresholds))
+        keys = [*named, None]  # each named value, and one none of them names
+        other = "a value other than " + " or ".join(named)
+        while other in named:
+            other += "'"
+        classes = [*(Category(value=x) for x in named), Category(value=other)]
     instants = sorted({t for _, a in group for t in bounds(a)[0::2] if t is not None})
     regions: list[Region] = [(None, instants[0])]
     for i, t in enumerate(instants):
         regions += [(t, t), (t, instants[i + 1] if i + 1 < len(instants) else None)]
+    lay = Layout(
+        observable=o,
+        value_type=obs.value_type,
+        conditions=tuple(cid for cid, _ in group),
+        bounds={cid: bounds(a) for cid, a in group},
+        comparisons={cid: comparison(a) for cid, a in group},
+        every=frozenset(cid for cid, a in group if isinstance(a, Throughout)),
+        regions=tuple(regions),
+        used=(),
+        keys=tuple(keys),
+        classes=tuple(classes),
+    )
+    used = tuple(sorted({i for cid in lay.conditions for i in range(len(regions)) if lay.within(i, cid)}))
+    return replace(lay, used=used)
 
-    def within(r: Region, b: tuple[datetime | None, bool, datetime | None, bool]) -> bool:
-        lo, lo_closed, hi, hi_closed = b
-        a, z = r
-        if a is not None and a == z:
-            return _in(a, lo, lo_closed, hi, hi_closed)
-        return (lo is None or (a is not None and a >= lo)) and (hi is None or (z is not None and z <= hi))
+
+def _readings(lay: Layout, taken: set[str]) -> dict[str, cov.Expr]:
+    """Exactly which truth assignments the conditions reading one observable at instants allow, over its `Layout`.
+
+    An instant has one value, so a region that is an instant has at most one class. Each condition is then a formula
+    over the layout's variables: At (and a compared published value) is the class at its instant, which has a value; By,
+    that some instant within its bounds has a satisfying value; Throughout, that some instant within its window has a
+    value and none fails. The kernel states are two-valued, so each condition is established: a By or Throughout has
+    some instant within its bounds. Any assignment satisfying these is realized by placing one instant per class in each
+    region, and every set of observations gives one, so the constraint is exact. A group of one condition needs no other
+    conditions: it is constrained only where its comparisons make it constant."""
+    o = lay.observable
+    if len(lay.conditions) == 1:
+        cid = lay.conditions[0]
+        values = {lay.satisfies(cid, k) for k in range(len(lay.keys))}
+        if len(values) == 2:
+            return {}
+        return {f"ir:{o}:{cid}:constant": cov.Var(cid) if True in values else cov.Not(cov.Var(cid))}
 
     def var(i: int, k: int) -> cov.Var:
-        name = f"ir:{o}:region{i}:class{k}"
+        name = lay.variable(i, k)
         if name in taken:
             raise IRError(f"an IR node id, {name!r}, is the name of a coverage variable the lowering needs")
         return cov.Var(name)
 
     out: dict[str, cov.Expr] = {}
-    used = sorted({i for _, a in group for i, r in enumerate(regions) if within(r, bounds(a))})
-    for i in used:
-        if regions[i][0] is not None and regions[i][0] == regions[i][1]:
-            for k in range(len(classes)):
-                for m in range(k + 1, len(classes)):
+    n = len(lay.keys)
+    for i in lay.used:
+        if lay.regions[i][0] is not None and lay.regions[i][0] == lay.regions[i][1]:
+            for k in range(n):
+                for m in range(k + 1, n):
                     out[f"ir:{o}:region{i}:one:{k}:{m}"] = cov.Or(cov.Not(var(i, k)), cov.Not(var(i, m)))
-    for cid, a in group:
-        inside = [i for i in used if within(regions[i], bounds(a))]
-        some = [var(i, k) for i in inside for k in range(len(classes))]
+    for cid in lay.conditions:
+        inside = [i for i in lay.used if lay.within(i, cid)]
+        some = [var(i, k) for i in inside for k in range(n)]
         out[f"ir:{o}:{cid}:established"] = cov.Or(*some)
-        if isinstance(a, Throughout):
-            failing = [var(i, k) for i in inside for k, x in enumerate(classes) if not sat(a, x)]
+        if cid in lay.every:
+            failing = [var(i, k) for i in inside for k in range(n) if not lay.satisfies(cid, k)]
             out[f"ir:{o}:{cid}"] = _iff(cov.Var(cid), cov.Not(cov.Or(*failing)))
         else:
-            holding = [var(i, k) for i in inside for k, x in enumerate(classes) if sat(a, x)]
+            holding = [var(i, k) for i in inside for k in range(n) if lay.satisfies(cid, k)]
             out[f"ir:{o}:{cid}"] = _iff(cov.Var(cid), cov.Or(*holding))
     return out
 

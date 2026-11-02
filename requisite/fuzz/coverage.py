@@ -697,6 +697,55 @@ def count_points(condition: str, op: Op, k: int, days: int) -> tuple[BoundaryPoi
     return threshold_points(condition, op, k, 1, domain=(0, days))
 
 
+# ---------------------------------------------------------------- feasible states on request
+
+
+class Feasible:
+    """Queries of one account's feasible states, by the account's own search path, with its engine held open across
+    queries (a context manager). A scenario generator asks it for states to build: a feasible state with some conditions
+    fixed, trigger or other (a boundary point needs its condition's value and a class of value in a region), and every
+    feasible state of a small trigger (to choose the fewest scenarios meeting every obligation)."""
+
+    def __init__(self, account: Coverage) -> None:
+        self.problem = _Problem.of(account.trigger, account.constraints)
+        self.index = self.problem.index()
+        self.cids = tuple(self.problem.constraints)
+        self.method = account.method
+        self._engine: _Enumeration | _Sat | None = None
+
+    def __enter__(self) -> Feasible:
+        self._engine = self.problem.engine(self.method).__enter__()
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        if self._engine is not None:
+            self._engine.__exit__(*exc)
+            self._engine = None
+
+    def complete(self, fixed: Mapping[str, bool]) -> tuple[State, State] | None:
+        """A feasible state of the trigger's conditions, and its completion, with the given conditions (trigger or other)
+        at the given values; None where the constraints allow none."""
+        assert self._engine is not None, "use Feasible as a context manager"
+        unknown = sorted(set(fixed) - set(self.index))
+        if unknown:
+            raise ValueError(f"conditions {unknown} are neither the trigger's nor its constraints'")
+        found = self._engine.satisfying({self.index[c]: v for c, v in fixed.items()}, self.cids)
+        if not isinstance(found, int):
+            return None
+        return self.problem.state(found), self.problem.completion(found)
+
+    def states(self) -> tuple[tuple[State, State], ...]:
+        """Every feasible state of the trigger's conditions, each with a completion, in the order of their assignments
+        read as binary numbers (the first condition the lowest bit)."""
+        n = len(self.problem.conditions)
+        out = []
+        for bits in range(1 << n):
+            found = self.complete({c: bool(bits >> i & 1) for i, c in enumerate(self.problem.conditions)})
+            if found is not None:
+                out.append(found)
+        return tuple(out)
+
+
 # ---------------------------------------------------------------- which obligations scenarios meet
 
 

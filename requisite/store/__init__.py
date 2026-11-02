@@ -103,6 +103,23 @@ class Committed:
     committed_at: datetime
 
 
+def open_case(root: Path, *, clock: Callable[[], datetime] | None = None) -> Store:
+    """An existing case's store, opened as the case it was created as: its name and whether it is synthetic are its
+    own first record."""
+    path = Path(root) / "requisite.db"
+    if not path.exists():
+        raise Refused(f"no case is committed at {root}")
+    db = sqlite3.connect(path)
+    try:
+        row = db.execute("select body from records where kind = 'case' and key = 'meta'").fetchone()
+    finally:
+        db.close()
+    if row is None:
+        raise Refused(f"{root} holds no case record")
+    meta = json.loads(row[0])
+    return Store(Path(root), case=str(meta["case"]), synthetic=bool(meta["synthetic"]), clock=clock)
+
+
 class Store:
     """One case's committed state, under `root`: `requisite.db` and `blobs/`. `synthetic` marks a synthetic case (spec
     I4: fuzzing scenarios and simulations); a real case admits no synthetic artifact or claim, and a synthetic case no

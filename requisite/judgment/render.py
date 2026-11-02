@@ -28,6 +28,7 @@ from requisite.core import (
     JudgmentState,
     Paraphrase,
     SyntheticClaim,
+    SyntheticJudgmentState,
     TimeWindow,
 )
 
@@ -76,20 +77,25 @@ def _when(at: datetime | None) -> str:
 
 
 def observed_lines(
-    state: JudgmentState, claims: Mapping[str, Claim | SyntheticClaim], artifacts: Mapping[str, Any]
+    state: JudgmentState | SyntheticJudgmentState,
+    claims: Mapping[str, Claim | SyntheticClaim],
+    artifacts: Mapping[str, Any],
 ) -> list[ObservedLine]:
-    """The state's observed claims, labelled [C1], [C2] ... in the order the state lists them."""
+    """The state's observed claims, labelled [C1], [C2] ... in the order the state lists them. A synthetic case's
+    document carries its own publication date in its text, as a fuzzing packet's documents do (requisite/fuzz/run.py),
+    so its line says the date is as the document states it: the judge reads a packet as the evidence of the world it
+    renders, and the quarantine is the type's (I4), not a label put before the judge."""
     lines = []
     for i, cid in enumerate(state.observed, 1):
         claim = claims[cid]
         artifact = artifacts.get(claim.artifact)
-        published = _when(artifact.published_at) if isinstance(artifact, Artifact) else "synthetic"
+        published = _when(artifact.published_at) if isinstance(artifact, Artifact) else "as stated in the document"
         lines.append(ObservedLine(f"C{i}", claim.text, claim.authority, published, claim.artifact[-12:]))
     return lines
 
 
 def render_state(
-    state: JudgmentState,
+    state: JudgmentState | SyntheticJudgmentState,
     render: Render,
     *,
     claims: Mapping[str, Claim | SyntheticClaim],

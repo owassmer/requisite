@@ -219,3 +219,42 @@ def test_the_western_grazers_coverage_witnesses_are_settled_by_the_evaluator():
     for a in account.accounts:
         assert realized(a.witness.fired) == "resolved_yes", a.condition
         assert realized(a.witness.not_fired) == "resolved_no", a.condition
+
+
+def test_a_durations_boundary_points_lie_within_its_window():
+    # A duration lies between zero and its window's length: 25 hours in a 24-hour window is no value it can take, so
+    # that boundary point is infeasible, never a scenario (A09 §10.3).
+    window = c.TimeWindow(start=T0, end=T0 + timedelta(days=1), start_closed=True, end_closed=False)
+    hot = c.DurationIn(id="hot", expr=c.Cmp(id="warm", observable="x", op=">", value=num(30)), window=window, unit="hour")
+    lowered = lower(contract(c.NumCmp(id="day", expr=hot, op="!=", value=D(24))))
+    (comp,) = lowered.comparisons
+    assert [(p.value, p.in_domain) for p in comp.points] == [(D(23), True), (D(24), True), (D(25), False)]
+    account = cov.coverage(lowered.trigger, lowered.constraints, comp.points)
+    assert [pa.feasible for pa in account.points] == [True, True, False]
+
+
+@settings(max_examples=200, deadline=None)
+@given(contracts(decidable=True))
+def test_every_feasible_state_of_an_observables_conditions_is_realized_by_its_layout(ir):
+    # The lowering's claim: any assignment its constraints allow is realized by placing one value of each class present
+    # in each region, at an instant of that region. Every feasible state the kernel finds, so placed, is settled by the
+    # evaluator to exactly that state for each condition of the layout.
+    lowered = lower(ir)
+    nodes = {n.id: n for n in c.walk(ir.trigger)}
+    for lay in lowered.layouts.values():
+        if len(lay.conditions) < 2:
+            continue
+        constraints = {k: v for k, v in lowered.constraints.items() if k.startswith(f"ir:{lay.observable}:")}
+        group = cov.And(*(cov.Var(x) for x in lay.conditions))  # any expression mentioning exactly the conditions
+        account = cov.coverage(group, constraints)
+        with cov.Feasible(account) as feas:
+            for state, completion in feas.states():
+                done = dict(completion)
+                placed = {i: [k for k in range(len(lay.keys)) if done.get(lay.variable(i, k))] for i in lay.used}
+                records = [obs(lay.classes[k].value, t, oid=lay.observable, src=src, synthetic=False)
+                           for i, ks in placed.items() if ks for k, t in zip(ks, lay.instants(i, len(ks)), strict=True)
+                           for src in (["a", "b"] if lay.observable == "y" else ["a"])]  # fmt: skip
+                for cid, want in state:
+                    alone = ir.model_copy(update={"trigger": nodes[cid]})
+                    got = evaluate(alone, records, {}, at=T0 + timedelta(days=12)).trigger_truth
+                    assert got is (Kleene.TRUE if want else Kleene.FALSE), (cid, state, done)
