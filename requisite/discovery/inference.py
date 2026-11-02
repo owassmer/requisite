@@ -332,15 +332,17 @@ def _assemble(c: _Cells, est: _CellEstimates, *, unit: str, lam: float, lam_rule
 
     estimate = float(est_h.sum())
     v1, v2 = float(v1_h.sum()), float(v2_h.sum())
+    def stratum_interval(i: int) -> tuple[float, float]:
+        lo, hi = bounds(float(est_h[i]), float(dlo_h[i]), float(dhi_h[i]), float(v1_h[i]))
+        return (float(lo / W[i]), float(hi / W[i]))
+
     by_stratum = tuple(
         StratumMean(
             stratum=name,
             frame_size=int(c.frame_sizes[i]),
             estimate=float(est_h[i] / W[i]),
             variance=float((v1_h[i] + v2_h[i]) / W[i] ** 2),
-            interval=tuple(  # type: ignore[arg-type]
-                x / W[i] for x in bounds(float(est_h[i]), float(dlo_h[i]), float(dhi_h[i]), float(v1_h[i]))
-            ),
+            interval=stratum_interval(i),
         )
         for i, name in enumerate(c.names)
     )

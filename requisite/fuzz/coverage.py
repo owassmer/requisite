@@ -1,22 +1,27 @@
 """Feasible MC/DC coverage of a trigger under world constraints, and boundary values (spec §8.6 step 1; addendum A09).
 
 The trigger and the world constraints arrive in a small boolean form defined here: ``Var`` for an atomic condition,
-``Not``, ``And`` and ``Or``. The contract IR lowers into it, one variable per atomic condition. A state assigns each
-atomic condition true or false; it is feasible when every constraint holds in it.
+``Not``, ``And`` and ``Or``. The contract IR lowers into it, one variable per atomic condition. The trigger's conditions
+are the variables it mentions. A constraint may also mention conditions the trigger does not (a proposition that links
+two trigger conditions); those are the *other* conditions. A state assigns each of the trigger's conditions true or
+false, and it is feasible when some assignment of the other conditions satisfies every constraint. Each feasible state
+the account shows comes with such an assignment, its completion: the certificate that it is feasible, checkable by
+evaluating the constraints. Witnesses, redundancy and groups are over the trigger's conditions; in each state the other
+conditions take any values the constraints allow.
 
-For each atomic condition x_i the account is exact, with no third case (A09 §10.2):
+For each of the trigger's conditions x_i the account is exact, with no third case (A09 §10.2):
 
 - a feasible unique-cause witness: two feasible states that differ in x_i alone and on which the trigger differs; or
-- none exists. By definition that means the trigger, on the feasible states, is a function of the other conditions:
-  x_i has no independent effect under the stated constraints, so it is redundant under them. A linked threshold or a
-  repeated predicate is one case of this, through the constraints. The proof is kept: the exhaustive search over every
-  state, or the solver's UNSAT.
+- none exists. By definition that means the trigger, on the feasible states, is a function of the other trigger
+  conditions: x_i has no independent effect under the stated constraints, so it is redundant under them. A linked
+  threshold or a repeated predicate is one case of this, through the constraints. The proof is kept: the exhaustive
+  search over every assignment, or the solver's UNSAT.
 
 Redundancy is per condition, given the others: two conditions can each be redundant while removing both changes the
 trigger (A == B under A AND B). So the account also gives, completely, the minimal groups of redundant conditions whose
-joint removal changes the trigger on the feasible states, each with two feasible states that agree on every other
-condition and differ in outcome. Any set of redundant conditions containing no group can be removed together; no other
-can. The search is exponential only in the number of redundant conditions, and always runs to completion.
+joint removal changes the trigger on the feasible states, each with two feasible states that agree on every condition
+outside the group and differ in outcome. A set of redundant conditions can be removed together exactly when it contains
+no group. The search is exponential only in the number of redundant conditions, and always runs to completion.
 
 Two findings about the whole trigger come first: constraints with no feasible state, and a trigger constant on the
 feasible states (it never fires, or always fires). Either makes every per-condition statement vacuous, so neither is
@@ -24,18 +29,22 @@ reported as conditions being removable.
 
 Boundary values (spec §8.6 step 1; A09 §10.3) are made for numeric thresholds at their declared precision, temporal
 cutoffs at the exact instant and its neighbours at the comparison's resolution, and counts at k - 1, k and k + 1. A
-boundary point fixes the value of the atomic condition its comparison defines; where no feasible state has that value
+boundary point fixes the value of the trigger condition its comparison defines; where no feasible state has that value
 the point is infeasible, and the reason kept is every minimal set of constraints that excludes it.
 
 Given scenarios, ``meets`` says which obligations they meet, which they do not, and which no feasible scenario can meet
-(A09: store uncovered and infeasible obligations explicitly). An infeasible scenario meets nothing.
+(A09: store uncovered and infeasible obligations explicitly). The obligations are each witnessed condition's
+independence, each group's joint effect (the coverage a coupled group can have, since none of its conditions has an
+independent one), and each boundary point. An infeasible scenario meets nothing.
 
-Search is by enumeration of all 2^n states up to ``ENUMERATE_UP_TO`` conditions and by SAT (python-sat) above. The
-exhaustive search is its own proof, which a reader can check without trusting a solver, and up to 10 conditions it
-costs a few milliseconds; past that it doubles with each condition while SAT stays under a millisecond. Measured on
-random triggers over every condition with n/2 implication constraints, median of five, the whole account took 3.5 ms by
-enumeration against 0.2 ms by SAT at 10 conditions, 22 ms against 0.3 ms at 12, 380 ms against 0.4 ms at 16. The size
-is a parameter, so either path can be forced.
+Search is by enumeration of every assignment while the trigger's and the other conditions number at most
+``ENUMERATE_UP_TO``, and by SAT (python-sat) above. Both are exact; they differ in their proof and their cost. The
+exhaustive search is its own proof, which a reader can check without trusting a solver, and its cost doubles with each
+condition, while SAT's barely moves. Measured on random triggers over every condition, with n/2 implication constraints
+and one boundary point the constraints exclude (so the minimal reasons are searched too), the median whole account took
+3 ms by enumeration against 0.4 ms by SAT at 10 conditions, 13 ms against 0.4 ms at 12, and 260 ms against 0.6 ms at
+16. Ten keeps the checkable proof for every trigger of up to ten conditions, at a few milliseconds, and stops before
+the doubling makes enumeration the slow part of a fuzzing run. The size is a parameter, so either path can be forced.
 """
 
 from __future__ import annotations
@@ -122,7 +131,7 @@ def truth(expr: Expr, state: Mapping[str, bool]) -> bool:
 
 
 def _compile(expr: Expr, index: Mapping[str, int]) -> Callable[[int], bool]:
-    """The expression as a function of a state packed into an int, bit i holding condition i."""
+    """The expression as a function of an assignment packed into an int, bit i holding the condition indexed i."""
     if isinstance(expr, Var):
         bit = 1 << index[expr.name]
         return lambda s: bool(s & bit)
@@ -137,24 +146,27 @@ def _compile(expr: Expr, index: Mapping[str, int]) -> Callable[[int], bool]:
 
 # ---------------------------------------------------------------- results
 
-State = tuple[tuple[str, bool], ...]  # each condition with its value, in the account's condition order
+State = tuple[tuple[str, bool], ...]  # each condition with its value, in the account's order of those conditions
 
 
 @dataclass(frozen=True)
 class Pair:
-    """Two feasible states on which the trigger differs: it does not fire on the first and fires on the second."""
+    """Two feasible states of the trigger's conditions on which the trigger differs: it does not fire on the first and
+    fires on the second. ``completions`` gives, for each, values of the other conditions under which every constraint
+    holds (empty when the constraints mention only trigger conditions)."""
 
     not_fired: State
     fired: State
+    completions: tuple[State, State]
 
 
 @dataclass(frozen=True)
 class Exhaustive:
-    """Shown by enumeration: every state was evaluated, and none (or no pair) answered the query."""
+    """Shown by enumeration: every assignment was evaluated, and none (or no pair) answered the query."""
 
-    states: int  # 2^n, every assignment of the n conditions
-    feasible: int  # the states that met the query's requirements: zero when it asked for a state
-    pairs: int  # for a pair query, the pairs of distinct feasible states it compared, each with equal outcomes
+    assignments: int  # 2^(n + m): every assignment of the trigger's n conditions and the m other conditions
+    feasible: int  # a pair query: the feasible states of the trigger's conditions; a state query: zero, none met it
+    pairs: int  # a pair query: the pairs of feasible states agreeing where it required, each with equal outcomes
 
 
 @dataclass(frozen=True)
@@ -187,7 +199,7 @@ class Group:
     """A minimal set of redundant conditions whose joint removal changes the trigger on the feasible states."""
 
     conditions: frozenset[str]
-    pair: Pair  # two feasible states that agree on every condition outside the group and differ in outcome
+    pair: Pair  # two feasible states that agree on every trigger condition outside the group and differ in outcome
 
 
 @dataclass(frozen=True)
@@ -197,6 +209,7 @@ class Finding:
     kind: Literal["no_feasible_state", "never_fires", "always_fires"]
     proof: Proof  # no feasible state at all, or no two feasible states with different outcomes
     example: State | None  # a constant trigger: a feasible state, on which it takes its one value
+    completion: State  # the example's values of the other conditions, under which every constraint holds
     excluded_by: tuple[frozenset[str], ...]  # no feasible state: every minimal set of constraint ids with none
 
 
@@ -212,17 +225,38 @@ _OPS: dict[str, Callable[[Any, Any], bool]] = {
 }
 
 
+def _instant(v: Any) -> Any:
+    """Values compared as what they mean: an aware datetime as its UTC instant, so that wall-clock times in one zone
+    across a daylight-saving change compare by instant (Python compares same-zone datetimes by wall clock)."""
+    return v.astimezone(UTC) if isinstance(v, datetime) else v
+
+
 @dataclass(frozen=True)
 class BoundaryPoint:
-    """A value at or beside a comparison's boundary, and the truth it gives the condition the comparison defines."""
+    """A value at or beside a comparison's boundary. The truth it gives the condition the comparison defines, and
+    whether it lies in the comparison's domain, are computed from the point, so they cannot disagree with it."""
 
     condition: str
-    op: str
+    op: Op
     threshold: Value
     offset: int  # -1, 0 or +1 steps (precision, resolution or one count) from the threshold
     value: Value
-    holds: bool  # the condition's value at this point: (value op threshold)
-    in_domain: bool  # whether the value lies in the comparison's declared domain
+    domain: tuple[Value | None, Value | None] = (None, None)  # inclusive bounds on the values the quantity can take
+
+    def __post_init__(self) -> None:
+        if self.op not in _OPS:
+            raise ValueError(f"comparison {self.op!r} is not one of {sorted(_OPS)}")
+
+    @property
+    def holds(self) -> bool:
+        """The condition's value at this point: (value op threshold)."""
+        return _OPS[self.op](_instant(self.value), _instant(self.threshold))
+
+    @property
+    def in_domain(self) -> bool:
+        lo, hi = self.domain
+        at = _instant(self.value)
+        return (lo is None or at >= _instant(lo)) and (hi is None or at <= _instant(hi))
 
 
 @dataclass(frozen=True)
@@ -231,9 +265,8 @@ class PointAccount:
 
     point: BoundaryPoint
     example: State | None  # a feasible state with the condition at the point's value; None when infeasible
-    excluded_by: tuple[
-        frozenset[str], ...
-    ]  # infeasible in the domain: every minimal set of constraint ids excluding it
+    completion: State  # the example's values of the other conditions, under which every constraint holds
+    excluded_by: tuple[frozenset[str], ...]  # infeasible in the domain: every minimal set of constraint ids excluding it
 
     @property
     def feasible(self) -> bool:
@@ -247,8 +280,9 @@ class Coverage:
     trigger: Expr
     constraints: Mapping[str, Expr]
     conditions: tuple[str, ...]  # the trigger's atomic conditions, in order of first appearance
+    others: tuple[str, ...]  # the conditions only the constraints mention, in order of first appearance
     method: Literal["enumeration", "sat"]
-    finding: Finding | None  # a whole-trigger finding; when present, conditions and groups are empty
+    finding: Finding | None  # a whole-trigger finding; when present, accounts and groups are empty
     accounts: tuple[ConditionAccount, ...]  # one per condition, in condition order
     groups: tuple[Group, ...]  # every minimal group of redundant conditions whose joint removal changes the trigger
     points: tuple[PointAccount, ...]
@@ -294,30 +328,36 @@ def _minimal_sets[T: Hashable](ground: Sequence[T], holds: Callable[[frozenset[T
 
 
 # ---------------------------------------------------------------- the two search paths
-# States are ints, bit i holding condition i. Each path answers two queries:
-#   satisfying(fixed, ids): a state with the fixed condition values satisfying the constraints in ids, or the proof
-#     that there is none;
-#   pair(free): two feasible states that agree on every condition outside the bit set free, the first not firing and
-#     the second firing, or the proof that there are none.
+# An assignment is an int over the trigger's n conditions (bits 0 to n - 1) and then the m other conditions. Each path
+# answers two queries:
+#   satisfying(fixed, ids): an assignment with the fixed values (by bit) satisfying the constraints in ids, or the
+#     proof that there is none;
+#   pair(free): two assignments satisfying every constraint whose trigger conditions agree outside the bit set free,
+#     the first not firing and the second firing, or the proof that there are none.
 
 
 class _Enumeration:
     method: Literal["enumeration", "sat"] = "enumeration"
 
-    def __init__(self, n: int, trigger: Callable[[int], bool], constraints: Mapping[str, Callable[[int], bool]]):
-        self.n = n
-        bit = {cid: 1 << j for j, cid in enumerate(constraints)}
-        self.bit = bit
+    def __init__(
+        self, n: int, m: int, trigger: Callable[[int], bool], constraints: Mapping[str, Callable[[int], bool]]
+    ) -> None:
+        self.n, self.size = n, 1 << (n + m)
+        self.mask = (1 << n) - 1
+        self.bit = {cid: 1 << j for j, cid in enumerate(constraints)}
         self.violated: list[int] = []
-        self.fires: list[bool] = []
-        for s in range(1 << n):
+        for s in range(self.size):
             v = 0
             for cid, holds in constraints.items():
                 if not holds(s):
-                    v |= bit[cid]
+                    v |= self.bit[cid]
             self.violated.append(v)
-            self.fires.append(trigger(s))
-        self.feasible = [s for s in range(1 << n) if self.violated[s] == 0]
+        # Each feasible state of the trigger's conditions, with the first assignment that completes it.
+        self.feasible: dict[int, int] = {}
+        for s, v in enumerate(self.violated):
+            if v == 0:
+                self.feasible.setdefault(s & self.mask, s)
+        self.fires = {t: trigger(t) for t in self.feasible}
 
     def __enter__(self) -> _Enumeration:
         return self
@@ -329,22 +369,22 @@ class _Enumeration:
         mask = sum(1 << i for i in fixed)
         want = sum(1 << i for i, v in fixed.items() if v)
         used = sum(self.bit[cid] for cid in ids)
-        found = next((s for s in range(1 << self.n) if s & mask == want and not self.violated[s] & used), None)
-        if found is not None:
-            return found
-        return Exhaustive(states=1 << self.n, feasible=0, pairs=0)
+        for s, v in enumerate(self.violated):
+            if s & mask == want and not v & used:
+                return s
+        return Exhaustive(assignments=self.size, feasible=0, pairs=0)
 
     def pair(self, free: int) -> tuple[int, int] | Proof:
-        keep = ((1 << self.n) - 1) & ~free
+        keep = self.mask & ~free
         first: dict[tuple[int, bool], int] = {}
-        for s in self.feasible:
-            key, fires = s & keep, self.fires[s]
+        for t, s in self.feasible.items():
+            key, fires = t & keep, self.fires[t]
             first.setdefault((key, fires), s)
             if (key, not fires) in first:
                 return (first[(key, False)], first[(key, True)])
-        sizes = Counter(s & keep for s in self.feasible)
+        sizes = Counter(t & keep for t in self.feasible)
         return Exhaustive(
-            states=1 << self.n, feasible=len(self.feasible), pairs=sum(c * (c - 1) // 2 for c in sizes.values())
+            assignments=self.size, feasible=len(self.feasible), pairs=sum(c * (c - 1) // 2 for c in sizes.values())
         )
 
 
@@ -378,15 +418,19 @@ class _Tseitin:
 class _Sat:
     method: Literal["enumeration", "sat"] = "sat"
 
-    def __init__(self, conditions: Sequence[str], trigger: Expr, constraints: Mapping[str, Expr]):
-        n = len(conditions)
+    def __init__(
+        self, conditions: Sequence[str], others: Sequence[str], trigger: Expr, constraints: Mapping[str, Expr]
+    ) -> None:
+        names = (*conditions, *others)
+        n, t = len(conditions), len(names)
         self.n = n
-        # Pairs: two copies of the conditions, x (firing) and y (not firing), both feasible, with a selector e_i that,
-        # assumed true, makes the copies agree on condition i.
-        x = {c: 1 + i for i, c in enumerate(conditions)}
-        y = {c: 1 + n + i for i, c in enumerate(conditions)}
-        self.agree = [1 + 2 * n + i for i in range(n)]
-        enc = _Tseitin(1 + 3 * n)
+        # Pairs: two copies of every condition, x (firing) and y (not firing), each satisfying every constraint, with a
+        # selector per trigger condition that, assumed true, makes the copies agree on it. The other conditions are
+        # free in each copy.
+        x = {c: 1 + i for i, c in enumerate(names)}
+        y = {c: 1 + t + i for i, c in enumerate(names)}
+        self.agree = [1 + 2 * t + i for i in range(n)]
+        enc = _Tseitin(1 + 2 * t + n)
         for i, c in enumerate(conditions):
             enc.clauses += [[-self.agree[i], -x[c], y[c]], [-self.agree[i], x[c], -y[c]]]
         for e in constraints.values():
@@ -395,14 +439,13 @@ class _Sat:
         self.x, self.y = x, y
         self.pairs = Solver(name=SOLVER, bootstrap_with=enc.clauses)
         self.pairs_size = (enc.top, len(enc.clauses))
-        # Feasibility: one copy z, with a selector per constraint that, assumed true, makes the constraint hold. The
-        # trigger is encoded, unasserted, so that every condition is a variable of the formula.
-        z = {c: 1 + i for i, c in enumerate(conditions)}
-        self.selector = {cid: 1 + n + j for j, cid in enumerate(constraints)}
-        enc = _Tseitin(1 + n + len(constraints))
+        # States: one copy z, with a selector per constraint that, assumed true, makes the constraint hold. A condition
+        # no clause mentions is free; the solver creates it when an assumption names it.
+        z = {c: 1 + i for i, c in enumerate(names)}
+        self.selector = {cid: 1 + t + j for j, cid in enumerate(constraints)}
+        enc = _Tseitin(1 + t + len(constraints))
         for cid, e in constraints.items():
             enc.clauses.append([-self.selector[cid], enc.encode(e, z)])
-        enc.encode(trigger, z)
         self.z = z
         self.states = Solver(name=SOLVER, bootstrap_with=enc.clauses)
         self.states_size = (enc.top, len(enc.clauses))
@@ -415,7 +458,8 @@ class _Sat:
         self.states.delete()
 
     @staticmethod
-    def _state(model: list[int] | None, var: Mapping[str, int]) -> int:
+    def _assignment(model: list[int] | None, var: Mapping[str, int]) -> int:
+        # A variable the model omits appears in no clause and no assumption, so it is free: false is a valid value.
         true = {lit for lit in model or [] if lit > 0}
         return sum(1 << i for i, v in enumerate(var.values()) if v in true)
 
@@ -423,15 +467,60 @@ class _Sat:
         zs = list(self.z.values())
         assume = [self.selector[cid] for cid in ids] + [zs[i] if v else -zs[i] for i, v in fixed.items()]
         if self.states.solve(assumptions=assume):
-            return self._state(self.states.get_model(), self.z)
+            return self._assignment(self.states.get_model(), self.z)
         return Unsat(solver=SOLVER, variables=self.states_size[0], clauses=self.states_size[1])
 
     def pair(self, free: int) -> tuple[int, int] | Proof:
         assume = [self.agree[i] for i in range(self.n) if not free >> i & 1]
         if self.pairs.solve(assumptions=assume):
             model = self.pairs.get_model()
-            return (self._state(model, self.y), self._state(model, self.x))
+            return (self._assignment(model, self.y), self._assignment(model, self.x))
         return Unsat(solver=SOLVER, variables=self.pairs_size[0], clauses=self.pairs_size[1])
+
+
+@dataclass(frozen=True)
+class _Problem:
+    """A trigger and its constraints, with the search path, and the readings of an assignment as states."""
+
+    trigger: Expr
+    constraints: Mapping[str, Expr]
+    conditions: tuple[str, ...]
+    others: tuple[str, ...]
+
+    @staticmethod
+    def of(trigger: Expr, constraints: Mapping[str, Expr]) -> _Problem:
+        conditions = variables(trigger)
+        mentioned = (v for e in constraints.values() for v in variables(e) if v not in conditions)
+        return _Problem(trigger, dict(constraints), conditions, tuple(dict.fromkeys(mentioned)))
+
+    def index(self) -> dict[str, int]:
+        return {c: i for i, c in enumerate((*self.conditions, *self.others))}
+
+    def engine(self, method: Literal["enumeration", "sat"]) -> _Enumeration | _Sat:
+        if method == "enumeration":
+            index = self.index()
+            compiled = {cid: _compile(e, index) for cid, e in self.constraints.items()}
+            return _Enumeration(len(self.conditions), len(self.others), _compile(self.trigger, index), compiled)
+        return _Sat(self.conditions, self.others, self.trigger, self.constraints)
+
+    def state(self, s: int) -> State:
+        return tuple((c, bool(s >> i & 1)) for i, c in enumerate(self.conditions))
+
+    def completion(self, s: int) -> State:
+        n = len(self.conditions)
+        return tuple((c, bool(s >> (n + j) & 1)) for j, c in enumerate(self.others))
+
+    def as_pair(self, found: tuple[int, int]) -> Pair:
+        return Pair(
+            not_fired=self.state(found[0]),
+            fired=self.state(found[1]),
+            completions=(self.completion(found[0]), self.completion(found[1])),
+        )
+
+
+def _excluded_by(engine: _Enumeration | _Sat, ids: Sequence[str], fixed: Mapping[int, bool]) -> tuple[frozenset[str], ...]:
+    """Every minimal set of the constraints that no assignment with the fixed values satisfies."""
+    return _minimal_sets(tuple(ids), lambda chosen: not isinstance(engine.satisfying(fixed, chosen), int))
 
 
 # ---------------------------------------------------------------- the account
@@ -445,75 +534,69 @@ def coverage(
     enumerate_up_to: int = ENUMERATE_UP_TO,
 ) -> Coverage:
     """The feasible MC/DC account of a trigger under its constraints (keyed by constraint id), with boundary points."""
-    constraints = dict(constraints or {})
-    conditions = variables(trigger)
-    index = {c: i for i, c in enumerate(conditions)}
-    for cid, e in constraints.items():
-        extra = [v for v in variables(e) if v not in index]
-        if extra:
-            raise ValueError(f"constraint {cid!r} mentions {extra}, which are not conditions of the trigger")
-    _comparisons(points, index)
+    problem = _Problem.of(trigger, constraints or {})
+    conditions, cids = problem.conditions, tuple(problem.constraints)
+    index = problem.index()
+    _comparisons(points, conditions)
     n = len(conditions)
-    fires = _compile(trigger, index)
-    engine: _Enumeration | _Sat
-    if n <= enumerate_up_to:
-        engine = _Enumeration(n, fires, {cid: _compile(e, index) for cid, e in constraints.items()})
-    else:
-        engine = _Sat(conditions, trigger, constraints)
-
-    def state(s: int) -> State:
-        return tuple((c, bool(s >> i & 1)) for i, c in enumerate(conditions))
-
-    def as_pair(found: tuple[int, int]) -> Pair:
-        return Pair(not_fired=state(found[0]), fired=state(found[1]))
-
-    def excluded_by(fixed: Mapping[int, bool]) -> tuple[frozenset[str], ...]:
-        return _minimal_sets(tuple(constraints), lambda ids: not isinstance(engine.satisfying(fixed, ids), int))
-
-    with engine:
+    method: Literal["enumeration", "sat"] = "enumeration" if len(index) <= enumerate_up_to else "sat"
+    with problem.engine(method) as engine:
         finding: Finding | None = None
         accounts: list[ConditionAccount] = []
         groups: list[Group] = []
-        some = engine.satisfying({}, constraints)
+        some = engine.satisfying({}, cids)
         if not isinstance(some, int):
-            finding = Finding("no_feasible_state", proof=some, example=None, excluded_by=excluded_by({}))
+            finding = Finding(
+                "no_feasible_state", proof=some, example=None, completion=(), excluded_by=_excluded_by(engine, cids, {})
+            )
         else:
             whole = engine.pair((1 << n) - 1)
             if not isinstance(whole, tuple):
-                kind: Literal["never_fires", "always_fires"] = "always_fires" if fires(some) else "never_fires"
-                finding = Finding(kind, proof=whole, example=state(some), excluded_by=())
+                fires = _compile(trigger, index)(some)
+                finding = Finding(
+                    "always_fires" if fires else "never_fires",
+                    proof=whole,
+                    example=problem.state(some),
+                    completion=problem.completion(some),
+                    excluded_by=(),
+                )
         if finding is None:
             for i, c in enumerate(conditions):
                 found = engine.pair(1 << i)
                 if isinstance(found, tuple):
-                    accounts.append(ConditionAccount(c, witness=as_pair(found), redundancy=None))
+                    accounts.append(ConditionAccount(c, witness=problem.as_pair(found), redundancy=None))
                 else:
                     accounts.append(ConditionAccount(c, witness=None, redundancy=found))
             redundant = tuple(a.condition for a in accounts if a.redundant)
 
-            def changes(group: frozenset[str]) -> bool:
-                return isinstance(engine.pair(sum(1 << index[c] for c in group)), tuple)
+            def bits(group: Iterable[str]) -> int:
+                return sum(1 << index[c] for c in group)
 
-            for g in _minimal_sets(redundant, changes):
-                found = engine.pair(sum(1 << index[c] for c in g))
-                assert isinstance(found, tuple)  # changes(g) held
-                groups.append(Group(conditions=g, pair=as_pair(found)))
+            for g in _minimal_sets(redundant, lambda group: isinstance(engine.pair(bits(group)), tuple)):
+                found = engine.pair(bits(g))
+                assert isinstance(found, tuple)  # the predicate held on g
+                groups.append(Group(conditions=g, pair=problem.as_pair(found)))
         point_accounts = []
         for p in points:
             if not p.in_domain:
-                point_accounts.append(PointAccount(p, example=None, excluded_by=()))
+                point_accounts.append(PointAccount(p, example=None, completion=(), excluded_by=()))
                 continue
             fixed = {index[p.condition]: p.holds}
-            found_state = engine.satisfying(fixed, constraints)
-            if isinstance(found_state, int):
-                point_accounts.append(PointAccount(p, example=state(found_state), excluded_by=()))
+            at = engine.satisfying(fixed, cids)
+            if isinstance(at, int):
+                point_accounts.append(
+                    PointAccount(p, example=problem.state(at), completion=problem.completion(at), excluded_by=())
+                )
             else:
-                point_accounts.append(PointAccount(p, example=None, excluded_by=excluded_by(fixed)))
+                point_accounts.append(
+                    PointAccount(p, example=None, completion=(), excluded_by=_excluded_by(engine, cids, fixed))
+                )
     return Coverage(
         trigger=trigger,
-        constraints=constraints,
+        constraints=problem.constraints,
         conditions=conditions,
-        method=engine.method,
+        others=problem.others,
+        method=method,
         finding=finding,
         accounts=tuple(accounts),
         groups=tuple(groups),
@@ -521,11 +604,11 @@ def coverage(
     )
 
 
-def _comparisons(points: Iterable[BoundaryPoint], index: Mapping[str, int]) -> dict[str, tuple[str, Any]]:
+def _comparisons(points: Iterable[BoundaryPoint], conditions: Sequence[str]) -> dict[str, tuple[str, Any]]:
     """Each condition's comparison (op, threshold), as its boundary points state it; one comparison per condition."""
     out: dict[str, tuple[str, Any]] = {}
     for p in points:
-        if p.condition not in index:
+        if p.condition not in conditions:
             raise ValueError(f"boundary point for {p.condition!r}, which is not a condition of the trigger")
         cmp = (p.op, _instant(p.threshold))
         if out.setdefault(p.condition, cmp) != cmp:
@@ -536,12 +619,6 @@ def _comparisons(points: Iterable[BoundaryPoint], index: Mapping[str, int]) -> d
 # ---------------------------------------------------------------- boundary values
 
 
-def _instant(v: Value) -> Any:
-    """Values compared as what they mean: an aware datetime as its UTC instant, so that wall-clock times in one zone
-    across a daylight-saving change compare by instant (Python compares same-zone datetimes by wall clock)."""
-    return v.astimezone(UTC) if isinstance(v, datetime) else v
-
-
 def _points(
     condition: str,
     op: Op,
@@ -549,17 +626,7 @@ def _points(
     step: Callable[[int], Value],
     domain: tuple[Value | None, Value | None],
 ) -> tuple[BoundaryPoint, ...]:
-    if op not in _OPS:
-        raise ValueError(f"comparison {op!r} is not one of {sorted(_OPS)}")
-    lo, hi = (None if d is None else _instant(d) for d in domain)
-    out = []
-    for k in (-1, 0, 1):
-        v = step(k)
-        at = _instant(v)
-        inside = (lo is None or at >= lo) and (hi is None or at <= hi)
-        holds = _OPS[op](at, _instant(threshold))
-        out.append(BoundaryPoint(condition, op, threshold, k, v, holds, inside))
-    return tuple(out)
+    return tuple(BoundaryPoint(condition, op, threshold, k, step(k), domain) for k in (-1, 0, 1))
 
 
 def threshold_points(
@@ -597,9 +664,15 @@ def cutoff_points(
     times. A date cutoff takes a whole number of days."""
     if resolution <= timedelta(0):
         raise ValueError(f"resolution is {resolution!r}: expected a positive step")
+    timed = isinstance(cutoff, datetime)
+    for t in (cutoff, *domain):
+        if t is None:
+            continue
+        if isinstance(t, datetime) != timed:
+            raise TypeError(f"{t!r} is not the same kind of time as the cutoff {cutoff!r}")
+        if isinstance(t, datetime) and t.utcoffset() is None:
+            raise ValueError(f"{t!r} has no time zone; contract times carry explicit zones (spec §14)")
     if isinstance(cutoff, datetime):
-        if cutoff.utcoffset() is None:
-            raise ValueError(f"cutoff {cutoff!r} has no time zone; contract times carry explicit zones (spec §14)")
         tz = cutoff.tzinfo
 
         def step(k: int) -> Value:
@@ -612,9 +685,6 @@ def cutoff_points(
         def step(k: int) -> Value:
             return cutoff + k * resolution
 
-    for d in domain:
-        if d is not None and isinstance(d, datetime) != isinstance(cutoff, datetime):
-            raise TypeError(f"domain bound {d!r} is not the same kind of time as the cutoff {cutoff!r}")
     return _points(condition, op, cutoff, step, domain)
 
 
@@ -632,7 +702,8 @@ def count_points(condition: str, op: Op, k: int, days: int) -> tuple[BoundaryPoi
 
 @dataclass(frozen=True)
 class Scenario:
-    """An abstract scenario: each condition's value, and the comparison values it uses where it sets one."""
+    """An abstract scenario: each trigger condition's value (and, where it states them, other conditions' values), and
+    the comparison values it uses where it sets one."""
 
     id: str
     state: Mapping[str, bool]
@@ -643,38 +714,59 @@ class Scenario:
 class ScenarioCoverage:
     """Which coverage obligations a set of scenarios meets, which it does not, and which no feasible set can meet."""
 
-    infeasible_scenarios: tuple[str, ...]  # violate a constraint: they meet nothing
+    infeasible_scenarios: Mapping[str, tuple[frozenset[str], ...]]  # id -> every minimal set of constraints excluding it
     independence_met: Mapping[str, tuple[str, str]]  # condition -> (not firing, firing) scenarios differing in it alone
     independence_unmet: tuple[str, ...]  # a feasible witness exists; no pair of these scenarios shows it
     independence_infeasible: tuple[str, ...]  # no feasible pair: redundant, or vacuous by a whole-trigger finding
+    groups_met: Mapping[frozenset[str], tuple[str, str]]  # group -> (not firing, firing) scenarios agreeing outside it
+    groups_unmet: tuple[frozenset[str], ...]
     points_met: Mapping[BoundaryPoint, str]  # a feasible scenario at the point's value
     points_unmet: tuple[BoundaryPoint, ...]
     points_infeasible: tuple[BoundaryPoint, ...]  # outside the domain, or excluded by the constraints
 
 
 def meets(account: Coverage, scenarios: Sequence[Scenario]) -> ScenarioCoverage:
-    """Which of the account's obligations the scenarios meet (A09: uncovered and infeasible obligations are explicit)."""
-    conditions = account.conditions
-    index = {c: i for i, c in enumerate(conditions)}
-    comparisons = _comparisons((p.point for p in account.points), index)
+    """Which of the account's obligations the scenarios meet (A09: uncovered and infeasible obligations are explicit).
+
+    A scenario is feasible when some values of the other conditions it leaves unstated satisfy every constraint; it is
+    checked by the same search path the account used."""
+    problem = _Problem.of(account.trigger, account.constraints)
+    conditions, cids = problem.conditions, tuple(problem.constraints)
+    index = problem.index()
+    comparisons = _comparisons((p.point for p in account.points), conditions)
     ids = [s.id for s in scenarios]
     if len(set(ids)) != len(ids):
         raise ValueError("scenario ids repeat")
-    feasible: list[tuple[Scenario, bool]] = []
-    infeasible: list[str] = []
     for s in scenarios:
-        if set(s.state) != set(conditions) or not all(isinstance(v, bool) for v in s.state.values()):
-            raise ValueError(f"scenario {s.id!r} does not assign every condition {list(conditions)} true or false")
+        if not set(conditions) <= set(s.state) <= set(index) or not all(isinstance(v, bool) for v in s.state.values()):
+            raise ValueError(
+                f"scenario {s.id!r} does not assign every condition {list(conditions)} true or false, with any others "
+                f"from {list(problem.others)}"
+            )
         for c, v in s.values.items():
             if c not in comparisons:
                 raise ValueError(f"scenario {s.id!r} sets a value for {c!r}, which has no comparison here")
             op, threshold = comparisons[c]
             if _OPS[op](_instant(v), threshold) != s.state[c]:
                 raise ValueError(f"scenario {s.id!r} sets {c!r} to {s.state[c]} but its value {v!r} gives the opposite")
-        if all(truth(e, s.state) for e in account.constraints.values()):
-            feasible.append((s, truth(account.trigger, s.state)))
-        else:
-            infeasible.append(s.id)
+    feasible: list[tuple[Scenario, bool]] = []
+    infeasible: dict[str, tuple[frozenset[str], ...]] = {}
+    fires = _compile(account.trigger, index)
+    with problem.engine(account.method) as engine:
+        for s in scenarios:
+            fixed = {index[c]: v for c, v in s.state.items()}
+            if isinstance(engine.satisfying(fixed, cids), int):
+                feasible.append((s, fires(sum(1 << i for i, v in fixed.items() if v))))
+            else:
+                infeasible[s.id] = _excluded_by(engine, cids, fixed)
+
+    def shown(free: frozenset[str]) -> tuple[str, str] | None:
+        """Two feasible scenarios, not firing then firing, that agree on every trigger condition outside free."""
+        for s, s_fires in feasible:
+            for t, t_fires in feasible:
+                if not s_fires and t_fires and all(s.state[d] == t.state[d] for d in conditions if d not in free):
+                    return (s.id, t.id)
+        return None
 
     met: dict[str, tuple[str, str]] = {}
     unmet: list[str] = []
@@ -683,24 +775,17 @@ def meets(account: Coverage, scenarios: Sequence[Scenario]) -> ScenarioCoverage:
     for c in conditions:
         if c not in witnessed:
             no_pair.append(c)
-            continue
-        shown = None
-        for s, fires in feasible:
-            for t, other in feasible:
-                if (
-                    not fires
-                    and other
-                    and s.state[c] != t.state[c]
-                    and all(s.state[d] == t.state[d] for d in conditions if d != c)
-                ):
-                    shown = (s.id, t.id)
-                    break
-            if shown:
-                break
-        if shown:
-            met[c] = shown
+        elif pair := shown(frozenset({c})):
+            met[c] = pair
         else:
             unmet.append(c)
+    groups_met: dict[frozenset[str], tuple[str, str]] = {}
+    groups_unmet: list[frozenset[str]] = []
+    for g in account.groups:
+        if pair := shown(g.conditions):
+            groups_met[g.conditions] = pair
+        else:
+            groups_unmet.append(g.conditions)
 
     points_met: dict[BoundaryPoint, str] = {}
     points_unmet: list[BoundaryPoint] = []
@@ -723,10 +808,12 @@ def meets(account: Coverage, scenarios: Sequence[Scenario]) -> ScenarioCoverage:
         else:
             points_met[p] = at
     return ScenarioCoverage(
-        infeasible_scenarios=tuple(infeasible),
+        infeasible_scenarios=infeasible,
         independence_met=met,
         independence_unmet=tuple(unmet),
         independence_infeasible=tuple(no_pair),
+        groups_met=groups_met,
+        groups_unmet=tuple(groups_unmet),
         points_met=points_met,
         points_unmet=tuple(points_unmet),
         points_infeasible=tuple(points_infeasible),
