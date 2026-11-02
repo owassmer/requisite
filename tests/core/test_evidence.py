@@ -72,3 +72,13 @@ def test_a_claim_is_observable_only_from_an_artifact_published_and_available_by_
     undated = c.Artifact(**{**artifact.model_dump(), "published_at": None})
     assert not observable_at(undated, as_of=T0, evaluated_at=now)
     assert observable_at(undated, as_of=T0 + day, evaluated_at=now)
+
+
+def test_a_synthetic_observation_cannot_stand_as_an_observed_one():
+    from core_examples import SYN_ART
+
+    fields = dict(observable="rain", source="noaa", at=T0, value=c.Number(value=1), published_at=T0, final=False)
+    with pytest.raises(ValidationError):
+        c.Observation(**fields, artifact=SYN_ART)
+    with pytest.raises(ValidationError):
+        c.SyntheticObservation(**fields, artifact=ART)

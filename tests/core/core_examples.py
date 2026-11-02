@@ -60,6 +60,7 @@ PROCEDURE = c.ResolutionProcedure(
     precedence=["noaa"],
     conflict_policy=c.ConflictPolicy(procedure="precedence_first_available"),
     on_unknown_at_expiry="extend",
+    early_expiration="none",
     extension_days=10,
     after_extension="no",
     void_transfer=c.VoidTransfer(returns="premium"),
@@ -199,6 +200,10 @@ def examples() -> list[c.Record]:
         ),
         SOURCE,
         RAIN,
+        c.Observation(observable="rain", source="noaa", at=T0, value=c.Number(value=D("0.12")), published_at=T0,
+                      final=False, artifact=ART),  # fmt: skip
+        c.SyntheticObservation(observable="rain", source="noaa", at=T0, value=c.Number(value=D("0.12")),
+                               published_at=T0, final=False, artifact=SYN_ART),  # fmt: skip
         WET,
         c.And(id="a", args=[WET, c.Not(id="n", arg=WET)]),
         c.Or(id="o", args=[WET, WET]),
@@ -348,7 +353,8 @@ def examples() -> list[c.Record]:
         c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3),
         c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120),
         c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0),
-        c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0,
+        c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0, retrieval_started=T0, retrieval_ended=T0,
+                mode="prospective",
                 searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3)],
                 dockets=[c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120)],
                 items=[c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0)]),  # fmt: skip

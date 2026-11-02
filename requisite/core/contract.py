@@ -14,6 +14,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, model_validator
 
 from requisite.core.base import Day, Instant, Money, Record, Ref
+from requisite.core.evidence import ArtifactId, SyntheticArtifactId
 from requisite.core.judgment import TimeWindow, require_zone
 from requisite.core.kleene import Kleene
 
@@ -97,6 +98,35 @@ class OnDay(Record):
 # number or a category (ours; spec §4 Observable.value_type names the kinds a comparison can be over).
 CmpValue = Annotated[Number | Category | Flag | OnDay, Field(discriminator="kind")]
 VALUE_KIND = {"number": "number", "category": "text", "text": "text", "bool": "bool", "date": "date"}
+
+
+class Observation(Record):
+    """One published value of an observable, from one source (spec §4 Observable; the evaluator's input, I8). `at` is the
+    instant the value is for; `published_at` when the source published this value; `final` whether the source marks it
+    final (for a "final" revision policy); `artifact` the observed evidence it was read from. The revision policy picks
+    among a value's vintages: the first published (first_print), the latest published by expiration (as_of_expiry), or
+    the final one (final)."""
+
+    observable: str
+    source: str
+    at: Instant
+    value: CmpValue
+    published_at: Instant
+    final: bool
+    artifact: ArtifactId
+
+
+class SyntheticObservation(Record):
+    """A fuzzing scenario's or a simulation's observation, read from synthetic evidence; it can never stand where an
+    observed one is required (spec I4: "enforce this at the type level")."""
+
+    observable: str
+    source: str
+    at: Instant
+    value: CmpValue
+    published_at: Instant
+    final: bool
+    artifact: SyntheticArtifactId
 
 
 class Cmp(Record):
@@ -399,18 +429,33 @@ class VoidTransfer(Record):
 
 class ResolutionProcedure(Record):
     """How the contract resolves (spec §4, amended by A05 §5.2 and §5.4). on_unknown_at_expiry says what an unknown
-    trigger means at settlement without changing the trigger's truth (A05 §5.2). An extension names its length and what
-    happens if the trigger is still unknown after it."""
+    trigger means at settlement without changing the trigger's truth (A05 §5.2). early_expiration: "when_true" when the
+    contract expires early once its trigger is true (spec §9.3: "early_close_condition"; the Western Grazers terms: "If
+    an event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance
+    with Rule 7.2"). Its timing is what the contract states: "first_true" where the contract itself fixes the instant at
+    which the trigger is first true on the observations then published; "per_exchange_rule" where it defers to a rule
+    outside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is
+    true while the early date stays unresolved, named, until that rule is supplied (A05 §5.2: "Unsupported procedure
+    details must be reported, not guessed"). An extension names its length and what happens if the trigger is still
+    unknown after it."""
 
     precedence: Sequence[str]
     conflict_policy: ConflictPolicy
     on_unknown_at_expiry: Literal["no", "yes", "extend", "void"]
+    early_expiration: Literal["none", "when_true"]
+    early_expiration_at: Literal["first_true", "per_exchange_rule"] | None = None
+    early_expiration_rule: str | None = None
     extension_days: int | None = None
     after_extension: Literal["no", "yes", "void"] | None = None
     void_transfer: VoidTransfer
 
     @model_validator(mode="after")
     def _extend(self) -> ResolutionProcedure:
+        early = self.early_expiration == "when_true"
+        if early != (self.early_expiration_at is not None):
+            raise ValueError("an early expiration states its timing, and only it does")
+        if (self.early_expiration_at == "per_exchange_rule") != (self.early_expiration_rule is not None):
+            raise ValueError("a timing deferred to an exchange rule names that rule, and only it does")
         extending = self.on_unknown_at_expiry == "extend"
         if extending != (self.extension_days is not None and self.after_extension is not None):
             raise ValueError("an extension states its days and what follows it, and only an extension does")

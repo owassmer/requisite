@@ -170,3 +170,13 @@ def test_an_independent_labelled_sample_is_not_nested():
     # Independence removes the nesting, never the labelled sample: a stratum with items must have one.
     with pytest.raises(ValidationError, match="no labelled sample"):
         c.SamplingDesign(**{**independent, "phase2": [{**labelled, "sample_size": 0}]})
+
+
+def test_a_frame_is_prospective_only_when_retrieved_by_its_as_of():
+    from datetime import timedelta
+
+    frame = one(c.Frame).model_dump()
+    late = frame["as_of"] + timedelta(minutes=5)
+    with pytest.raises(ValidationError, match="retrospective reconstruction"):
+        c.Frame(**{**frame, "retrieval_ended": late})
+    assert c.Frame(**{**frame, "retrieval_ended": late, "mode": "retrospective_reconstruction"})

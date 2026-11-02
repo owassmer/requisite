@@ -503,17 +503,31 @@ class FrameItem(Record):
 class Frame(Record):
     """A wide run's frozen frame: what its criteria searched, which dockets they reached and kept, and every item of the
     kept dockets posted by as_of (spec §7.2 step 1: a snapshot of the corpus, split into items). Its content hash is the
-    frame_hash a SamplingDesign names (addendum A07 §8.1), so the frame a sample was drawn from is the frame recorded."""
+    frame_hash a SamplingDesign names (addendum A07 §8.1), so the frame a sample was drawn from is the frame recorded.
+    The API serves its record as it stands when asked, so a frame states what was known at as_of only when everything in
+    it was retrieved by as_of: prospective when its retrieval ended at or before as_of (spec I3: observed claims come from
+    artifacts observed by the evaluation time), and otherwise a retrospective reconstruction, whose fields that can
+    change after posting (a comment period's end, a withdrawal) are as served after as_of (addendum A11 §11.3: "Do not
+    classify a historical reconstruction as clean prospective evaluation")."""
 
     id: str
     criteria: Ref
     as_of: Instant
+    retrieval_started: Instant
+    retrieval_ended: Instant
+    mode: Literal["prospective", "retrospective_reconstruction"]
     searches: Sequence[FrameSearch]
     dockets: Sequence[FrameDocket]
     items: Sequence[FrameItem]
 
     @model_validator(mode="after")
     def _items(self) -> Frame:
+        if self.retrieval_started > self.retrieval_ended:
+            raise ValueError("a frame's retrieval starts before it ends")
+        prospective = self.retrieval_ended <= self.as_of
+        if (self.mode == "prospective") != prospective:
+            kind = "prospective" if prospective else "a retrospective reconstruction"
+            raise ValueError(f"a frame whose retrieval ended {'by' if prospective else 'after'} its as_of is {kind}")
         kept = {d.docket for d in self.dockets if d.kept}
         if any(i.docket not in kept for i in self.items):
             raise ValueError("a frame's items come from the dockets it kept")
