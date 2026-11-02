@@ -59,6 +59,23 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   item has a positive inclusion probability (A07 §8.2: pi_i > 0) and every stratum's residual variance can be
   estimated from its own gold (coordinator's reasoning: one gold item gives no within-stratum variance, and the design's
   unbiased variance estimator needs one; the 000-2 task, November 1).
+- Wide inference as built (worker on 000-2, November 1, measured by simulation under the exact design, 1,000 draws).
+  The interval is a score interval: each bound is the estimate minus or plus z times the SD evaluated at the phase-2
+  stratum prevalences restricted to that bound (Wilson's interval for one stratum); a stratum's f is credited with
+  reducing the variance only as far as that stratum's own gold shows, never borrowed across strata, since a judge's
+  false negatives sit exactly where its f does not separate the labels. Wald under-covered when a heavy stratum's gold
+  held no positive (0.918 at λ = 1, 0.657 cross-fitted); MOVER-of-Wilson missed on one side only. The tuned λ is
+  cross-fitted leave-one-out, which keeps its point estimate exactly unbiased (proved by enumeration); its variance is
+  asymptotic and its coverage measured by requisite/discovery/sampling.py's measure_coverage. The flow draws both
+  phases with that module's draw_phase1 and draw_phase2, so the sample is the design the estimator assumes.
+- Phase-2 allocation (coordinator, November 1, from 000-2's numbers). Within each phase-1 stratum, 80% of its gold goes
+  to the phase-2 stratum the judge scores below the cut (the large stratum where its missed positives live) and 20% to
+  the rest, each at least two. Equal allocation over-covered rare families (0.981–0.986, almost no upper misses) because
+  their dominant stratum's gold expected under one positive; 80/20 brought the same scenarios to 0.970–0.978. Before the
+  gold is drawn, measure_coverage on the actual phase-1 predictions gives each family's expected gold positives, and the
+  run reports beside each family's interval its measured coverage and expected positives. Where a family is so rare in
+  the frame that its interval over-covers at any allocation the labelling budget allows, the interval is still valid (it
+  covers at least nominally) and wide for a stated reason: the gold saw almost none of it.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
