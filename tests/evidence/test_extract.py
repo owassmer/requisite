@@ -4,6 +4,7 @@ recorded with its reason. Extractions are recorded, and a replay never re-runs O
 
 import io
 import json
+import pathlib
 import sys
 import zipfile
 
@@ -19,7 +20,7 @@ from requisite.evidence import extract
 def test_the_fixture_pdf_is_read_by_its_text_layer():
     x = extract.read("pdf", fixture_pdf())
     assert x.pages == ("text layer",) and x.unreadable == ()
-    assert x.id == f"pdf/1 pypdf {pypdf.__version__}"
+    assert x.id == f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}"
     assert x.text.startswith("[page 1 of 1: text layer]\nTechnical Operations\n13th Floor – WHQEG")
     assert "United Airlines (UA) has reviewed Ref /A/ and /B/" in x.text
 
@@ -39,7 +40,7 @@ def test_a_page_without_a_text_layer_is_read_by_ocr_and_each_pages_method_is_rec
     x = extract.read("pdf", two_pages(fixture_pdf(), scan))
     assert x.pages == ("text layer", "OCR") and x.unreadable == ()
     versions = extract._versions()
-    assert x.id == (f"pdf/1 pypdf {pypdf.__version__}; OCR by pdftoppm {versions['pdftoppm']} and tesseract "
+    assert x.id == (f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}; OCR by pdftoppm {versions['pdftoppm']} and tesseract "
                     f"{versions['tesseract']}")  # fmt: skip
     page2 = x.text.split("[page 2 of 2: OCR]\n", 1)[1]
     for words in ("United Airlines", "Wacker", "Aviation Safety Engineer", "Seattle"):
@@ -106,7 +107,8 @@ def test_an_extraction_is_recorded_and_a_replay_never_reruns_ocr(live, scan, mon
     art = artifact_id(scan)
     first = extract.extract("pdf", art, scan, root=live / "cassettes", budget=spend)
     kept = json.loads(next((live / "cassettes" / "extraction").glob("*.json")).read_text())
-    assert kept["request"] == {"artifact": art, "extractor": "requisite.evidence.extract.pdf", "version": 1}
+    assert kept["request"] == {"artifact": art, "extractor": "requisite.evidence.extract.pdf",
+                               "version": extract.VERSIONS["pdf"]}
     monkeypatch.setenv("REQUISITE_REPLAY_ONLY", "1")
 
     def no_ocr(*args, **kwargs):
@@ -118,3 +120,35 @@ def test_an_extraction_is_recorded_and_a_replay_never_reruns_ocr(live, scan, mon
     assert again == first and again.pages == ("OCR",)
     with pytest.raises(Exception, match="no cassette"):
         extract.extract("pdf", artifact_id(b"other"), b"other", root=live / "cassettes")
+
+
+UNMAPPED = pathlib.Path(__file__).resolve().parents[2] / "fixtures/regulations_gov/TREAS-DO-2026-0232/0055_attachment_1.pdf"
+
+
+def test_a_text_layer_in_a_font_with_no_unicode_map_that_does_not_carry_the_pages_words_is_read_by_ocr():
+    # TREAS-DO-2026-0232-0055's attachment sets its text in TrueType subsets declared WinAnsi with no ToUnicode map, and
+    # its codes are glyph indices: pypdf reads them as punctuation (November 2). Each such page is read by OCR too, and
+    # OCR's text is used where the layer carries less than CARRIES_AT_LEAST of OCR's words, said in the page's method.
+    content = UNMAPPED.read_bytes()
+    reader = pypdf.PdfReader(io.BytesIO(content))
+    layer = reader.pages[0].extract_text()
+    assert extract._unmapped(reader.pages[0])  # page 1: its font has no Unicode map
+    assert not extract._unmapped(reader.pages[1]) and extract.suspect(reader.pages[1].extract_text())  # page 2: a wrong map
+    x = extract.read("pdf", content)
+    assert x.pages and all(m.startswith("OCR (its text layer carries") for m in x.pages)
+    first = x.text.split("[page 2 of", 1)[0]
+    share = extract.carried(layer, first)
+    assert share is not None and share < extract.CARRIES_AT_LEAST  # the rule, read from the page's own two readings
+    assert extract._WORD.findall(first) and "OCR by pdftoppm" in str(x.id) and x.id.startswith("pdf/2")
+
+
+def test_typed_prose_and_a_table_of_contents_are_not_suspect():
+    assert not extract.suspect(extract.read("pdf", fixture_pdf()).text)
+    assert not extract.suspect("Introduction ........ 1\nScope ........ 3\nCosts, by line ........ 7")
+
+
+def test_a_layer_carries_the_words_ocr_reads_or_says_too_few_were_read():
+    words = " ".join(f"word{chr(97 + i % 26)}{'x' * (i // 26)}" for i in range(40))
+    assert extract.carried(words, words) == 1.0
+    assert extract.carried("!\"#$%&'()*", words) == 0.0
+    assert extract.carried(words, "too few words here") is None

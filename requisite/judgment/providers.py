@@ -163,10 +163,19 @@ def _send(spec: ProviderSpec, body: Mapping[str, Any]) -> tuple[Any, float]:
                         raise ProviderError(f"clef: {data.get('errors')}")
                     data = data["result"]
                 return data, float(_cost(spec, data))
+            if r.status_code == 400 and any(m in r.text for m in TOO_LARGE.get(spec.name, ())):
+                # The provider declines to read an input over its size limit: its answer, kept as it gave it, and read
+                # as a refusal (read), never as an error that stops the run or an answer it did not give.
+                return {"model": None, "declined": {"status": r.status_code, "body": r.text[:2000]}}, 0.0
             if r.status_code not in RETRY_STATUS or attempt >= 5:
                 raise ProviderError(f"{spec.name}: HTTP {r.status_code}: {r.text[:300]}")
         attempt += 1
         threading.Event().wait(min(30.0, 2**attempt))
+
+
+# What each provider says when it declines an input over its size limit (November 2: a sampled filing of 6.5 MB of
+# exhibits; openai_decisions answers HTTP 400 "input_json data exceeds the maximum serialized size of 262144 bytes").
+TOO_LARGE: Mapping[str, tuple[str, ...]] = {"openai_decisions": ("exceeds the maximum serialized size",)}
 
 
 def _cost(spec: ProviderSpec, data: Mapping[str, Any]) -> Decimal:
@@ -205,6 +214,10 @@ def _step(values: Sequence[float], declared: float) -> float:
 def read(spec: ProviderSpec, data: Mapping[str, Any], asked: AskedQuestion) -> Reading:
     """The provider's answer to the asked question, as a distribution over its answer values."""
     model = data.get("model")
+    if "declined" in data:
+        declined = data["declined"]
+        return Reading(None, None, f"{spec.name} declined to read the input (HTTP {declined['status']}): "
+                                   f"{declined['body'][:300]}", spec.precision, str(spec.model))  # fmt: skip
     if not spec.accepts(model):
         raise ProviderError(f"{spec.name} answered as {model!r}, not {spec.model!r}")
     if spec.name == "openai_decisions":

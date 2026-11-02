@@ -16,6 +16,7 @@ from __future__ import annotations
 import random
 import threading
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from fractions import Fraction
@@ -28,12 +29,13 @@ from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
 from requisite.agents.trace import made_from, record_run
 from requisite.discovery import labels, sampling
+from requisite.evidence import extract
 from requisite.evidence import frame as framing
 from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.fetched import free_budget
 from requisite.evidence.frame import entries, frame_gate
 from requisite.evidence.frame import frames as evidence_frames
-from requisite.evidence.items import committed, read_items
+from requisite.evidence.items import committed, read_items, reextracted, stale
 from requisite.evidence.mirrulations import Mirrulations
 from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.judgment import providers
@@ -372,7 +374,19 @@ def read_sample(
             regulations_gov.close()
             if copies is not None:
                 copies.close()
-        have = committed(store, ids)
+    # Each sample item read again from its own bytes where a newer reader reads a file of it differently (committed):
+    # the stale parts found and the item committed in this thread, the files read in parallel.
+    held = list(committed(store, ids).values())
+    jobs = [(it, part) for it in held for part in stale(store, it)]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        newer = list(pool.map(lambda j: extract.extract(j[1].reader, j[1].artifact, j[1].content), jobs))
+    by_item: dict[str, dict[int, extract.Extraction]] = {}
+    for (it, part), x in zip(jobs, newer, strict=True):
+        by_item.setdefault(it.id, {})[part.part] = x
+    for it in held:
+        if it.id in by_item:
+            reextracted(store, it, by_item[it.id])
+    have = committed(store, ids)
     read = [have[i] for i in ids if i in have]
     unmeasured = [i for i in read if store.get("item_measure", i.id, core.ItemMeasure) is None]
     if unmeasured:

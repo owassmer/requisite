@@ -34,7 +34,7 @@ from datetime import datetime, timedelta
 from functools import cache
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from xml.etree import ElementTree as ET  # noqa: S405  (see the module docstring)
 
 import pypdf
@@ -46,7 +46,7 @@ EXTRACTOR = "requisite.evidence.extract"
 # Each reader's version: a change to what a reader returns for the same bytes is a new version, so a new extraction.
 VERSIONS: Mapping[str, int] = {
     "comment": 1,
-    "pdf": 1,
+    "pdf": 2,  # 2 (November 2): a text layer in a font with no Unicode map is checked against OCR
     "docx": 1,
     "xlsx": 1,
     "pptx": 1,
@@ -81,6 +81,22 @@ CELL_SEPARATOR = " | "
 # most a stamp or a page number in its text layer, while a typed page carries hundreds (ours). OCR reads the rendered
 # page, so whatever text layer it has is read with it.
 SCANNED_BELOW = 200
+# A text layer can carry glyph codes rather than characters: a font's encoding and Unicode map are the producer's word,
+# and both can be wrong (seen November 2: TREAS-DO-2026-0232-0055, TrueType subsets declared WinAnsi with no ToUnicode,
+# and Type0 fonts whose ToUnicode maps to punctuation, read as "!\"#$%&'()*"). A page whose layer is suspect is read by OCR
+# too, an independent reading of the same page, and its text layer stands only where it carries at least
+# CARRIES_AT_LEAST of the words OCR reads there (alphabetic words of three letters or more): a correct layer carries
+# nearly all of them, OCR's own misreadings aside, and a glyph-coded one almost none (ours). Where OCR reads fewer than
+# CHECK_WORDS words the layer stands, there being too little to check it against.
+# Which pages are verified (OCR on every page would read F4's thousands of typed pages twice): those set in a subset
+# font with no Unicode map (_unmapped), and those whose layer is more than SYMBOLS_ABOVE symbols that prose rarely holds
+# (SYMBOLS, dots, commas and hyphens left out, so a table of contents is not one); measured on F4's 6,850 text-layer
+# pages: the glyph-coded ones 0.63-0.65, the next 0.46, typed prose about 0.01. A page that passes the screen is taken
+# from its text layer unverified: a garbling into plain letters would pass it (ours, November 2).
+CARRIES_AT_LEAST = 0.5
+CHECK_WORDS = 20
+SYMBOLS = frozenset("!\"#$%&'()*+/:;<=>?@[\\]^_`{|}~")
+SYMBOLS_ABOVE = 0.15
 RENDER_TIMEOUT_S = 300
 OCR_TIMEOUT_S = 600
 
@@ -331,15 +347,49 @@ def _has_images(page: pypdf.PageObject) -> bool:
         return True
 
 
+_SUBSET = re.compile(r"^/[A-Z]{6}\+")
+_WORD = re.compile(r"[^\W\d_]{3,}")
+
+
+def _unmapped(page: pypdf.PageObject) -> bool:
+    """Whether the page sets text in a subset font with no Unicode map (SCANNED_BELOW's neighbour, CARRIES_AT_LEAST)."""
+    try:
+        fonts = cast(Any, page["/Resources"])["/Font"]
+        for ref in fonts.values():
+            font = ref.get_object()
+            if "/ToUnicode" not in font and _SUBSET.match(str(font.get("/BaseFont", ""))):
+                return True
+    except Exception:  # resources pypdf cannot read: the page is checked by OCR, which reads the rendered page whole
+        return True
+    return False
+
+
+def suspect(layer: str) -> bool:
+    """Whether a text layer is more than SYMBOLS_ABOVE symbols prose rarely holds (CARRIES_AT_LEAST's screen)."""
+    seen = [c for c in layer if not c.isspace()]
+    return bool(seen) and sum(c in SYMBOLS for c in seen) / len(seen) > SYMBOLS_ABOVE
+
+
+def carried(layer: str, ocr: str) -> float | None:
+    """The share of the words OCR reads on a page that the text layer carries, or None where OCR reads fewer than
+    CHECK_WORDS (CARRIES_AT_LEAST)."""
+    seen = [w.lower() for w in _WORD.findall(ocr)]
+    if len(seen) < CHECK_WORDS:
+        return None
+    have = {w.lower() for w in _WORD.findall(layer)}
+    return sum(w in have for w in seen) / len(seen)
+
+
 def _pdf(content: bytes) -> Extraction:
-    """Each page by its text layer (pypdf), and by OCR where it has none (module constants). A file pypdf cannot open is
-    rendered and read page by page by poppler and tesseract; one neither can read is unreadable, with both reasons."""
-    layers: list[tuple[str, bool]] | None
+    """Each page by its text layer (pypdf), and by OCR where it has none or where its text layer, set in a font with no
+    Unicode map, does not carry the page's words (module constants). A file pypdf cannot open is rendered and read page
+    by page by poppler and tesseract; one neither can read is unreadable, with both reasons."""
+    layers: list[tuple[str, bool, bool]] | None
     try:
         reader = pypdf.PdfReader(io.BytesIO(content))
         if reader.is_encrypted:
             reader.decrypt("")  # a file restricted only by an owner password opens with the empty user password
-        layers = [(page.extract_text() or "", _has_images(page)) for page in reader.pages]
+        layers = [(page.extract_text() or "", _has_images(page), _unmapped(page)) for page in reader.pages]
         failure = None
     except Exception as e:  # pypdf raises many types on malformed files; the reason is kept, and poppler tries
         layers, failure = None, f"pypdf could not read it ({type(e).__name__}: {e})"
@@ -355,10 +405,22 @@ def _pdf(content: bytes) -> Extraction:
             count = _page_count(pdf)
             if count is None:
                 return _unreadable("pdf", f"{failure}; poppler could not read it either")
-            layers = [("", True)] * count
-        for number, (layer, images) in enumerate(layers, start=1):
+            layers = [("", True, False)] * count
+        for number, (layer, images, unmapped) in enumerate(layers, start=1):
             letters = sum(ch.isalnum() for ch in layer)
             if letters and not (images and letters < SCANNED_BELOW):
+                if unmapped or suspect(layer):
+                    _versions()
+                    try:
+                        seen = _ocr_page(pdf, number, work)
+                    except _Unreadable:
+                        seen = ""  # nothing to check the layer against: it stands, as for a page OCR cannot read
+                    share = carried(layer, seen)
+                    if share is not None and share < CARRIES_AT_LEAST:
+                        texts.append(seen)
+                        methods.append(f"OCR (its text layer carries {share:.0%} of the words OCR reads)")
+                        ocr = True
+                        continue
                 methods.append("text layer")
                 texts.append(layer)
                 continue

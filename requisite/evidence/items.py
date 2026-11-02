@@ -286,10 +286,70 @@ def read_items(client: RegulationsGov, store: Store, entries: Sequence[FrameItem
 
 
 def committed(store: Store, ids: Sequence[str]) -> dict[str, Item]:
-    """The items read for these frame entries, by id, each as first read. An item read again is a new record (its key
-    carries its content hash), and a sample's item is the one read and frozen when the sample was read."""
-    wanted, out = set(ids), {}
+    """The items read for these frame entries, by id: each as first read, or as read again from the same retrieved bytes
+    (the same artifacts) by a newer reader (reextracted). An item fetched again is a new record that never replaces the
+    first, so a sample's filing is the one frozen when the sample was read; a better reading of those same bytes is that
+    filing still (November 2: a PDF text layer with no Unicode map had been read as glyph codes)."""
+    wanted, out = set(ids), dict[str, Item]()
     for item in store.all("item", Item):  # oldest first
-        if item.id in wanted and item.id not in out:
-            out[item.id] = item
+        if item.id in wanted:
+            first = out.get(item.id)
+            if first is None or tuple(item.artifacts) == tuple(first.artifacts):
+                out[item.id] = item
     return out
+
+
+def _reader_of(extraction: str) -> tuple[str, int]:
+    """The reader and its version an extraction id names ("pdf/1 pypdf 6.21.4" -> ("pdf", 1))."""
+    head = extraction.split(" ", 1)[0]
+    reader, _, version = head.partition("/")
+    return reader, int(version)
+
+
+@dataclass(frozen=True)
+class Stale:
+    """A part of an item read by an older version of its reader than the one now in use (extract.VERSIONS)."""
+
+    part: int
+    reader: str
+    artifact: str
+    content: bytes
+    old: str
+
+
+def stale(store: Store, item: Item) -> list[Stale]:
+    """The parts of an item that a reader now in use would read again (the store is read here, in one thread)."""
+    out = []
+    for n, p in enumerate(item.parts):
+        if p.extraction is None or p.artifact is None:
+            continue
+        reader, version = _reader_of(p.extraction)
+        if reader in extract.VERSIONS and version < extract.VERSIONS[reader]:
+            old = store.extraction(p.artifact, p.extraction)
+            if old is not None:
+                out.append(Stale(n, reader, p.artifact, store.content(p.artifact), old))
+    return out
+
+
+def reextracted(store: Store, item: Item, read: Mapping[int, extract.Extraction]) -> Item | None:
+    """The item read again from the bytes it was first read from, where a reader now in use reads one of its files
+    differently than the older version that read it (`read`: each stale part's new extraction, by part); None where
+    every part reads as before. A part that reads the same keeps its extraction, so its record stays true of what read
+    it. Committed here, in the store's thread."""
+    parts, text, changed = list(item.parts), item.text, False
+    for n, x in read.items():
+        p = parts[n]
+        assert p.artifact is not None and p.extraction is not None
+        old = store.extraction(p.artifact, p.extraction)
+        if old is None or x.id is None or x.text is None or x.text == old:
+            continue  # nothing better read: the part stands as first read
+        store.commit_extraction(p.artifact, x.id, x.text)
+        partial = "; ".join(x.unreadable) or None
+        parts[n] = p.model_copy(update={"extraction": x.id, "unreadable": partial, "by": "source" if partial else None})
+        text = text.replace(old.rstrip("\n"), x.text.rstrip("\n"), 1)
+        changed = True
+    if not changed:
+        return None
+    again = Item.model_validate_json(item.model_copy(update={"parts": parts, "text": text}).model_dump_json())
+    store.commit("item", f"{again.id}|{again.content_hash()}", again)
+    return again

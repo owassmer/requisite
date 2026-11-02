@@ -93,3 +93,18 @@ def test_what_is_not_an_answer_to_this_question_is_not_read_as_one():
         read(PROVIDERS["jev"], response("jev", {"yes": 1, "no": 0, "not_established": 0}, model="other/model"), ASKED)
     assert read(PROVIDERS["jev"], response("jev", {"yes": 1, "no": 0, "not_established": 0},
                                            model="typesafe/jev-1.13-20260917"), ASKED).distribution  # fmt: skip
+
+
+def test_an_input_the_provider_declines_for_its_size_is_read_as_its_refusal_with_its_words():
+    # openai_decisions answers HTTP 400 for an input over 262144 serialized bytes (November 2): kept as it gave it, and
+    # read as a refusal, never an error that stops the run or an answer it did not give.
+    from requisite.judgment import providers
+
+    spec = providers.PROVIDERS["openai_decisions"]
+    said = '{"error":{"message":"input_json data exceeds the maximum serialized size of 262144 bytes"}}'
+    from requisite.judgment.render import AskedQuestion
+
+    asked = AskedQuestion(name="q", instructions="", answers={"yes": "", "no": ""})
+    reading = providers.read(spec, {"model": None, "declined": {"status": 400, "body": said}}, asked)
+    assert reading.distribution is None and reading.reported is None
+    assert reading.refusal is not None and "declined to read the input (HTTP 400)" in reading.refusal and "262144" in reading.refusal

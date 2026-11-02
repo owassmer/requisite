@@ -8,6 +8,7 @@ import pypdf
 from fake_api import DOCKET, FakeAPI, fixture_pdf, fixture_world, load
 
 from requisite.core import FrameItem, Item
+from requisite.evidence import extract
 from requisite.evidence.items import read_items
 from requisite.evidence.regulations_gov import instant
 
@@ -31,7 +32,7 @@ def test_an_item_is_the_comment_then_each_file_in_order_each_headed_by_its_artif
         f'Airlines (UA) has reviewed and provides comments in attached letter. Thanks.\n\n[attachment 1 "UA Comments '
         f'FAA-2026-01579-T" · attachment_1.pdf · {letter}]\n[page 1 of 1: text layer]\nTechnical Operations\n'
     )
-    assert united.extractions == ["comment/1", f"pdf/1 pypdf {pypdf.__version__}"] and united.unreadable == []
+    assert united.extractions == [f"comment/{extract.VERSIONS['comment']}", f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}"] and united.unreadable == []
     assert united.addresses == f"{DOCKET}-0001"  # the document it comments on, as the source states it
     assert store.content(letter) == fixture_pdf()
     assert store.extraction(letter, united.extractions[1]) == united.text.split(f"{letter}]\n", 1)[1]
