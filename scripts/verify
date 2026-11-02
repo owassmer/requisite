@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# scripts/verify <outcome file>    A fresh verifier checks the outcome against the running product, from a clean copy.
+# scripts/verify --map             A fresh verifier finds every feature a user can reach and writes feature-map.md.
+# Exits 0 when every line of its list works. Called by the coordinator.
+#
+# The product is a clean copy of the committed code (git archive HEAD: no case stores, nothing under var/), with its
+# Python environment installed offline, so every verification is also the spec's cold start from a clean clone. It runs
+# outside any sandbox, replaying recorded responses only (REQUISITE_REPLAY_ONLY=1), behind tools/verify/bridge.py. The
+# verifier gets its own workspace holding only AGENTS.md, the outcome, feature-map.md, the verify skill and `requisite`
+# (tools/verify/requisite.mjs, which reaches the product through the bridge), and runs inside the role sandbox
+# (tools/roles/sandbox.ts): it cannot read the product's code, the tasks, the cassettes, git, or anything else outside
+# its workspace; the CLI, and the files the product writes under var/, are its only way into the product. Its list and
+# the feature map are copied back and committed; what it noticed is in its final message in the run log.
+# While it runs, scripts/steer <run> "<message>" reaches the verifier, and scripts/steer <run> --stop ends it with no list
+# committed. The run streams to .runs/<run>.log and Pi's events to .runs/<run>.jsonl.
+# The whole script is one block, so bash reads all of it before running any (Handoff, October 12: a file changing under a
+# long run ended it).
+{
+set -euo pipefail
+VERIFIER="openai-codex/gpt-6-astra:xhigh"    # a different family from the worker; change it here and nowhere else
+target="${1:?usage: scripts/verify outcomes/<id>.md | --map}"
+root="$(git rev-parse --show-toplevel)"; cd "$root"
+
+if [ "$target" = --map ]; then
+  seen=outcomes/map.seen.md
+  ask="Find every feature a user can reach in the running product, as the analyst who runs a case and as the human who
+decides at its gates. Write feature-map.md: one line per feature you reached and the commands you ran, and nothing you did
+not do in the product. Write $seen as a list, one line per behaviour you tried, each starting with WORKS or BROKEN, then
+what you did and what you saw."
+else
+  [ -f "$target" ] || { echo "no outcome file $target" >&2; exit 2; }
+  seen="${target%.md}.seen.md"
+  ask="Read $target. You did not write this change. Do, as a user, what the outcome says a user can do, then try the
+features that share a layer with what changed. Write $seen as a list, one line per behaviour you tried, each starting
+with WORKS or BROKEN, then what you did and what you saw. Update feature-map.md for each feature you reached."
+fi
+[ -n "${FACTORY_RUN:-}" ] || git diff --quiet HEAD -- . ':!tasks' ':!notebook.md' ':!outcomes' || {
+  echo "commit first: the verifier checks the committed product" >&2; exit 2; }
+
+run="${FACTORY_RUN:-verify-$(basename "${target#--}" .md)-$(date +%Y%m%dT%H%M%S)}"; mkdir -p .runs
+if [ -z "${FACTORY_RUN:-}" ]; then
+  FACTORY_RUN="$run" nohup "$root/scripts/verify" "$@" </dev/null >/dev/null 2>&1 &
+  echo "run: .runs/$run.log"; exit 0
+fi
+log="$root/.runs/$run.log"
+product="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/requisite-product.XXXXXX")" && pwd -P)"
+ws="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/requisite-verify.XXXXXX")" && pwd -P)"
+echo "=== verifier on $target ($VERIFIER) in $ws; product at $product (commit $(git rev-parse --short HEAD))" > "$log"
+echo "=== dispatched by session ${PI_SESSION_ID:-none}" >> "$log"
+echo "=== steerable (pid $$): scripts/steer $run \"<message>\" (or --stop)" >> "$log"
+on_err() { echo "=== finished exit $1 (${0##*/} stopped at line $2)" >> "$log"; }
+trap 'on_err $? $LINENO' ERR
+bridge=""
+cleanup() { [ -n "$bridge" ] && kill "$bridge" 2>/dev/null || true; rm -rf "$product"; }
+trap cleanup EXIT
+
+# The product: a clean copy of the committed code, its environment installed offline from uv's cache.
+git archive HEAD | tar -x -C "$product"
+(cd "$product" && uv sync --frozen --offline -q) >> "$log" 2>&1 || {
+  echo "=== finished exit 4 (the product's Python environment could not be installed offline: run uv sync --frozen in the checkout)" >> "$log"; exit 4; }
+
+# The verifier's workspace.
+mkdir -p "$ws/outcomes" "$ws/skill" "$ws/.requisite/bin"
+cp AGENTS.md "$ws/AGENTS.md"
+[ "$target" != --map ] && cp "$target" "$ws/$target"
+[ -f feature-map.md ] && cp feature-map.md "$ws/feature-map.md"
+cp .agents/skills/verify/SKILL.md "$ws/skill/SKILL.md"
+cp tools/verify/requisite.mjs "$ws/.requisite/bin/requisite.mjs"
+printf '#!/usr/bin/env bash\nexec node "$(dirname "$0")/requisite.mjs" "$@"\n' > "$ws/.requisite/bin/requisite"
+chmod +x "$ws/.requisite/bin/requisite"
+
+# The bridge, outside the sandbox: the product's CLI and what it writes under var/, nothing else.
+python3 tools/verify/bridge.py "$product" "$ws/.requisite/port" >> "$log" 2>&1 &
+bridge=$!
+for _ in $(seq 50); do [ -s "$ws/.requisite/port" ] && break; sleep 0.1; done
+[ -s "$ws/.requisite/port" ] || { echo "=== finished exit 4 (the bridge did not start)" >> "$log"; exit 4; }
+
+node_dir="$(dirname "$(dirname "$(command -v node)")")"
+trap - ERR; set +e
+(cd "$ws" && ROLE_WORKSPACE="$ws" ROLE_ALLOW_READ="$node_dir" PATH="$ws/.requisite/bin:$PATH" \
+  node "$root/tools/roles/run.mjs" --inbox "$root/.runs/$run.steer" --prompt "You are the verifier. Use the verify skill. $ask
+What you saw that bears on something else the product claims goes in your final message, one line each." -- \
+  pi --mode rpc --no-session --no-extensions --no-skills --no-context-files --no-prompt-templates \
+    -e "$HOME/.pi/agent/extensions/claude-cli" -e "$root/tools/roles/sandbox.ts" --skill "$ws/skill/SKILL.md" \
+    --tools read,bash,edit,write --model "$VERIFIER" --append-system-prompt "$ws/AGENTS.md" 2>> "$log") \
+  | tee "$root/.runs/$run.jsonl" | scripts/watch --render >> "$log"
+status=${PIPESTATUS[0]}; set -e; trap 'on_err $? $LINENO' ERR
+[ "$status" -eq 7 ] && echo "=== stopped by the coordinator; no list committed" >> "$log"
+[ "$status" -eq 0 ] || { echo "=== finished exit $status" >> "$log"; exit "$status"; }
+
+for f in "$seen" feature-map.md; do [ -f "$ws/$f" ] && mkdir -p "$(dirname "$f")" && cp "$ws/$f" "$f" && git add "$f"; done
+git diff --cached --quiet || git commit -q --no-verify -m "Verifier: ${target#--}" -- "$seen" feature-map.md
+cleanup; trap - EXIT
+rm -rf "$ws"
+clean=1; grep -q '^\(- \)\?WORKS' "$seen" && ! grep -q '^\(- \)\?BROKEN' "$seen" && clean=0
+echo "=== finished exit $clean" >> "$log"
+exit "$clean"
+}
