@@ -13,6 +13,8 @@ jobs:
       REQUISITE_REPLAY_ONLY: "1"
     steps:
       - uses: actions/checkout@v5
+      # Evidence extraction reads scanned pages by OCR (design/decisions.md: items are everything filed).
+      - run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils tesseract-ocr
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
