@@ -147,6 +147,19 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   group obligation a fully coupled trigger would be "covered" by a single scenario (A09 §10.2: "requiring a different
   justified coverage criterion"; worker's reasoning on 000-3). Enumeration gives way to python-sat above 10 conditions,
   where enumeration's self-evident proof still costs milliseconds.
+- Computation (000-4, spec §5, addendum A11 §11.2). One graph of sources and instances, each carrying its §5 layer. A
+  source is a value read from committed records and names at least one of them, so no constant written into code
+  enters the graph; an instance is a node (id, version) over named inputs. The value hash is a typed canonical hash
+  (values that print alike but differ in type differ; only immutable data hashes); the lineage hash is, for a source,
+  its id, value hash and records' content hashes, and for an instance its node id and version and each input's name,
+  value hash and lineage: a DerivationReceipt's fields, so every receipt is checkable. A judgment input's question
+  version, state hash and configuration enter its consumer's key (spec §5). Receipts commit through
+  Store.commit_derivations, one transaction per recompute, keyed by lineage; a committed lineage with another value is
+  refused, the symptom of a node changed without a new version or an impure one. A diff lists an approval where it stops
+  covering its vertex's lineage; explain() states any approval's standing. Approvals of graph values name the vertex id;
+  vertex ids are written "v:<name>", so none collides with a proposal id. I7's static walk applies its purity rules
+  (no provider, cassette, key, agent or store module; no network, process, database, clock, randomness, environment,
+  file or dynamic import) to every product module a node's module reaches, since the walk sees modules, not calls.
 - Reduced costs are diagnostics only. HiGHS's duals are not unique (in the addendum's own timing fixture a late payout
   and an early one both price at −110), so wherever the product shows a reduced cost it shows beside it the re-solve's
   measured improvement (C01 §7.2: a re-solve always runs).
