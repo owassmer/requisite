@@ -55,6 +55,17 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   for example "in a business's voice and describing exposure to this event family" (spec §7.2: items are comments,
   letters, filings, posts). A share of businesses would need a cluster design over submitters, which the product does not
   draw and so does not claim.
+- Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
+  §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
+  the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
+  prefix (measured November 1: 403 for curl, httpx and a bare product token; 200 for this form), and the form names the
+  runtime and where to learn about it, so nothing is impersonated. The regulations.gov key goes in the X-Api-Key header,
+  never in a URL, so it never reaches a cassette key or a log.
+- An item's text is everything its submitter filed: the comment and the text of each attachment. A PDF page without a
+  text layer is read by OCR (tesseract, installed on this machine; CI installs it), each page's method recorded in the
+  extraction, so a scanned business letter is read rather than counted as silent (coordinator's reasoning: an item the
+  judges cannot read would be labelled not_established for a reason of ours, not the world's). Extractions are committed
+  state, so a replay reads them from the frozen case rather than re-running OCR on another machine.
 - The same reason holds for F1, by the coordinator's reasoning: the filed contracts are drawn by a rule over the filed
   record (spec §9.3; one per strike type where they exist), plus the Western Grazers specimen the spec names, and the IR
   grammar comes from spec §8.1, never fitted to them. A filed construct the IR cannot express is a finding about the
