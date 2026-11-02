@@ -239,10 +239,30 @@ class Run:
     key: str
 
 
+ASKED = ("check", "read", "value")  # what a rendering-check question asks of a node: a condition, a reading, a value
+
+
+def question_prefix(contract: core.Ref) -> str:
+    """The prefix of every question a fuzz run of this contract version asks. A rendering-check question is
+    `<prefix>.<asked>.<node id>`, named by the IR node it asks about (ASKED: a condition, a reading or a published
+    value); the resolution question is `<prefix>.resolve.<the prose hash's first 12 digits>`."""
+    return f"fuzz.{contract.id}.v{contract.version}"
+
+
+def asked_node(contract: core.Ref, question_id: str) -> str | None:
+    """The IR node of this contract version a rendering-check question asks about, read from the id it was given
+    (question_prefix); None for any other question."""
+    for asked in ASKED:
+        head = f"{question_prefix(contract)}.{asked}."
+        if question_id.startswith(head):
+            return question_id[len(head):]
+    return None
+
+
 def _questions(p: Plan, s: Scenario) -> list[Question]:
     ir = p.ir
     out: list[Question] = []
-    prefix = f"fuzz.{ir.id}.v{ir.version}"
+    prefix = question_prefix(ir.ref)
     holds = library.template("condition_holds")
     meanings = {a.value: a.meaning for a in holds.answers}
 
@@ -409,7 +429,7 @@ def _scenario(p: Plan, s: Scenario, split: Literal["development", "held_out"], r
     out = Resolved(s, split, packets)
     # Resolution of the last packet: a passing one is scored; a failing one is recorded, never scored.
     state, rendered = _rendered(p, s, packets[-1])
-    q = library.instantiate(m.resolver, {"rules": rules}, question_id=f"fuzz.{p.ir.id}.v{p.ir.version}.resolve.{prose_key[:12]}")
+    q = library.instantiate(m.resolver, {"rules": rules}, question_id=f"{question_prefix(p.ir.ref)}.resolve.{prose_key[:12]}")
     for provider, pid in m.configurations:
         wording = _paraphrased(q, m.paraphrases, pid) if m.paraphrases is not None else library.original(q)
         out.judgments.append(m.judge(judging.Ask(q, state.content_hash(), rendered, ask(q, wording), _config(provider, pid))))
@@ -1013,7 +1033,7 @@ def summary(r: Run, store: Store) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["AMBIGUITY", "CLARITY", "FIDELITY", "RERENDERS", "STRESS", "THRESHOLDS", "Run", "active_paraphrases", "determined",
+__all__ = ["AMBIGUITY", "ASKED", "CLARITY", "asked_node", "question_prefix", "FIDELITY", "RERENDERS", "STRESS", "THRESHOLDS", "Run", "active_paraphrases", "determined",
            "forced", "total",
            "contract_in_case", "from_case", "propose_prose", "prose_problems", "prose_proposal", "rulebook_gate", "fuzz_store", "prose_hash", "prose_text", "reports",
            "resolver_template", "run", "summary"]  # fmt: skip

@@ -113,6 +113,48 @@ def _wide_stability(args: argparse.Namespace) -> int:
     return 0
 
 
+def _wide_families(args: argparse.Namespace) -> int:
+    from requisite.discovery import results
+
+    _show_proposal(results.draft_families(_store(args)))
+    return 0
+
+
+def _wide_estimate(args: argparse.Namespace) -> int:
+    from requisite.discovery import results
+
+    est = results.estimate(_store(args))
+    print(f"the share of readable items in the population's voice that describe exposure to a pending measure, "
+          f"{est.level:.0%} intervals; {est.phase1_items} phase-1 items ({est.unreadable_items} with no readable text, "
+          f"outside the scope), {est.gold_items} gold items, {est.unresolved_gold_labels} unresolved gold labels")  # fmt: skip
+    for sc in est.scopes:
+        rd = f"[{sc.read[0]:.3f}, {sc.read[1]:.3f}]" if sc.read else f"no interval: {sc.reason}"
+        lo, hi = sc.lowest.estimate, sc.highest.estimate
+        pts = f"{lo:.3f}" if lo == hi and lo is not None else f"{lo} to {hi}"
+        print(f"  {sc.scope}: {rd}  (estimate {pts}; Fieller within [0, 1]: {sc.lowest.fieller} to {sc.highest.fieller})")
+    return 0
+
+
+def _wide_leads(args: argparse.Namespace) -> int:
+    from requisite.discovery import results
+
+    leads = results.find_leads(_store(args), workers=args.workers)
+    for x in leads.leads:
+        usd = [f"{float(i.annual):,.0f} {i.currency}/year" for i in x.impact if i.annual is not None]
+        print(f"{x.rank:>3}. tier {x.tier}  {x.submitter or '(no name published)'}  {x.item}  {x.family}  "
+              f"{x.basis} p={x.probability:.2f}  {', '.join(f'{k}={v}' for k, v in sorted(x.answers.items()))}"
+              f"{'  ' + '; '.join(usd) if usd else ''}")  # fmt: skip
+    print(f"{len(leads.leads)} leads")
+    return 0
+
+
+def _wide_promote(args: argparse.Namespace) -> int:
+    from requisite.discovery import results
+
+    _show_proposal(results.propose_lead(_store(args), args.rank))
+    return 0
+
+
 def _wide_gold_draw(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
@@ -216,6 +258,14 @@ def _contract_read(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dossier(args: argparse.Namespace) -> int:
+    from requisite import dossier
+
+    index = dossier.render(Path(args.case_dir), args.case)
+    print(f"dossier of case {args.case}: {index.relative_to(Path(args.case_dir))} in {args.case_dir}")
+    return 0
+
+
 def _show(args: argparse.Namespace) -> int:
     p = _store(args).proposal(args.proposal)
     if p is None:
@@ -260,6 +310,10 @@ def main(argv: list[str] | None = None) -> int:
         ("label", "the phase-1 judge's labels on every phase-1 item", _wide_label, True),
         ("stability", "every judge configuration on the stability subsample (spec §2.1)", _wide_stability, True),
         ("gold-draw", "draw the gold sample from phase 1, by the judge's probabilities", _wide_gold_draw, False),
+        ("families", "an agent proposes the run's event families over its kept dockets' measures", _wide_families, False),
+        ("estimate", "the share, overall and per family, from the gold labels and the judges' labels", _wide_estimate,
+         False),
+        ("leads", "the businesses in the numerator, asked, their stated impacts extracted, ranked", _wide_leads, True),
     )
     for name, text, run, parallel in steps:
         w = wsub.add_parser(name, help=text)
@@ -271,6 +325,10 @@ def main(argv: list[str] | None = None) -> int:
     case_args(ph)
     ph.add_argument("--template", required=True, help="the library template's id")
     ph.set_defaults(run=_paraphrases)
+    pr = wsub.add_parser("promote", help="propose one lead for a deep case; a human decides at G1 (requisite approve)")
+    case_args(pr)
+    pr.add_argument("--rank", type=int, required=True, help="the lead's rank")
+    pr.set_defaults(run=_wide_promote)
     g = sub.add_parser("gold", help="label the gold sample blind, one item at a time (stop and resume at will)")
     case_args(g)
     g.add_argument("--labeler", required=True, help="who is labelling")
@@ -311,6 +369,10 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--reason", required=True)
     a.add_argument("--scope", required=True)
     a.set_defaults(run=_approve)
+    d = sub.add_parser("dossier", help="render the case's static HTML dossier, and its synthetic fuzz cases', into "
+                       "<case-dir>/dossier/ from its committed state alone (spec §13 WP16)")  # fmt: skip
+    case_args(d)
+    d.set_defaults(run=_dossier)
     sh = sub.add_parser("show", help="a proposal as it stands: payload, gates, rationale")
     case_args(sh)
     sh.add_argument("proposal")

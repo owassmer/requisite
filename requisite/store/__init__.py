@@ -77,6 +77,8 @@ PAYLOAD: dict[str, type[Record]] = {
     "frame": core.FrameCriteria,
     "clause": core.Rulebook,
     "scenario": core.ScenarioPacket,
+    "event_families": core.EventFamilies,
+    "lead": core.LeadPromotion,
 }
 
 SCHEMA = """
@@ -185,6 +187,27 @@ class Store:
     def get(self, kind: str, key: str, cls: type[R]) -> R | None:
         body = self._get(kind, key)
         return None if body is None else cls.model_validate_json(core.canonical_json(body))
+
+    # Reads by key, for what shows committed state whole (the dossier): every kind and key, in key order, never in
+    # commit order, since the order of commits is a build's and the same state is the same records however it was built.
+
+    def kinds(self) -> list[str]:
+        """Every kind of record committed in this case, sorted."""
+        return [r[0] for r in self._db.execute("select distinct kind from records order by kind")]
+
+    def keys(self, kind: str) -> list[str]:
+        """The keys of every record of a kind, sorted."""
+        return [r[0] for r in self._db.execute("select key from records where kind = ? order by key", (kind,))]
+
+    def body(self, kind: str, key: str) -> Any | None:
+        """A record's body as committed (its canonical JSON, parsed), whatever its kind's type."""
+        return self._get(kind, key)
+
+    def proposal_history(self, proposal_id: str) -> list[tuple[str, list[GateResult]]]:
+        """Each recorded decision on a proposal, in order: its status and gate results (submitted, then each time its
+        gates ran again after a human's decision)."""
+        rows = self._db.execute("select status, gates from proposal_events where proposal = ? order by seq", (proposal_id,))
+        return [(r[0], [GateResult.model_validate_json(core.canonical_json(g)) for g in json.loads(r[1])]) for r in rows]
 
     def all(self, kind: str, cls: type[R]) -> list[R]:
         return [cls.model_validate_json(core.canonical_json(b)) for b in self._all(kind)]
