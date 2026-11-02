@@ -348,7 +348,8 @@ class Store:
         return self._put("override", override.content_hash(), override.model_dump(mode="json"))
 
     def commit_gold_label(self, label: GoldLabel) -> Committed:
-        return self._put("gold_label", f"{label.design.id}|{label.design.version}|{label.item}", label.model_dump(mode="json"))
+        key = f"{label.design.id}|{label.design.version}|{label.item}|{label.question.id}|{label.question.version}"
+        return self._put("gold_label", key, label.model_dump(mode="json"))
 
     # An acceptance record is written at decision time (spec §11 step 1): one decided more than this long before it is
     # committed is a reconstruction, refused (ours: the bound allows for the time a commit takes, nothing more).
