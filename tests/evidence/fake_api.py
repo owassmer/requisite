@@ -179,8 +179,9 @@ class FakeAPI:
 
     # ---------------------------------------------------------------- the world
 
-    def add_document(self, resource: dict[str, Any]) -> None:
-        self.documents[resource["id"]] = resource
+    def add_document(self, resource: dict[str, Any], *, key: str | None = None) -> None:
+        """A document in the record; `key` keeps a second document the source lists under the same id."""
+        self.documents[key or resource["id"]] = resource
 
     def add_comment(self, docket: str, resource: dict[str, Any], detail: dict[str, Any] | None = None) -> None:
         self.comments[resource["id"]] = (docket, resource)

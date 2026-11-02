@@ -46,7 +46,7 @@ from requisite.core import (
     observable_at,
 )
 from requisite.evidence.artifacts import LISTING_BASIS, commit, listed
-from requisite.evidence.regulations_gov import Entry, Listing, RegulationsGov, instant
+from requisite.evidence.regulations_gov import Entry, Listing, RegulationsGov, identity, instant
 from requisite.store import Store
 
 WORKERS = 8
@@ -265,14 +265,14 @@ def docket_documents(store: Store, frame: Frame, docket: FrameDocket) -> list[En
     """A frame docket's documents posted by the frame's as_of, withdrawn ones set aside, rebuilt from the listing
     artifacts the frame names for it, each as the last page that served it gave it (decided as take_frame decides)."""
     pages: list[Artifact] = []
-    seen: dict[str, Entry] = {}
+    seen: dict[tuple[str, str, str], Entry] = {}
     for art_id in docket.artifacts:
         artifact = store.get("artifact", art_id, Artifact)
         if artifact is None:
             raise ValueError(f"frame {frame.id} names artifact {art_id}, which is not committed")
         for e in json.loads(store.content(art_id)).get("data") or []:
             if e.get("type") == "documents":
-                seen[str(e["id"])] = Entry(e, len(pages))
+                seen[identity(e)] = Entry(e, len(pages))
         pages.append(artifact)
     return [e for e in seen.values() if not e.attributes.get("withdrawn")
             and observable_at(listed(pages[e.page], instant(str(e.attributes["postedDate"])), POSTED), frame.as_of,

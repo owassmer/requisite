@@ -85,6 +85,15 @@ class Entry:
         return self.data.get("attributes") or {}
 
 
+def identity(resource: Mapping[str, Any]) -> tuple[str, str, str]:
+    """A listed resource's identity: its id, with its type and posting date, which a modification does not change. The
+    id alone is not unique: regulations.gov lists two different documents under one id (EPA-R03-OAR-2019-0295-0002, a
+    proposed rule and a transmittal letter, in one response on November 2, 2026), so keyed by id one would be lost and
+    the listing read as changing under itself."""
+    attributes = resource.get("attributes") or {}
+    return (str(resource["id"]), str(attributes.get("documentType")), str(attributes.get("postedDate")))
+
+
 @dataclass(frozen=True)
 class Listing:
     """A whole listing: its base request (path and filters, no page, no continuation), every page it took, continuations
@@ -157,13 +166,16 @@ class Pacer:
         """How long until a request may go: until the oldest of this run's requests leaves the hour, freeing a slot, or,
         where others hold part of the hour, until the probe interval has passed, whichever is sooner."""
         until = self._sent[0] + self.window - now if self._sent else None
-        if self._others() or until is None:
+        # Requests in flight state the count themselves when they settle, so a probe waits for none to be in flight.
+        if self._inflight == 0 and (self._others() or until is None):
             if self._probe_at is None:
                 self._probe_at = now + self.probe
             probe = self._probe_at - now
             until = probe if until is None else min(until, probe)
         else:
             self._probe_at = None
+        if until is None:  # nothing of this run's in the hour, and requests in flight: wait a probe interval for them
+            until = self.probe
         return max(until, 0.0)
 
     def acquire(self) -> float:
@@ -344,17 +356,17 @@ class RegulationsGov:
         and is listed again, merged, until a pass is undisturbed (ours)."""
         base = {**filters, "sort": "lastModifiedDate,documentId", "page[size]": str(PAGE_SIZE)}
         pages: list[Fetched] = []
-        entries: dict[str, Entry] = {}
+        entries: dict[tuple[str, str, str], Entry] = {}
         for attempt in range(1, PASSES + 1):
             if not self._pass(path, base, attempt, pages, entries):
                 return Listing(locator(path, base), tuple(pages), tuple(entries.values()))
         raise RegulationsGovError(f"{locator(path, base)}: the record changed under each of {PASSES} listings of it")
 
     def _pass(
-        self, path: str, base: Mapping[str, str], attempt: int, pages: list[Fetched], entries: dict[str, Entry]
+        self, path: str, base: Mapping[str, str], attempt: int, pages: list[Fetched], entries: dict[tuple[str, str, str], Entry]
     ) -> bool:
         """One pass through a listing, merged into `pages` and `entries`; whether it was disturbed."""
-        seen: dict[str, Any] = {}
+        seen: dict[tuple[str, str, str], Any] = {}
         disturbed = False
         total: int | None = None
         since: str | None = None
@@ -367,7 +379,7 @@ class RegulationsGov:
                 total = int(body["meta"]["totalElements"]) if total is None else total
                 pages.append(page)
                 for d in data:
-                    rid, modified = str(d["id"]), (d.get("attributes") or {}).get("lastModifiedDate")
+                    rid, modified = identity(d), (d.get("attributes") or {}).get("lastModifiedDate")
                     disturbed |= rid in seen and seen[rid] != modified
                     seen[rid] = modified
                     entries[rid] = Entry(d, len(pages) - 1)  # the latest version, at its first position

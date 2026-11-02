@@ -165,6 +165,24 @@ def test_a_waiting_pacer_reads_the_count_afresh_each_probe_interval_since_others
     for _ in range(5):
         pacer.settle(None)
     sent = pacer.acquire()
+    pacer.settle(None)  # the client settles every response before reading its status
     pacer.refused(sent, None)  # nothing remains, and the refused request is not counted
     pacer.acquire()
     assert time.slept == [60.0, 60.0]
+
+
+def test_two_documents_the_source_lists_under_one_id_are_both_kept_and_the_listing_is_not_read_as_changing(live, make_client):
+    # regulations.gov listed EPA-R03-OAR-2019-0295-0002 twice in one response, a proposed rule and a transmittal letter.
+    import copy
+
+    api = fixture_world(FakeAPI())
+    proposal = next(d for d in api.documents.values() if d["attributes"]["documentType"] == "Proposed Rule")
+    letter = copy.deepcopy(proposal)
+    letter["attributes"].update(documentType="Supporting & Related Material", postedDate="2026-05-04T04:00:00Z",
+                                lastModifiedDate="2026-07-12T10:22:38Z", title="Transmittal Letter")  # fmt: skip
+    api.add_document(letter, key=proposal["id"] + "#letter")
+    docket = proposal["attributes"]["docketId"]
+    listing = make_client(api, live / "cassettes", live).documents({"filter[docketId]": docket})
+    same = [e for e in listing.entries if e.id == proposal["id"]]
+    assert sorted(e.attributes["documentType"] for e in same) == ["Proposed Rule", "Supporting & Related Material"]
+    assert len(requests_to(api, "documents")) == 1  # one pass: nothing changed under it
