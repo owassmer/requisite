@@ -163,6 +163,10 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   vertex ids are written "v:<name>", so none collides with a proposal id. I7's static walk applies its purity rules
   (no provider, cassette, key, agent or store module; no network, process, database, clock, randomness, environment,
   file or dynamic import) to every product module a node's module reaches, since the walk sees modules, not calls.
+- The exposure register's dated cash impact is monthly (core.DatedImpact; coordinator, November 1): deep discovery's
+  materiality screens which exposures matter, and its drivers are stated per period. Intra-month liquidity timing is not
+  the register's to judge: construction's optimizer takes the instrument's dated transfers (I8) and the business's cash
+  on its own dated grid (A06 §6.1), where a payout late within a month shows as a breach.
 - Reduced costs are diagnostics only. HiGHS's duals are not unique (in the addendum's own timing fixture a late payout
   and an early one both price at −110), so wherever the product shows a reduced cost it shows beside it the re-solve's
   measured improvement (C01 §7.2: a re-solve always runs).
