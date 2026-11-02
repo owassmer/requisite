@@ -6,7 +6,8 @@ no field is defined twice."""
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -65,3 +66,31 @@ class HarvestDraft(_Answer):
     assumptions: Sequence[str]
     unsupported_terms: Sequence[str]
     ir: ContractIR | None
+
+
+class ProseSection(_Answer):
+    name: Literal[
+        "underlying_and_definitions", "source_hierarchy_and_conflict_rule", "trigger", "examples", "timing",
+        "unknown_at_expiry", "revisions",
+    ]  # fmt: skip
+    text: str
+    ir_nodes: Sequence[str]
+
+
+class ProseDraft(_Answer):
+    """clause_drafter: the rulebook prose of an IR, its sections in spec §8.5's order, each naming the IR nodes it states."""
+
+    sections: Sequence[ProseSection]
+
+
+class PacketDocument(_Answer):
+    title: str
+    source: str
+    published_at: datetime
+    text: str
+
+
+class PacketDraft(_Answer):
+    """scenario_renderer: one scenario's synthetic evidence packet (quarantined: spec I4)."""
+
+    documents: Sequence[PacketDocument]
