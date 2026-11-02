@@ -167,6 +167,11 @@ git -C "$ws" add -A
 changed="$(git -C "$ws" diff --cached --name-only "$base")"
 inside=(-e '^research/sources/'); for d in "${PRODUCT[@]}"; do inside+=(-e "^$d/"); done
 outside="$(printf '%s\n' "$changed" | grep -v "${inside[@]}" | grep -v '^$' || true)"
+# The definition is the coordinator's and reaches a commit only through the definition review (scripts/review
+# --definition), so a worker's change to it is refused like a change outside the product (November 1: a worker's
+# commit carried an unreviewed definition past the review hook).
+definition="$(printf '%s\n' "$changed" | grep -E -f <(grep -v '^#' tools/roles/definitions | grep . | sed 's#^#^#; s#$#(/|$)#') || true)"
+[ -z "$definition" ] || outside="$(printf '%s\n%s\n' "$outside" "$definition" | grep . || true)"
 if [ -n "$outside" ]; then
   echo "=== refused: changes outside the product, nothing applied (workspace kept at $ws):" >> "$log"
   printf '%s\n' "$outside" >> "$log"
@@ -185,7 +190,11 @@ if [ -n "$changed" ]; then
     echo "=== finished exit 6" >> "$log"; exit 6
   fi
   msg="$(git -C "$ws" log --format=%B "$base"..HEAD 2>/dev/null | sed '/^$/N;/^\n$/D')"
-  git commit -q --no-verify -m "${msg:-$(head -1 "$task" | sed 's/^# //')}" -m "Worker on $task."
+  # Only the worker's own paths go into its commit: anything else staged in this checkout (the coordinator's work in
+  # progress, a definition awaiting review) stays staged and out of it (November 1: a worker's commit swept in a staged,
+  # unreviewed definition).
+  printf '%s\n' "$changed" | grep . > "$ws.tmp/paths"
+  git commit -q --no-verify --pathspec-from-file="$ws.tmp/paths" -m "${msg:-$(head -1 "$task" | sed 's/^# //')}" -m "Worker on $task."
   echo "=== applied to $(git branch --show-current) as $(git log -1 --format=%h)" >> "$log"
   # Each worker's gates ran on its own workspace, so runs applied side by side are checked together here, on the branch
   # as it now stands (Handoff, October 14: two runs' gates passed and the branch did not typecheck).
