@@ -16,6 +16,7 @@ Clef, one for Jev); a response reported more finely than its provider's declared
 
 from __future__ import annotations
 
+import json
 import math
 import threading
 from collections.abc import Callable, Mapping, Sequence
@@ -35,6 +36,35 @@ from requisite.secrets import secret
 
 TIMEOUT = httpx.Timeout(120.0, connect=20.0)
 RETRY_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524}
+
+
+class Pace:
+    """Input tokens sent in the last minute kept under a limit, across threads. A request's tokens are estimated as its
+    body's bytes over four, more than it uses (Slope measured a 72,000-character question at 16,000 tokens)."""
+
+    def __init__(self, tokens_per_minute: int) -> None:
+        self.limit = tokens_per_minute
+        self.sent: list[tuple[float, int]] = []
+        self.lock = threading.Lock()
+
+    def take(self, tokens: int) -> None:
+        import time
+
+        tokens = min(tokens, self.limit)
+        while True:
+            with self.lock:
+                now = time.monotonic()
+                self.sent = [(t, n) for t, n in self.sent if now - t < 60]
+                if sum(n for _, n in self.sent) + tokens <= self.limit:
+                    self.sent.append((now, tokens))
+                    return
+                wait = 60 - (now - self.sent[0][0]) + 0.05
+            time.sleep(max(wait, 0.05))
+
+
+# OpenAI's organization limit is 2,000,000 input tokens a minute, and Requisite shares the organization's key with
+# Slope (design/decisions.md, "Providers and keys"), so it paces at half (coordinator, November 1).
+PACES: dict[str, Pace] = {"openai_decisions": Pace(1_000_000)}
 
 
 class ProviderError(RuntimeError):
@@ -116,6 +146,9 @@ def request_body(spec: ProviderSpec, rendered: RenderedState, asked: AskedQuesti
 def _send(spec: ProviderSpec, body: Mapping[str, Any]) -> tuple[Any, float]:
     """One live request, retried on the provider's transient failures; its response and its cost in dollars."""
     attempt = 0
+    pace = PACES.get(spec.name)
+    if pace is not None:
+        pace.take(len(json.dumps(body)) // 4)
     while True:
         try:
             r = httpx.post(spec.url(), json=body, headers={"Authorization": f"Bearer {spec.key()}"}, timeout=TIMEOUT)

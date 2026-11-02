@@ -182,6 +182,9 @@ work is judged against this file; its writer is the coordinator (a worker's repo
 - One question per Decisions request, the facts as the state: Slope measured on October 29 that a question's situation
   placed in a batched question's instructions moved its answer (0.52 alone, 0.13 batched), while repeat asks alone were
   identical. Spec §6.2's "batch only mutually independent questions" does not prevent that.
+- OpenAI's organization limit is 2,000,000 input tokens a minute, shared with Slope through the same key, so Requisite
+  paces its Decisions requests at 1,000,000 a minute (estimated as request bytes over four) and retries a 429 with
+  backoff (coordinator, November 1, from Slope's measured limit of October 29).
 - Requisite's own agents (spec WP15: discovery, decomposer, clause drafter, scenario renderer, template proposer,
   post-mortem) run on Claude Opus 5.5 through the same OAuth subscription route as the coordinator's claude-cli
   extension, at the reasoning level the work warrants (Owen, November 1). Their outputs are Proposals, recorded, so the
