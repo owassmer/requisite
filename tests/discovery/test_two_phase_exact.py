@@ -6,6 +6,7 @@ phase-1 items than its allocation is taken whole). The oracle's recorded result 
 check 10) is written here as numbers, since spec/ is not in the repository.
 """
 
+import dataclasses
 import itertools
 import math
 from fractions import Fraction
@@ -13,13 +14,18 @@ from typing import Any
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from scipy import stats
 
 from requisite.discovery.inference import (
+    _CellEstimates,
+    _mean_score,
+    _ratio_score,
+    _resolve,
     two_phase_difference,
     two_phase_difference_tuned,
+    two_phase_ratio,
     two_sample_ppi_mean,
 )
 
@@ -161,8 +167,9 @@ def test_a_gold_set_that_is_the_whole_frame_gives_the_truth_and_zero_se(frame, c
     for r in (two_phase_difference(**kw, lam=lam), two_phase_difference_tuned(**kw).result):
         assert r.estimate == pytest.approx(np.mean(y), abs=1e-12)
         assert r.se == 0.0 and r.variance == 0.0
-        assert r.interval[0] == pytest.approx(np.mean(y), abs=1e-12)
-        assert r.interval[1] == pytest.approx(np.mean(y), abs=1e-12)
+        assert r.interval.kind == "interval" and "without error" in r.interval.reason
+        ((lo, hi),) = r.interval.pieces
+        assert lo == hi == pytest.approx(np.mean(y), abs=1e-12)
 
 
 # ------------------------------------------------------------- A07 §8.4: unequal label sampling across phase-2 strata
@@ -342,19 +349,183 @@ def test_with_one_cell_and_no_f_term_the_interval_is_wilsons(m, data):
     ph = x / r
     centre, half = (ph + k / 2) / (1 + k), math.sqrt(k * ph * (1 - ph) + k * k / 4) / (1 + k)
     assert res.estimate == pytest.approx(ph, abs=1e-15)
-    assert res.interval[0] == pytest.approx(max(0.0, centre - half), abs=1e-9)
-    assert res.interval[1] == pytest.approx(min(1.0, centre + half), abs=1e-9)
+    assert res.interval.kind == "interval"
+    ((lo, hi),) = res.interval.pieces
+    assert lo == pytest.approx(max(0.0, centre - half), abs=1e-9)
+    assert hi == pytest.approx(min(1.0, centre + half), abs=1e-9)
 
 
-def test_the_interval_is_in_the_unit_interval_and_holds_the_estimate():
+def test_the_interval_is_in_the_unit_interval_and_holds_an_estimate_in_it():
     samples = list(_design_samples(TWO_PHASE, [0.5], TWO_PHASE_ALLOCATION))
     for _, kw in samples[::7]:
         for r in (two_phase_difference(**kw), two_phase_difference_tuned(**kw).result):
-            lo, hi = r.interval
-            assert 0.0 <= lo <= hi <= 1.0
-            assert lo - 1e-12 <= min(max(r.estimate, 0.0), 1.0) <= hi + 1e-12
-            for s in r.by_stratum:
-                assert 0.0 <= s.interval[0] <= s.interval[1] <= 1.0
+            for s, estimate in [(r.interval, r.estimate)] + [(d.interval, d.estimate) for d in r.by_stratum]:
+                assert all(0.0 <= lo <= hi <= 1.0 for lo, hi in s.pieces)
+                if 0.0 <= estimate <= 1.0:  # its own statistic is zero (phase 1 is a sample, so every share is reached)
+                    assert estimate in s
+
+
+# ----------------------------------------------- the interval's variance: the exact mixture, one definition with the ratio
+
+
+def _one_cell(y, f, gold, frame_size=None):
+    """One phase-1 stratum, one phase-2 stratum: phase 1 a census unless frame_size says the frame is larger."""
+    m = len(y)
+    return dict(
+        frame_size=frame_size or m,
+        unit="comment",
+        phase1_frame_sizes={"frame": frame_size or m},
+        phase1_sample_sizes={"frame": m},
+        phase2_cuts=[],
+        phase2_allocation={("frame", 0): int(gold.sum())},
+        phase1_stratum=["frame"] * m,
+        stratifier=np.asarray(f, dtype=float),
+        f=np.asarray(f, dtype=float),
+        gold=gold,
+        y=np.where(gold, np.asarray(y, dtype=float), np.nan),
+    )
+
+
+@settings(max_examples=60, deadline=None)
+@given(st.integers(3, 30), st.data())
+def test_the_mixture_is_the_exact_variance_of_the_residuals_where_its_categories_and_predictions_are_the_cells(m, data):
+    # The variance the score test evaluates, at a cell's own category proportions and with its own predictions' category
+    # means and within-category spread, is exactly the cell's variance (divisor m - 1) of the residuals the estimator
+    # forms: for a mean, y less any per-item prediction (lam f, or the cross-fitted lam_i f_i, any number); for a ratio,
+    # (y_num - f_num) - R (y_den - f_den). Read here where the gold is the whole cell (r = m), with the cell's phase-2
+    # factor set to 1 so that the term the design multiplies by it shows.
+    y = np.array(data.draw(st.lists(st.integers(0, 1), min_size=m, max_size=m)), dtype=float)
+    g = np.array(data.draw(st.lists(st.floats(-1, 2), min_size=m, max_size=m)))  # the per-item predictions
+    c = _resolve(**{k: v for k, v in _one_cell(y, np.full(m, 0.5), np.ones(m, dtype=bool)).items() if k != "unit"})
+    sc = dataclasses.replace(_mean_score(c, _CellEstimates(mu=np.array([y.mean()]), resid=y - g), y.mean()), q=np.ones(1))
+    p = y.mean()
+    R = np.array([data.draw(st.floats(0.01, 0.99))])
+    v = sc.variance(R, np.array([[[0.0, 1 - p, p]]]), np.array([[[0.0, 1 - p, p]]]))
+    assert v[0] == pytest.approx(np.var(y - g, ddof=1), rel=1e-9, abs=1e-12)
+
+    cat = np.array(data.draw(st.lists(st.integers(0, 2), min_size=m, max_size=m)))
+    yn, yd = (cat == 2).astype(float), (cat >= 1).astype(float)
+    fn, fd = (np.array(data.draw(st.lists(st.floats(0, 1), min_size=m, max_size=m))) for _ in range(2))
+    design = {k: v for k, v in _one_cell(yd, fd, np.ones(m, dtype=bool)).items() if k not in ("unit", "f", "y")}
+    cn, cd = _resolve(**design, f=fn, y=yn), _resolve(**design, f=fd, y=yd)
+    sc = dataclasses.replace(_ratio_score(cn, cd, (yn.mean(), yd.mean())), q=np.ones(1))
+    share = np.bincount(cat, minlength=3) / m
+    v = sc.variance(R, share[None, None, :], share[None, None, :])
+    e = (yn - fn) - R[0] * (yd - fd)
+    assert v[0] == pytest.approx(np.var(e, ddof=1), rel=1e-9, abs=1e-12)
+
+
+def _closed_form(estimate, k, a, b):
+    """{p in [0, 1]: (estimate - p)^2 <= k (a p (1 - p) + b)}, a quadratic's roots, as (lo, hi) or None where empty."""
+    A, B, C = 1 + k * a, -(2 * estimate + k * a), estimate**2 - k * b
+    disc = B * B - 4 * A * C
+    if disc < 0:
+        return None
+    lo, hi = (-B - math.sqrt(disc)) / (2 * A), (-B + math.sqrt(disc)) / (2 * A)
+    lo, hi = max(lo, 0.0), min(hi, 1.0)
+    return (lo, hi) if lo <= hi else None
+
+
+def _cross_fitted_lams(y, f, gold):
+    """LAM_RULE for one phase-2 stratum, computed here on its own: each gold item's lam from the other gold items'
+    covariance of y and f over the phase-1 variance of f, clipped to [0, 1]; 1 where fewer than 2 others or no variance."""
+    s2f = np.var(f, ddof=1)
+    yg, fg = y[gold], f[gold]
+    lams = []
+    for i in range(len(yg)):
+        yo, fo = np.delete(yg, i), np.delete(fg, i)
+        if len(yo) < 2 or s2f <= 0:
+            lams.append(1.0)
+        else:
+            lams.append(float(np.clip(np.cov(yo, fo, ddof=1)[0, 1] / s2f, 0.0, 1.0)))
+    return np.array(lams)
+
+
+@settings(max_examples=80, deadline=None)
+@given(st.integers(20, 300), st.data())
+def test_with_one_cell_the_interval_is_the_exact_mixtures_score_interval_for_any_lam(m, data):
+    # One phase-2 stratum of a phase-1 census, lam fixed or cross-fitted: the residual is y - g, g the prediction the
+    # estimator subtracts (lam f, or lam_i f_i), and the interval is closed-form: (mu_hat - p)^2 = z^2 (1 - r/m)/r
+    # [m/(m - 1) p (1 - p)(1 - delta)^2 + S2_within], delta the gap between the gold's labels in mean g (0 where the gold
+    # shows one label) and S2_within the gold's pooled spread of g within a label (over r - 1). No floor: a judge that
+    # separates the labels by more than half (delta > 1/2) narrows it as far as the gold shows. Wilson's at lam = 0.
+    r = data.draw(st.integers(2, m - 1))
+    y = np.array(data.draw(st.lists(st.integers(0, 1), min_size=m, max_size=m)), dtype=float)
+    sharp = data.draw(st.booleans())
+    noise = np.array(data.draw(st.lists(st.floats(0, 1), min_size=m, max_size=m)))
+    f = np.clip(0.1 + 0.8 * y + 0.1 * noise, 0, 1) if sharp else noise  # sharp: delta near 0.8
+    gold = np.zeros(m, dtype=bool)
+    gold[data.draw(st.permutations(range(m)))[:r]] = True
+    kw = _one_cell(y, f, gold)
+    z = stats.norm.ppf(0.975)
+    k = z * z * (1 - r / m) / r
+    lam = data.draw(st.floats(-0.5, 1.5))
+    for res, g in (
+        (two_phase_difference(**kw, lam=lam), lam * f[gold]),
+        (two_phase_difference_tuned(**kw).result, _cross_fitted_lams(y, f, gold) * f[gold]),
+    ):
+        yg = y[gold]
+        shown = (yg == 1).any() and (yg == 0).any()
+        delta = g[yg == 1].mean() - g[yg == 0].mean() if shown else 0.0
+        means = np.where(yg == 1, g[yg == 1].mean() if (yg == 1).any() else 0, g[yg == 0].mean() if (yg == 0).any() else 0)
+        within = np.sum((g - means) ** 2) / (r - 1)
+        want = _closed_form(res.estimate, k, m / (m - 1) * (1 - delta) ** 2, within)
+        if want is None:
+            assert res.interval.kind == "empty"
+            continue
+        assume(want[1] - want[0] > 1e-6)  # not a set that is all but empty, whose ends the grid's 1e-9 clip moves
+        assert res.interval.kind == "interval"
+        ((lo, hi),) = res.interval.pieces
+        assert lo == pytest.approx(want[0], abs=1e-8) and hi == pytest.approx(want[1], abs=1e-8)
+
+
+@settings(max_examples=40, deadline=None)
+@given(st.integers(10, 200), st.data())
+def test_where_phase_1_is_a_sample_and_the_gold_reads_it_whole_the_interval_is_wilsons_for_phase_1(n, data):
+    # Every phase-2 stratum taken whole, phase 1 a sample of n items of N: the estimate is the phase-1 mean and only
+    # phase 1 varies, so the interval is Wilson's for a sample of n of N, (ybar - P)^2 = z^2 (N - n) / (n (N - 1))
+    # P (1 - P): the frame's share moves beyond its phase-1 items along the path, not just its cells.
+    N = data.draw(st.integers(n + 1, 20 * n))
+    x = data.draw(st.integers(0, n))
+    y = np.zeros(n)
+    y[:x] = 1
+    f = np.array(data.draw(st.lists(st.floats(0, 1), min_size=n, max_size=n)))
+    res = two_phase_difference(**_one_cell(y, f, np.ones(n, dtype=bool), frame_size=N))
+    z = stats.norm.ppf(0.975)
+    want = _closed_form(x / n, z * z * (N - n) / (n * (N - 1)), 1.0, 0.0)
+    assert res.estimate == pytest.approx(x / n, abs=1e-15) and res.variance_phase2 == 0.0
+    ((lo, hi),) = res.interval.pieces
+    assert lo == pytest.approx(want[0], abs=1e-8) and hi == pytest.approx(want[1], abs=1e-8)
+    assert hi - lo > 0  # the ratio's path once collapsed here to the estimate alone
+
+
+@pytest.mark.parametrize("seed", range(6))
+def test_a_mean_is_the_ratio_over_a_denominator_that_holds_every_item(seed):
+    # One definition: the mean's score test (lam = 1) is two_phase_ratio's with y_den = 1 and f_den = 1 for every item,
+    # stratum for stratum and frame for frame; here on two-phase draws of a frame with a judge that separates well.
+    rng = np.random.default_rng(seed)
+    n_h = {"a": 300, "b": 300}
+    sizes = {"a": 3000, "b": 12000}
+    y = (rng.random(600) < np.repeat([0.3, 0.06], 300)).astype(float)
+    f = np.clip(np.where(y == 1, rng.beta(5, 2, 600), rng.beta(1, 8, 600)), 0, 1)
+    stratum = np.repeat(["a", "b"], 300)
+    gold = np.zeros(600, dtype=bool)
+    for s in sizes:
+        for low in (True, False):
+            units = np.flatnonzero((stratum == s) & ((f < 0.5) == low))
+            gold[rng.permutation(units)[: min(26 if low else 7, len(units))]] = True
+    design = dict(
+        frame_size=sum(sizes.values()), unit="comment", phase1_frame_sizes=sizes, phase1_sample_sizes=n_h,
+        phase2_cuts=[0.5], phase2_allocation={(s, b): (26, 7)[b] for s in sizes for b in (0, 1)},
+        phase1_stratum=stratum, stratifier=f, gold=gold,
+    )  # fmt: skip
+    mean = two_phase_difference(**design, f=f, y=np.where(gold, y, np.nan))
+    ratio = two_phase_ratio(
+        **design, f_den=np.ones(600), y_den=np.where(gold, 1.0, np.nan), numerators={"y": (f, np.where(gold, y, np.nan))}
+    )["y"]
+    assert ratio.estimate == pytest.approx(mean.estimate, abs=1e-15)  # summed in another order: equal to rounding
+    assert ratio.interval.kind == mean.interval.kind == "interval"
+    assert np.allclose(ratio.interval.pieces, mean.interval.pieces, rtol=0, atol=1e-12)
 
 
 # ---------------------------------------------------------------------------------------------- two independent samples

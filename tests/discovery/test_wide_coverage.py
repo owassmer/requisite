@@ -4,10 +4,17 @@ A07 §8.5), measured by the product's own measure_coverage; and the draws that d
 A frame with known labels; a judge whose bias differs by stratum (it over-calls in one docket and misses positives in
 another, or misses them below its own threshold); the two-phase design at the flow's sizes (a frame of thousands to tens
 of thousands, a phase-1 sample of a few thousand, 100 gold items, two to four phase-2 strata, the model's positives
-oversampled); 1,000 draws, seeded. The naive interval (the phase-1 mean of the model's probabilities, read as labels)
-misses; the corrected interval covers within 3 points of nominal, for lam = 1 and for the cross-fitted lam, overall and
-for each phase-1 stratum's own interval. Each coverage is reported with its Monte Carlo standard error, its misses on
-each side and its mean width, beside what each phase-2 stratum's gold is expected to hold.
+oversampled). Seven settings: the three below, and the rare-class frame and F4's shape of test_wide_ratio_coverage.py,
+each read as two means, its numerator's indicator and its denominator's. The denominator's is the voice indicator, which
+the judge separates by more than half: where the interval, when it floored the labels' part of the variance at
+1 - 2 lam delta >= 0, over-covered (0.999 at width 0.121 on the rare-class frame, 2,000 draws), now 0.945 at 0.074.
+
+DRAWS draws each, seeded: a coverage near 0.95 has a Monte Carlo standard error of 0.011 at that count, so the bar of 3
+points is about 2.7 of them (the full table, at 2,000 draws, SE 0.005, is in the 002-3 report). The naive interval
+(the phase-1 mean of the model's probabilities, read as labels) misses; the corrected interval covers within 3 points of
+nominal, for lam = 1 and for the cross-fitted lam, overall and for each phase-1 stratum's own interval. Each coverage is
+reported with its Monte Carlo standard error, its misses on each side and its mean width, beside what each phase-2
+stratum's gold is expected to hold.
 
 These are regression settings, not a guarantee for every design (A07 §8.5). Their allocations give the gold of the
 phase-2 strata that hold most of the frame enough expected positives for the bar to be reachable. Where such a stratum
@@ -17,13 +24,17 @@ on both sides; that is a property of the allocation (the coordinator's design de
 
 import itertools
 import math
+from functools import cache
 
 import numpy as np
 import pytest
+import test_wide_ratio_coverage as ratio_settings  # the ratio's frames, read here as means (same directory)
 from scipy import stats
 
 from requisite.discovery.inference import two_phase_difference
-from requisite.discovery.sampling import NAIVE, draw_phase1, draw_phase2, measure_coverage
+from requisite.discovery.sampling import NAIVE, CoverageReport, draw_phase1, draw_phase2, measure_coverage
+
+DRAWS = 400
 
 
 def _frame(rng, strata):
@@ -68,18 +79,37 @@ SETTINGS = {
 }
 
 
-@pytest.mark.covers("WP11b.coverage")
-@pytest.mark.parametrize("name", list(SETTINGS))
-def test_corrected_interval_covers_and_naive_interval_misses(name):
-    cfg = SETTINGS[name]
-    frame = _frame(np.random.default_rng(20261101), cfg["strata"])
+# The ratio's rare-class frame and F4's shape, each read as two means: its numerator's indicator (stratified, as the
+# ratio's is, on the judge's numerator probability) and its denominator's.
+RATIO_FRAMES = (
+    "rare class, 30,000 items, 3,000 read, 2 strata",
+    "F4's shape, denominator about 0.1, 92,500 items, 1,200 read, 130 gold",
+)
+MEANS_OF_RATIO_FRAMES = [f"ratio's {name}: {part}" for name in RATIO_FRAMES for part in ("numerator", "denominator")]
+
+
+def _setting(name):
+    """The frame and design of a setting: frame[stratum] = (labels, predictions, stratifier)."""
+    if name in SETTINGS:
+        return _frame(np.random.default_rng(20261101), SETTINGS[name]["strata"]), SETTINGS[name]
+    base, part = name.removeprefix("ratio's ").rsplit(": ", 1)
+    cfg = ratio_settings.SETTINGS[base]
+    frame = ratio_settings._frame(np.random.default_rng(20261101), cfg["strata"])
+    if part == "numerator":
+        return {s: (v[2]["exposed"][0], v[2]["exposed"][1], v[3]) for s, v in frame.items()}, cfg
+    return {s: (v[0], v[1], v[3]) for s, v in frame.items()}, cfg
+
+
+@cache
+def _measured(name: str) -> tuple[CoverageReport, str]:
+    frame, cfg = _setting(name)
     names = list(frame)
     report = measure_coverage(
         frame=frame,
         phase1_sample_sizes=dict(zip(names, cfg["n_h"], strict=True)),
         phase2_cuts=cfg["cuts"],
         phase2_allocation={(names[i], b): a for (i, b), a in cfg["allocation"].items()},
-        draws=1000,
+        draws=DRAWS,
         seed=20261102,
         unit="comment",
     )
@@ -87,8 +117,8 @@ def test_corrected_interval_covers_and_naive_interval_misses(name):
     for c in report.intervals:
         lines.append(
             f"  {c.estimator.split(':')[0]}: coverage {c.coverage:.3f} (Monte Carlo SE {c.monte_carlo_se:.3f}), "
-            f"missed below {c.missed_below:.3f} above {c.missed_above:.3f}, mean width {c.mean_width:.4f}"
-            + (f", by stratum {[round(x, 3) for x in c.by_stratum]}" if c.by_stratum else "")
+            f"missed below {c.missed_below:.3f} above {c.missed_above:.3f} between {c.missed_between:.3f}, mean width "
+            f"{c.mean_width:.4f}" + (f", by stratum {[round(x, 3) for x in c.by_stratum]}" if c.by_stratum else "")
         )
     for g in report.gold:
         lines.append(
@@ -97,12 +127,19 @@ def test_corrected_interval_covers_and_naive_interval_misses(name):
         )
     summary = "\n".join(lines)
     print(summary)
+    return report, summary
 
+
+@pytest.mark.covers("WP11b.coverage")
+@pytest.mark.parametrize("name", list(SETTINGS) + MEANS_OF_RATIO_FRAMES)
+def test_corrected_interval_covers_and_naive_interval_misses(name):
+    report, summary = _measured(name)
     by = {c.estimator: c for c in report.intervals}
     assert by[NAIVE].coverage < 0.5, summary
+    band = 0.03 + 1e-12  # the closed band [0.92, 0.98]: 392 of 400 draws is 0.98, which a float may put past it
     for key in ("lam = 1", "cross-fitted lam"):
-        assert abs(by[key].coverage - report.level) <= 0.03, summary
-        assert all(abs(x - report.level) <= 0.03 for x in by[key].by_stratum), summary
+        assert abs(by[key].coverage - report.level) <= band, summary
+        assert all(abs(x - report.level) <= band for x in by[key].by_stratum), summary
 
 
 # -------------------------------------------------------------------------------------------------------- the draws

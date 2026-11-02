@@ -14,17 +14,20 @@ from fractions import Fraction
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from scipy import stats
+from scipy.optimize import brentq
 
 from requisite.discovery.inference import (
     MARGINAL,
+    _combination,
     _design_covariance,
     _difference_means,
     _fieller,
     _ratio_score,
     _resolve,
+    _tilt,
     two_phase_ratio,
 )
 
@@ -395,3 +398,67 @@ def test_a_numerator_item_outside_the_denominator_is_refused():
         two_phase_ratio(**{**kw, "numerators": {"exposed": (fn, bad)}})
     with pytest.raises(ValueError, match="at least one numerator"):
         two_phase_ratio(**{**kw, "numerators": {}})
+
+
+@settings(max_examples=30, deadline=None)
+@given(st.integers(30, 300), st.data())
+def test_where_phase_1_is_a_sample_and_the_gold_reads_it_whole_the_ends_are_the_empirical_likelihood_tests(n, data):
+    # Every phase-2 stratum taken whole, phase 1 a sample of n of N: only phase 1 varies, the frame's categories move
+    # beyond its phase-1 items, and at each R the restricted frame is the empirical-likelihood one, Pi_c = P_c / (1 +
+    # eta z_c) with sum_c Pi_c z_c = 0 (Owen 1988), computed here on its own; the statistic is (theta_num - R
+    # theta_den)^2 / ((N - n) / (n (N - 1)) Var_Pi(z)). The path once collapsed the set to the estimate here.
+    N = data.draw(st.integers(n + 1, 20 * n))
+    counts = data.draw(st.lists(st.integers(1, 100), min_size=3, max_size=3))  # every category has phase-1 items
+    cat = np.repeat([0, 1, 2], np.round(np.array(counts) / sum(counts) * n).astype(int))[:n]
+    assume(len(cat) == n and len(set(cat.tolist())) == 3)
+    yn, yd = (cat == 2).astype(float), (cat >= 1).astype(float)
+    f = np.array(data.draw(st.lists(st.floats(0, 1), min_size=n, max_size=n)))
+    gold = np.ones(n, dtype=bool)
+    r = two_phase_ratio(
+        frame_size=N, unit="comment", phase1_frame_sizes={"frame": N}, phase1_sample_sizes={"frame": n},
+        phase2_cuts=[], phase2_allocation={("frame", 0): n}, phase1_stratum=["frame"] * n, stratifier=f, gold=gold,
+        f_den=f, y_den=yd, numerators={"exposed": (f, yn)},
+    )["exposed"]  # fmt: skip
+    P = np.bincount(cat, minlength=3) / n
+
+    def statistic(R: float) -> float:
+        zc = np.array([0.0, -R, 1.0 - R])
+        lo, hi = -1.0 / (1.0 - R), 1.0 / R  # where every 1 + eta z_c stays positive
+        eta = brentq(lambda e: float(np.sum(P * zc / (1 + e * zc))), lo * (1 - 1e-12), hi * (1 - 1e-12), xtol=1e-15)
+        Pi = P / (1 + eta * zc)
+        var = float(np.sum(Pi * zc * zc) - np.sum(Pi * zc) ** 2)
+        return (r.theta_num - R * r.theta_den) ** 2 / ((N - n) / (n * (N - 1)) * var)
+
+    assert r.interval.kind == "interval"
+    ((lo, hi),) = r.interval.pieces
+    assert hi - lo > 0
+    for end in (lo, hi):
+        if 1e-6 < end < 1 - 1e-6:
+            assert statistic(end) == pytest.approx(Z * Z, rel=1e-6)
+
+
+@settings(max_examples=300, deadline=None)
+@given(
+    st.lists(st.sampled_from([0.0, 2.8e-17, 1e-9, 0.3, 0.5, 1.0]), min_size=3, max_size=3).filter(lambda p: sum(p) > 0),
+    st.floats(1e-6, 1 - 1e-6),
+    st.floats(-1e9, 1e9),
+)
+def test_the_tilt_is_owens_weights_to_rounding_however_small_a_category_or_large_the_tilt(mass, R, lam):
+    # pi_c = pihat_c / (1 - lam z_c + s): pihat_c / pi_c + lam z_c is one number, 1 + s, over the categories with mass,
+    # and no category's 1 - lam z_c + s is negative; the weights sum to one; and their mean of z is nondecreasing in lam.
+    # A category with a mass of 2.8e-17 next to one of nearly 1 once gave NaN weights.
+    pihat = np.array(mass) / sum(mass)
+    z = _combination(np.array([R]))
+    lams = np.array([lam, lam + 1e-6 * (1 + abs(lam))])  # the second the larger
+    pi, _, _ = _tilt(pihat[None, :], lams[:, None], np.repeat(z, 2, axis=0))
+    pi = pi[:, 0, :]
+    assert np.all(np.isfinite(pi)) and np.all(pi >= 0)
+    assert np.allclose(pi.sum(axis=1), 1.0, rtol=0, atol=1e-12)
+    for row, la in zip(pi, [lams[0] * z[0], lams[1] * z[0]], strict=True):
+        has = pihat > 0
+        one = pihat[has] / row[has] + la[has]  # 1 + s
+        scale = 1.0 + np.max(np.abs(la))
+        assert np.ptp(one) <= 1e-9 * scale
+        assert np.all(la <= one.mean() + 1e-9 * scale)  # every category's 1 - lam z_c + s >= 0
+    means = pi @ z[0]
+    assert means[1] >= means[0] - 1e-12

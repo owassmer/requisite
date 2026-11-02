@@ -94,6 +94,16 @@ def draw_phase2(
 # ---------------------------------------------------------------------------------------------------------- coverage
 
 
+def _misses(
+    sets: Sequence[RatioSet], truth: float
+) -> tuple[NDArray[np.bool_], NDArray[np.bool_], NDArray[np.bool_]]:
+    """For each set: whether it holds the truth, whether the truth is below every point of it, and above every point."""
+    held = np.array([truth in s for s in sets])
+    below = np.array([bool(s.pieces) and truth < s.pieces[0][0] for s in sets])
+    above = np.array([bool(s.pieces) and truth > s.pieces[-1][1] for s in sets])
+    return held, below, above
+
+
 @dataclass(frozen=True)
 class IntervalCoverage:
     """How often one estimator's interval held the frame truth over the draws."""
@@ -101,8 +111,9 @@ class IntervalCoverage:
     estimator: str
     coverage: float
     monte_carlo_se: float  # sqrt(c (1 - c) / draws)
-    missed_below: float  # the truth was below the interval
-    missed_above: float
+    missed_below: float  # the truth was below every point of the interval
+    missed_above: float  # above every point of it
+    missed_between: float  # in a gap between its pieces, or the set was empty
     mean_width: float
     by_stratum: tuple[float, ...]  # each phase-1 stratum's own interval holding its own share; () for the naive
 
@@ -166,7 +177,7 @@ def measure_coverage(
     fpc = 1 - n_h / np.array([N_h[s] for s in names])
 
     rng = np.random.default_rng(seed)
-    bounds: dict[str, list[tuple[float, float]]] = {"lam = 1": [], "cross-fitted lam": [], NAIVE: []}
+    sets: dict[str, list[RatioSet]] = {"lam = 1": [], "cross-fitted lam": [], NAIVE: []}
     held: dict[str, list[list[bool]]] = {"lam = 1": [], "cross-fitted lam": []}
     for _ in range(draws):
         picks = _phase1(rng, N_h, phase1_sample_sizes)
@@ -204,28 +215,27 @@ def measure_coverage(
             level=level,
         ).result
         for key, r in (("lam = 1", lam1), ("cross-fitted lam", tuned)):
-            bounds[key].append(r.interval)
-            held[key].append(
-                [b.interval[0] <= t <= b.interval[1] for b, t in zip(r.by_stratum, stratum_truth, strict=True)]
-            )
+            sets[key].append(r.interval)
+            held[key].append([t in b.interval for b, t in zip(r.by_stratum, stratum_truth, strict=True)])
         means = np.array([fs[s][picks[s]].mean() for s in names])
         variances = np.array([fs[s][picks[s]].var(ddof=1) if len(picks[s]) > 1 else 0.0 for s in names])
         naive = float(W @ means)
         se = float(np.sqrt(np.sum(W**2 * fpc * variances / n_h)))
-        bounds[NAIVE].append((naive - z * se, naive + z * se))
+        sets[NAIVE].append(RatioSet(pieces=((naive - z * se, naive + z * se),), kind="interval", reason=NAIVE))
 
     intervals = []
-    for key, rows in bounds.items():
-        a = np.array(rows)
-        c = float(np.mean((a[:, 0] <= truth) & (truth <= a[:, 1])))
+    for key, rows in sets.items():
+        inside, below, above = _misses(rows, truth)
+        c = float(inside.mean())
         intervals.append(
             IntervalCoverage(
                 estimator=key,
                 coverage=c,
                 monte_carlo_se=float(np.sqrt(c * (1 - c) / draws)),
-                missed_below=float(np.mean(truth < a[:, 0])),
-                missed_above=float(np.mean(truth > a[:, 1])),
-                mean_width=float(np.mean(a[:, 1] - a[:, 0])),
+                missed_below=float(below.mean()),
+                missed_above=float(above.mean()),
+                missed_between=float(np.mean(~inside & ~below & ~above)),
+                mean_width=float(np.mean([s.width for s in rows])),
                 by_stratum=tuple(float(x) for x in np.mean(held[key], axis=0)) if key in held else (),
             )
         )
@@ -322,9 +332,7 @@ NAIVE_RATIO = (
 def _set_coverage(
     estimator: str, sets: Sequence[RatioSet], within: Sequence[RatioSet], truth: float
 ) -> RatioIntervalCoverage:
-    held = np.array([truth in s for s in sets])
-    below = np.array([bool(s.pieces) and truth < s.pieces[0][0] for s in sets])
-    above = np.array([bool(s.pieces) and truth > s.pieces[-1][1] for s in sets])
+    held, below, above = _misses(sets, truth)
     c, n = float(held.mean()), len(sets)
     return RatioIntervalCoverage(
         estimator=estimator,
