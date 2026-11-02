@@ -18,10 +18,11 @@ import os
 import subprocess  # noqa: S404  (the Claude Code CLI, with fixed arguments)
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from requisite import cassettes
 from requisite.core import canonical_json
@@ -54,6 +55,30 @@ def prompt(role: str) -> str:
     if not path.exists():
         raise AgentError(f"no prompt for agent role {role!r} at {path}")
     return path.read_text()
+
+
+def json_schema(model: type[BaseModel]) -> dict[str, Any]:
+    """The answer type's JSON Schema in a form both the Claude Code CLI's strict local check and the API's draft 2020-12
+    accept: pydantic's OpenAPI-only "discriminator" keyword dropped (the oneOf it annotates already says which branch
+    each value takes by its tag), and a tuple's "prefixItems" (which the CLI's check refuses) written as "items" with a
+    fixed length, the items' schemas as alternatives where they differ. The answer is validated by its pydantic type
+    afterwards, which holds each position to its own type."""
+
+    def clean(node: Any) -> Any:
+        if isinstance(node, dict):
+            out = {k: clean(v) for k, v in node.items() if k != "discriminator"}
+            if "prefixItems" in out:
+                positions = out.pop("prefixItems")
+                distinct = [p for i, p in enumerate(positions) if p not in positions[:i]]
+                out["items"] = distinct[0] if len(distinct) == 1 else {"anyOf": distinct}
+                out["minItems"] = out["maxItems"] = len(positions)
+            return out
+        if isinstance(node, list):
+            return [clean(v) for v in node]
+        return node
+
+    cleaned: dict[str, Any] = clean(model.model_json_schema())
+    return cleaned
 
 
 def _oauth_token() -> str | None:
@@ -98,23 +123,38 @@ def _claude(system: str, message: str, schema: Mapping[str, Any], effort: str) -
     return kept, 0.0
 
 
+ATTEMPTS = 3
+
+
 def run[O: BaseModel](
     role: str, input: Mapping[str, Any], output: type[O], *, effort: str = "high", root: Path | None = None
 ) -> AgentResult[O]:
-    """One agent call: the role's prompt, the input as canonical JSON, an answer of type `output`."""
+    """One agent call: the role's prompt, the input as canonical JSON, an answer of type `output`. An answer that its
+    type refuses is returned to the agent with the validator's errors, as spec §13 has agents run the checks before they
+    submit, up to ATTEMPTS times; each attempt is its own recorded call, so a replay takes the same path."""
     system = prompt(role)
-    schema = output.model_json_schema()
-    message = canonical_json(dict(input))
-    body = {"role": role, "model": MODEL, "effort": effort, "system": system, "input": json.loads(message),
-            "schema": schema}  # fmt: skip
-    recorded = cassettes.call(
-        "claude_agent", role, body, lambda: _claude(system, message, schema, effort), estimate_usd=0.0, root=root
-    )
-    try:
-        value = output.model_validate(recorded.response["structured_output"])
-    except Exception as e:  # pydantic ValidationError and anything malformed: the answer is not one
-        raise AgentError(f"{role}'s answer is not a {output.__name__}: {e}") from e
-    return AgentResult(role, value, cassettes.request_key("claude_agent", role, body), MODEL, effort, recorded.replayed)
+    schema = json_schema(output)
+    feedback: list[dict[str, Any]] = []
+    for _ in range(ATTEMPTS):
+        payload = dict(input) if not feedback else {**input, "earlier_attempts_refused": feedback}
+        message = canonical_json(payload)
+        body = {"role": role, "model": MODEL, "effort": effort, "system": system, "input": json.loads(message),
+                "schema": schema}  # fmt: skip
+        recorded = cassettes.call(
+            "claude_agent", role, body, partial(_claude, system, message, schema, effort), estimate_usd=0.0, root=root
+        )
+        answer = recorded.response["structured_output"]
+        try:
+            # JSON mode, as the answer arrived: a record's tuple fields take JSON arrays there (strict Python mode
+            # refuses a list for a tuple).
+            value = output.model_validate_json(json.dumps(answer))
+        except ValidationError as e:
+            errors = [{"at": ".".join(str(x) for x in err["loc"]), "error": err["msg"]} for err in e.errors()]
+            feedback.append({"answer": answer, "refused_because": errors})
+            continue
+        run_id = cassettes.request_key("claude_agent", role, body)
+        return AgentResult(role, value, run_id, MODEL, effort, recorded.replayed)
+    raise AgentError(f"{role}'s answer was refused {ATTEMPTS} times; the last refusal: {feedback[-1]['refused_because']}")
 
 
 __all__ = ["MODEL", "AgentError", "AgentResult", "prompt", "run"]

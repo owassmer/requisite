@@ -10,7 +10,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
-from requisite.core import TimeWindow
+from requisite.core import ContractIR, TimeWindow
+from requisite.core.contract import Support
 from requisite.core.governance import CommentStatus, DocumentType
 
 
@@ -54,3 +55,13 @@ class ParaphrasesDraft(_Answer):
     """paraphrase_writer: two rewordings of a template (core.ParaphraseSet holds them with the original, p0)."""
 
     paraphrases: Sequence[ParaphraseDraft]
+
+
+class HarvestDraft(_Answer):
+    """contract_reader: a filed contract read into the IR (core.HarvestedContract's support classification, and the IR
+    itself as a core.ContractIR, validated as one)."""
+
+    support: Support
+    assumptions: Sequence[str]
+    unsupported_terms: Sequence[str]
+    ir: ContractIR | None
