@@ -122,12 +122,21 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   November 1). The Western Grazers contract is in by name: spec §9.3 names it as the reference specimen, and it is
   Kalshi's series KXCAGOAT, "California goat herder wage obligations" (its product certification and contract terms
   are filed PDFs; found November 1 through the read-only Kalshi API). The others: among Kalshi series with filed contract
-  terms (contract_terms_url) and at least one market that has settled, as of a pinned instant, one series per strike
-  type present among those settled markets, the one whose ticker has the smallest sha256("requisite-F1|" + ticker);
-  where more than four strike types are present, the four with the most settled markets. A series's strike types are
-  those of its markets settled by the instant (strike_type is a market field); a series is eligible under each. The
-  named series is apart from the draw: it counts toward neither the cap nor any type, and the draw passes over it to
-  the next in hash order. The hash makes the choice
+  terms (a non-empty contract_terms_url), ordered by sha256("requisite-F1|" + ticker), a series is eligible when one of
+  its markets settled in the 45 days before the pinned instant (a market counts as settled by the instant when its
+  recorded settlement_ts is at or before it). Its strike types are those of its latest settled event's markets settled
+  by the instant (the event of its market settled last; a tie goes to the smaller event ticker), and it is eligible
+  under each. Each strike type's draw is the first eligible series in hash order; the walk stops once four types are
+  drawn, so at most four series are drawn. A drawn series' harvested markets are those of the event that drew it; the
+  named series' are all its markets. The named series is apart from the draw: it counts toward no type, and the draw
+  passes over it to the next in hash order. (Bounded by the worker on 001-2 before any live draw ran, accepted by the
+  coordinator, November 1: the first wording needed every settled Kalshi market, millions; all 15,589 listed series
+  carry contract_terms_url, and Kalshi offers no count, no strike filter and no archive time filter. Forty-five days is
+  longer than a month and shorter than the archive's lag, cutoff 2026-09-02 when read November 1, and keeps the compared
+  outcomes recent, so most likely settled under the terms contract_terms_url now links to.) The pinned instant is
+  2026-11-02T00:00:00Z, fixed here before the live draw runs: the first midnight UTC after the rule was fixed. Kalshi
+  requests are keyed by path, query and the instant the reads serve, in UTC: the record changes over time, so the same
+  request for another instant is another request. The hash makes the choice
   independent of anyone's view of which contracts are interesting; spec §12 asks for 2–5 contracts and spec §9.3 for
   every strike type over the harvest as a whole. The IR grammar comes from spec §8.1 and the definition, never fitted to
   a drawn contract: a filed construct the IR cannot express is a finding about the grammar, fixed there when the
