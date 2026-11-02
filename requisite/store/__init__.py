@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -30,6 +30,7 @@ from requisite.core import (
     Approval,
     Artifact,
     Claim,
+    DerivationReceipt,
     GateResult,
     GoldLabel,
     Judgment,
@@ -168,7 +169,7 @@ class Store:
     def commit(self, kind: str, key: str, record: Record) -> Committed:
         """Commit a code-produced record under (kind, key). Prefer the typed commit_* methods, which apply the rules
         that kind carries."""
-        if kind in {"artifact", "synthetic_artifact", "claim", "synthetic_claim", "proposal", "case"}:
+        if kind in {"artifact", "synthetic_artifact", "claim", "synthetic_claim", "proposal", "case", "derivation"}:
             raise Refused(f"{kind} records are committed through their own method, which checks them")
         return self._put(kind, key, record.model_dump(mode="json"))
 
@@ -346,6 +347,39 @@ class Store:
 
     def commit_override(self, override: Override) -> Committed:
         return self._put("override", override.content_hash(), override.model_dump(mode="json"))
+
+    def commit_derivations(self, receipts: Sequence[DerivationReceipt]) -> list[DerivationReceipt]:
+        """The receipts of one recompute's computed values, in one transaction (spec §5, I7; addendum A11 §11.2). A
+        receipt is keyed by its lineage hash, which names one derivation: a node version applied to inputs of given value
+        and lineage. Where a lineage is already committed, the receipt first committed for it stands and is returned in
+        place of the new one. A receipt that would give a committed lineage another value or other inputs is refused: a
+        pure node's value is fixed by its lineage, so the node changed without a new version (spec §5) or is not pure."""
+        standing: list[DerivationReceipt] = []
+        now = self.clock().isoformat()
+        with self._tx() as db:
+            for receipt in receipts:
+                row = db.execute(
+                    "select body from records where kind = 'derivation' and key = ?", (receipt.lineage_hash,)
+                ).fetchone()
+                if row is not None:
+                    existing = DerivationReceipt.model_validate_json(row[0])
+                    if (existing.node, existing.value_hash, existing.inputs) != (
+                        receipt.node, receipt.value_hash, receipt.inputs,
+                    ):  # fmt: skip
+                        raise Conflict(
+                            f"lineage {receipt.lineage_hash} was derived by {existing.node.id} v{existing.node.version} "
+                            f"to value {existing.value_hash}, now to {receipt.value_hash}: a node changed without a new "
+                            "version, or is not pure"
+                        )
+                    standing.append(existing)
+                    continue
+                text = core.canonical_json(receipt.model_dump(mode="json"))
+                db.execute(
+                    "insert into records (kind, key, hash, body, committed_at) values (?, ?, ?, ?, ?)",
+                    ("derivation", receipt.lineage_hash, sha256(text), text, now),
+                )
+                standing.append(receipt)
+        return standing
 
     def commit_gold_label(self, label: GoldLabel) -> Committed:
         key = f"{label.design.id}|{label.design.version}|{label.item}|{label.question.id}|{label.question.version}"
