@@ -236,13 +236,49 @@ def _f1_retrieve(args: argparse.Namespace) -> int:
 
 
 def _fuzz(args: argparse.Namespace) -> int:
+    from requisite.fuzz import revise
     from requisite.fuzz import run as fuzz
 
     result, store = fuzz.from_case(Path(args.case), args.contract, prose=Path(args.prose) if args.prose else None,
                                    reference=Path(args.reference) if args.reference else None,
                                    providers=args.providers, workers=args.workers)  # fmt: skip
     print(fuzz.summary(result, store))
+    print(revise.examples_line(*revise.publish_run(Path(args.case), result)))
     return 0
+
+
+def _fuzz_revise(args: argparse.Namespace) -> int:
+    from requisite.fuzz import revise
+
+    out = revise.from_case(Path(args.case), args.contract, prose=Path(args.prose) if args.prose else None,
+                           reference=Path(args.reference) if args.reference else None, providers=args.providers,
+                           workers=args.workers)  # fmt: skip
+    print(revise.summary(out))
+    return 0
+
+
+def _fuzz_args(fz: argparse.ArgumentParser) -> None:
+    fz.add_argument("contract", help="an active contract in the case (id, or id@version), or a ContractIR JSON file")
+    fz.add_argument("--case", required=True, help="the case's directory; the run's synthetic case is kept beside it")
+    fz.add_argument("--prose", help="a ProseDraft JSON file to test (default: the clause drafter's prose of the IR)")
+    fz.add_argument("--reference", help="a JSON list of observations for values the IR reads only through a "
+                                         "computation (default: a hundred steps of each one's precision)")
+    fz.add_argument("--providers", nargs="+", default=["openai_decisions", "clef", "jev"],
+                    choices=["openai_decisions", "clef", "jev"], help="the judges (default: all three)")
+    fz.add_argument("--workers", type=int, default=8, help="scenarios worked at once (default 8)")
+
+
+REVISE = ("revise the clauses a fuzz run suspects from its development scenarios, each section alone, and fuzz again "
+          "over the same scenarios and held-out split, by rounds, until the development scenarios pass (spec §8.6 step 7)")
+
+
+def _revise_parser() -> argparse.ArgumentParser:
+    rv = argparse.ArgumentParser(prog="requisite fuzz revise", description=REVISE.capitalize() + ". The run reported "
+                                 "is compared with its base on the development and the held-out scenarios apart; a pass "
+                                 "counts only on the held-out ones, which the drafter never saw.")  # fmt: skip
+    _fuzz_args(rv)
+    rv.set_defaults(run=_fuzz_revise)
+    return rv
 
 
 def _approve(args: argparse.Namespace) -> int:
@@ -468,15 +504,11 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--series", required=True, help="the harvested series' ticker")
     m.add_argument("--as-of", type=_instant, help="the draw's instant, where the series is harvested at more than one")
     m.set_defaults(run=_contract_read)
-    fz = sub.add_parser("fuzz", help="resolvability fuzzing (spec §8.6): a contract's prose tested against its IR")
-    fz.add_argument("contract", help="an active contract in the case (id, or id@version), or a ContractIR JSON file")
-    fz.add_argument("--case", required=True, help="the case's directory; the run's synthetic case is kept beside it")
-    fz.add_argument("--prose", help="a ProseDraft JSON file to test (default: the clause drafter's prose of the IR)")
-    fz.add_argument("--reference", help="a JSON list of observations for values the IR reads only through a "
-                                         "computation (default: a hundred steps of each one's precision)")
-    fz.add_argument("--providers", nargs="+", default=["openai_decisions", "clef", "jev"],
-                    choices=["openai_decisions", "clef", "jev"], help="the judges (default: all three)")
-    fz.add_argument("--workers", type=int, default=8, help="scenarios worked at once (default 8)")
+    fz = sub.add_parser("fuzz", help="resolvability fuzzing (spec §8.6): a contract's prose tested against its IR; "
+                        "`requisite fuzz revise <contract> --case <dir>` revises the clauses it suspects",
+                        description="Resolvability fuzzing (spec §8.6): a contract's prose tested against its IR. "
+                        f"`requisite fuzz revise <contract> --case <dir>` (see its --help): {REVISE}.")  # fmt: skip
+    _fuzz_args(fz)
     fz.set_defaults(run=_fuzz)
     a = sub.add_parser("approve", help="a human decides at a gate (G1-G4) on one proposal, as it stands")
     case_args(a)
@@ -495,7 +527,11 @@ def main(argv: list[str] | None = None) -> int:
     case_args(sh)
     sh.add_argument("proposal")
     sh.set_defaults(run=_show)
-    args = parser.parse_args(argv)
+    given = list(sys.argv[1:] if argv is None else argv)
+    if given[:2] == ["fuzz", "revise"]:  # a step of fuzz, beside its contract argument
+        args = _revise_parser().parse_args(given[2:])
+    else:
+        args = parser.parse_args(given)
     return int(args.run(args))
 
 

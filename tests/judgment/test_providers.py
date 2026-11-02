@@ -3,6 +3,7 @@ over the same rendered state with the same answer keys, replay is deterministic 
 vector is read exactly as declared: round-off corrected and logged, anything else refused."""
 
 import math
+from decimal import Decimal
 
 import pytest
 from hypothesis import given
@@ -70,7 +71,9 @@ def test_round_off_is_corrected_within_each_values_own_interval_and_kept():
 
 @given(st.lists(st.integers(0, 100), min_size=2, max_size=6), st.sampled_from([0.1, 0.01, 0.001]))
 def test_every_correction_stays_within_half_a_step_of_each_reported_value(units, step):
-    reported = [u * step for u in units]
+    # Each value as a provider reports it at its step: the decimal u x step (0.7, never 70 * 0.01 = 0.7000000000000001,
+    # which is finer than the step, and which correct_roundoff reads exactly as it prints).
+    reported = [float(Decimal(u) * Decimal(repr(step))) for u in units]
     corrected = correct_roundoff(reported, step)
     feasible = sum(max(0.0, r - step / 2) for r in reported) <= 1 + 1e-12 <= sum(r + step / 2 for r in reported) + 2e-12
     if corrected is None:

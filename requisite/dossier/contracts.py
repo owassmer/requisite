@@ -13,7 +13,8 @@ from requisite import core
 from requisite.dossier.html import anchor, code, dl, esc, heading, link, para, pre, table, ul, value
 from requisite.dossier.refs import ContractKey, refs, reports_of
 from requisite.dossier.site import Page, Site, renders, renders_payload, summarizes
-from requisite.fuzz.run import SECTION_TITLES
+from requisite.fuzz.revise import EXAMPLES, examples_text
+from requisite.fuzz.run import SECTION_ORDER, SECTION_TITLES
 
 
 def node_anchor(node_id: str) -> str:
@@ -414,13 +415,19 @@ def rulebook(page: Page, p: core.Proposal) -> str:
     nodes = set(ir_nodes(ir)) if ir is not None else set()
     observables = {o.id for o in ir.observables} if ir is not None else set()
     reports = reports_of(refs(site).family, prose=p.id)
+    examples = [(k, site.case.get(EXAMPLES, k, core.ScenarioExample)) for k in site.case.keys.get(EXAMPLES, [])
+                if k.startswith(f"{p.id}|")]  # fmt: skip
     out = [para(f"The rulebook prose of {page.record('contract', ckey, f'{rb.contract.id} v{rb.contract.version}')}, "
                 "in spec §8.5's sections and order. Each section names the IR nodes and observables it states; each "
                 "links to its place in the IR, where every node lists the sections that state it.")]  # fmt: skip
     if reports:
         out.append(para("Fuzzed in: " + "; ".join(
             page.record("fuzz_report", k, k, site=s) + esc(f" (equivalence {r.equivalence})") for s, k, r in reports)))
-    for section in rb.sections:
+    shown = list(rb.sections)
+    if examples and "examples" not in {s.name for s in shown}:  # published examples take the section's place (spec §8.5)
+        shown.append(core.RulebookSection(name="examples", text="", ir_nodes=[]))
+        shown.sort(key=lambda s: SECTION_ORDER.index(s.name))
+    for section in shown:
         cites = []
         for ident in section.ir_nodes:
             if ident in nodes:
@@ -438,6 +445,13 @@ def rulebook(page: Page, p: core.Proposal) -> str:
         body = pre(section.text) if section.text.strip() else para(
             "<em>Empty as drafted: the examples are the coverage scenarios that passed fuzzing, rendered by code with "
             "their IR outcomes (spec §8.5), never drafted.</em>" if section.name == "examples" else "<em>Empty.</em>")
+        if section.name == "examples" and examples:
+            rows = [[page.record(EXAMPLES, k, x.scenario_id), esc(x.description), code(x.expected), code(x.evaluation)]
+                    for k, x in examples]  # fmt: skip
+            body += para("Published by code from a run of this rulebook that passed: its passing coverage scenarios "
+                         "(spec §8.6 step 1), each rendered with the evaluator's outcome (spec §8.5; requisite.fuzz.revise).")
+            body += pre(examples_text([x for _, x in examples])) + table(
+                ["scenario", "description", "the evaluator's outcome", "its evaluation (content hash)"], rows)
         out.append(f'<section class="prose" id="{esc(section_anchor(section.name))}">'
                    + heading(3, esc(SECTION_TITLES[section.name]))
                    + body

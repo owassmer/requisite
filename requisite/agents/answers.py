@@ -99,6 +99,18 @@ class ProseDraft(_Answer):
     sections: Sequence[ProseSection]
 
 
+class SectionsRevised(_Answer):
+    """clause_reviser: the clause drafter's revision of one rulebook section a fuzz run suspects (spec §8.6 step 7). sections:
+    each section it revised, whole (the one it was asked to revise; another only where the failing scenarios cannot be
+    fixed without it, which code refuses and reports). not_decided_by_the_ir: each case the readers were asked about that
+    the IR itself does not decide, so no wording can settle it without adding to the contract. rationale: what the readers
+    hesitated on, and how the revision settles it."""
+
+    sections: Sequence[ProseSection]
+    not_decided_by_the_ir: Sequence[str]
+    rationale: str
+
+
 class PacketDocument(_Answer):
     title: str
     source: str

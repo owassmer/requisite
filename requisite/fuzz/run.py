@@ -932,13 +932,24 @@ def rulebook_gate(store: Store, proposal: core.Proposal) -> core.GateResult:
         "settlement is stated"))  # fmt: skip
 
 
+def clause_payload(ir: core.ContractIR, prose: Prose) -> dict[str, Any]:
+    """A clause proposal's payload: the prose as the contract's rulebook, validated by the clause's schema gate, which
+    says why where it is not one."""
+    return {"contract": ir.ref.model_dump(mode="json"),
+            "sections": [{"name": x.name, "text": x.text, "ir_nodes": list(x.ir_nodes)} for x in prose.sections]}  # fmt: skip
+
+
+def clause_id(payload: Mapping[str, Any]) -> str:
+    """A clause proposal's id, its payload's hash: the same prose is the same proposal."""
+    return f"clause-{core.sha256(core.canonical_json(dict(payload)))[:16]}"
+
+
 def propose_prose(case: Store, ir: core.ContractIR, prose: ProseDraft, author: str) -> core.Proposal:
     """The prose proposed as the contract's rulebook (kind "clause"; spec I1), through its gates. The same prose proposed
     again is the proposal it already is."""
     case.register_gate("clause", "tests", rulebook_gate)
-    payload = {"contract": ir.ref.model_dump(mode="json"),  # validated by the clause's schema gate, which says why not
-               "sections": [{"name": x.name, "text": x.text, "ir_nodes": list(x.ir_nodes)} for x in prose.sections]}
-    pid = f"clause-{core.sha256(core.canonical_json(payload))[:16]}"
+    payload = clause_payload(ir, prose)
+    pid = clause_id(payload)
     existing = case.proposal(pid)
     if existing is not None:
         return existing
@@ -971,6 +982,27 @@ def from_case(case_dir: Path, contract: str, *, prose: Path | None = None, refer
     """`requisite fuzz <contract> --case <dir>`: a case's contract fuzzed against its prose (the file given, or the
     clause drafter's), with the case's active paraphrase set for the resolver template where it has one, and the
     reference observations given (a JSON list of core.Observation) for values the IR reads only through a computation."""
+    x = prepare(case_dir, contract, prose=prose, reference=reference, agent=agent)
+    return run(x.ir, x.rulebook, x.store, providers=providers, resolver_paraphrases=x.paraphrases, reference=x.reference,
+               judge=judge, agent=agent, workers=workers), x.store  # fmt: skip
+
+
+@dataclass(frozen=True)
+class Prepared:
+    """What a fuzz run of a case's contract reads: the case, its contract, the rulebook fuzzed, the case's active
+    paraphrase set for the resolver template, the reference observations, and the run's synthetic case."""
+
+    case: Store
+    ir: core.ContractIR
+    rulebook: core.Proposal
+    paraphrases: core.ParaphraseSet | None
+    reference: tuple[core.Observation, ...]
+    store: Store
+
+
+def prepare(case_dir: Path, contract: str, *, prose: Path | None = None, reference: Path | None = None,
+            agent: AgentCall | None = None) -> Prepared:  # fmt: skip
+    """A case's contract and its rulebook (the prose file given, or the clause drafter's), as `from_case` fuzzes them."""
     case = open_case(case_dir)
     ir = contract_in_case(case, contract)
     if prose is not None:
@@ -984,9 +1016,7 @@ def from_case(case_dir: Path, contract: str, *, prose: Path | None = None, refer
     pset = active_paraphrases(case, resolver_template(ir))
     observed = ([core.Observation.model_validate_json(core.canonical_json(o)) for o in json.loads(reference.read_text())]
                 if reference is not None else [])  # fmt: skip
-    store = fuzz_store(case, ir)
-    return run(ir, rulebook, store, providers=providers, resolver_paraphrases=pset, reference=observed, judge=judge,
-               agent=agent, workers=workers), store  # fmt: skip
+    return Prepared(case, ir, rulebook, pset, tuple(observed), fuzz_store(case, ir))
 
 
 def summary(r: Run, store: Store) -> str:
