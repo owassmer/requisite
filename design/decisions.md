@@ -75,9 +75,12 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   an event tree's branches, the optimizer's scenarios) are exact: Fraction, Decimal or int, summing to exactly one, never
   normalized (addendum §4.2), with a float refused. Expectations under them (CVaR, E[D], a breach probability) are exact
   Fractions, since a third of a dollar has no finite Decimal. A decision model's answer distribution is the provider's
-  float output. It is checked to sum to one within the oracle's 1e-10 and never normalized, and the stability kernel
-  computes over it as the oracle does. A provider whose reported probabilities fail that check returns no distribution,
-  and the provider layer records why (worker on 000-1 and coordinator, November 1). Money is Decimal, and the optimizer's
+  float output, read at the step the provider reports at (measured November 1: Decisions two decimals, Clef four, Jev
+  one). A reported vector whose sum is off one by at most half a step per answer is a rounding: it is corrected
+  proportionally to sum to one, and the correction is recorded on the Judgment (addendum A04 §4.2: "Numerical round-off
+  corrections need a declared tolerance and log"). Beyond that tolerance it is no rounding, and the judgment has no
+  distribution, with the reason; it is never normalized. The stability kernel then computes over distributions that sum
+  to one within the oracle's 1e-10 (worker on 000-1 and coordinator, November 1). Money is Decimal, and the optimizer's
   cash accounting is exact Decimal, in which a rounding raises.
 - The liquidity optimizer (000-1, addendum A06, C01 §7.2). Receipts arrive per grid date and the kernel cumulates them,
   so its input is the I8 evaluator's dated transfers placed on the grid. The business arrives as B_0, operating cash
