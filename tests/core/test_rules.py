@@ -250,3 +250,20 @@ def test_an_interpretive_parameter_is_compared_even_where_it_looks_like_a_bound_
     a, b = with_parameter("A", rep.id), with_parameter("B", "KXWET-26DEC31-T23")
     with pytest.raises(ValidationError, match="beyond the values their bindings fill"):
         c.ContractFamily(**{**dict(family), "representative": a, "markets": [a, b]})
+
+
+def test_a_rulebooks_sections_are_spec_8_5s_each_once_in_its_order():
+    rb = one(c.Rulebook)
+    sections = list(rb.sections)
+    with pytest.raises(ValidationError, match="in its order"):
+        c.Rulebook(contract=rb.contract, sections=[sections[2], *sections[:2], *sections[3:]])
+    with pytest.raises(ValidationError, match="each once"):
+        c.Rulebook(contract=rb.contract, sections=[*sections, sections[-1]])
+    with pytest.raises(ValidationError, match=r"lacks \['timing'\]"):
+        c.Rulebook(contract=rb.contract, sections=[x for x in sections if x.name != "timing"])
+    assert c.Rulebook(contract=rb.contract, sections=[x for x in sections if x.name != "examples"])
+    drafted_example = sections[3].model_copy(update={"text": "If it rains 0.2 inches, it pays."})
+    with pytest.raises(ValidationError, match="never drafted"):
+        c.Rulebook(contract=rb.contract, sections=[*sections[:3], drafted_example, *sections[4:]])
+    with pytest.raises(ValidationError, match="holds its documents"):
+        c.ScenarioPacket(**{**one(c.ScenarioPacket).model_dump(), "documents": []})

@@ -176,7 +176,19 @@ def examples() -> list[c.Record]:
                artifacts=[ART], text=TEXT, extractions=["rg-comment-text-v1"]),  # fmt: skip
         c.Claim(id=CLM, artifact=ART, extraction="plain-v1", span=(4, 10), text=TEXT[4:10], authority="a commenter"),
         c.SyntheticArtifact(id=SYN_ART, scenario="s1", generator="run-1", media_type="text/plain", size=5,
-                            created_at=T0),  # fmt: skip
+                            published_at=T0, created_at=T0),  # fmt: skip
+        c.RulebookSection(name="trigger", text="Pays if rainfall reaches 0.10 inches.", ir_nodes=["rain_ge_0.10"]),
+        c.Rulebook(contract=c.Ref(id="wet-spring", version=1), sections=[
+            c.RulebookSection(name="underlying_and_definitions", text="Rainfall at the station.", ir_nodes=["rain"]),
+            c.RulebookSection(name="source_hierarchy_and_conflict_rule", text="NOAA, then the station.", ir_nodes=[]),
+            c.RulebookSection(name="trigger", text="Pays if rainfall reaches 0.10 inches.", ir_nodes=["rain_ge_0.10"]),
+            c.RulebookSection(name="examples", text="", ir_nodes=[]),
+            c.RulebookSection(name="timing", text="Expires June 1.", ir_nodes=[]),
+            c.RulebookSection(name="unknown_at_expiry", text="Resolves No.", ir_nodes=[]),
+            c.RulebookSection(name="revisions", text="The first print settles.", ir_nodes=[]),
+        ]),  # fmt: skip
+        c.ScenarioPacket(contract=c.Ref(id="wet-spring", version=1), scenario="s1", state_hash=H, evidence_at=T0,
+                         documents=[SYN_ART]),  # fmt: skip
         c.SyntheticClaim(
             id="syn_clm_" + c.sha256(f"{SYN_ART}|0:5|hello"), artifact=SYN_ART, span=(0, 5), text="hello", authority="x"
         ),
@@ -443,16 +455,19 @@ def examples() -> list[c.Record]:
         ),
         c.CoverageObligation(conditions=["A"], status="met", witnesses=["s1", "s2"], proof=None),
         c.BoundaryPoint(condition="rain_ge_0.10", point="0.09", feasible=True, scenario="s3"),
-        c.FuzzScenario(id="s1", state_hash=H, split="held_out", mandatory=True, severity="critical", ir_outcome="resolved_yes",
+        c.FuzzScenario(id="s1", state_hash=H, packet="scenario-s1-1", split="held_out", mandatory=True, severity="critical", ir_outcome="resolved_yes",
                        ir_evaluation=H, ir_transfers=[c.CashTransfer(at=T1, amount=D("100"), currency="USD",
                        basis="payout")], rendering_passed=True, resolver_outcomes={"resolved_yes": 1.0},
                        prose_outcome="resolved_yes", prose_transfers=[c.CashTransfer(at=T1, amount=D("100"),
                        currency="USD", basis="payout")], amount_error=D("0"), liquidity_discrepancy=D("0")),  # fmt: skip
-        c.Attribution(scenario="s1", cause="contract_ambiguity", status="open", evidence="minimal pair pending"),
+        c.Attribution(scenario="s1", cause="contract_ambiguity", status="open", evidence="minimal pair pending",
+                      suspected_clauses=[("trigger", 0.93)]),  # fmt: skip
         HardGate(name="no unreviewed critical mismatch", passed=True, detail="-"),
         c.FuzzReport(
             contract=c.Ref(id="wet-spring", version=1),
+            prose="clause-1",
             prose_hash=H,
+            resolvers=[CONFIG],
             pooling_policy=c.Ref(id="equal_per_provider_split_among_configurations", version=1),
             whole_trigger="ok",
             obligations=[c.CoverageObligation(conditions=["B"], status="redundant", witnesses=[], proof="UNSAT"),

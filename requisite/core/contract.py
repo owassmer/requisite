@@ -795,3 +795,77 @@ def _unbound(ir: ContractIR, bindings: Sequence[ListingBinding]) -> Any:
     if dump["payout"].get("quantity") is not None:
         blank(dump["payout"]["quantity"])
     return dump
+
+
+# ---------------------------------------------------------------- rulebook prose and fuzz packets (spec §8.5-8.6; I1)
+
+ProseSectionName = Literal[
+    "underlying_and_definitions", "source_hierarchy_and_conflict_rule", "trigger", "examples", "timing",
+    "unknown_at_expiry", "revisions",
+]  # fmt: skip
+# spec §8.5: "Prose is generated from the IR by a clause drafter into fixed sections: underlying and definitions, source
+# hierarchy and conflict rule, trigger, qualifying and non-qualifying examples, timing, unknown-at-expiry and revisions."
+SECTION_ORDER: tuple[ProseSectionName, ...] = (
+    "underlying_and_definitions", "source_hierarchy_and_conflict_rule", "trigger", "examples", "timing",
+    "unknown_at_expiry", "revisions",
+)  # fmt: skip
+
+
+class RulebookSection(Record):
+    """One section of a rulebook: its text, and the ids of the IR nodes and observables it states (spec §8.7: "Every
+    clause links to its IR node")."""
+
+    name: ProseSectionName
+    text: str
+    ir_nodes: Sequence[str]
+
+
+class Rulebook(Record):
+    """A contract version's rulebook prose, generated from its IR by the clause drafter and proposed as a "clause" (spec
+    I1; core.REQUIRED_GATES: schema and tests), so it enters state only through its gates. Spec §8.5: "The sections are
+    underlying and definitions, source hierarchy and conflict rule, trigger, qualifying and non-qualifying examples,
+    timing, unknown at expiry, and revisions", and "Examples are not hand-picked. They are the coverage scenarios from
+    §8.6 that passed fuzzing, rendered with their IR outcomes." So a drafted rulebook holds every section but the
+    examples, and an examples section, where present, is empty: the examples are rendered by code from a fuzz report's
+    passed scenarios, never drafted. Its sections in §8.5's order, each once, is ours (a rulebook reads in one order).
+    The tests gate holds every section to the contract's own nodes and observables, and requires every condition that
+    decides settlement to be stated (ours, from the drafter's task in §8.5: it compiles the IR into prose)."""
+
+    contract: Ref
+    sections: Sequence[RulebookSection]
+
+    @model_validator(mode="after")
+    def _sections(self) -> Rulebook:
+        names = [s.name for s in self.sections]
+        if len(set(names)) != len(names) or names != [n for n in SECTION_ORDER if n in names]:
+            raise ValueError(f"a rulebook's sections are spec §8.5's, each once, in its order: {SECTION_ORDER}")
+        drafted = [n for n in SECTION_ORDER if n != "examples"]
+        missing = [n for n in drafted if n not in names]
+        if missing:
+            raise ValueError(f"a rulebook holds every section of spec §8.5 but the examples; it lacks {missing}")
+        examples = [s for s in self.sections if s.name == "examples"]
+        if examples and (examples[0].text.strip() or examples[0].ir_nodes):
+            raise ValueError("a drafted rulebook's examples section is empty: examples are the scenarios that passed "
+                             "fuzzing, rendered by code (spec §8.5), never drafted")  # fmt: skip
+        return self
+
+
+class ScenarioPacket(Record):
+    """One fuzz scenario's evidence packet, written by the scenario renderer and proposed as a "scenario" (spec I1;
+    core.REQUIRED_GATES: schema and tests). Its documents are synthetic artifacts, committed only in the fuzz run's
+    synthetic case (spec I4). The tests gate is the rendering check (spec §8.6 step 4: "Ask the atomic condition
+    questions of the rendered packet. If judges don't recover the intended assignment, the rendering is at fault"),
+    asked in the original wording. evidence_at is the instant the scenario's evidence stands at, and that every document
+    is dated by it is ours: a document dated after it could not be among the evidence then."""
+
+    contract: Ref
+    scenario: str
+    state_hash: str
+    evidence_at: Instant
+    documents: Sequence[SyntheticArtifactId]
+
+    @model_validator(mode="after")
+    def _documents(self) -> ScenarioPacket:
+        if not self.documents:
+            raise ValueError("a scenario's packet holds its documents")
+        return self

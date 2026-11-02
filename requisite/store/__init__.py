@@ -75,6 +75,8 @@ PAYLOAD: dict[str, type[Record]] = {
     "template": core.QuestionTemplate,
     "paraphrase_set": core.ParaphraseSet,
     "frame": core.FrameCriteria,
+    "clause": core.Rulebook,
+    "scenario": core.ScenarioPacket,
 }
 
 SCHEMA = """

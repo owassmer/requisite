@@ -150,6 +150,7 @@ def test_a_claim_is_its_artifacts_text_at_its_span(store):
 def test_real_and_synthetic_cases_hold_only_their_own_evidence(store, tmp_path):
     body = b"scenario packet"
     syn = c.SyntheticArtifact(id=synthetic_artifact_id(body), scenario="s1", generator="run-3", media_type="text/plain",
+                              published_at=None,
                               size=len(body), created_at=NOW)  # fmt: skip
     with pytest.raises(Refused):
         store.commit_synthetic_artifact(syn, body)

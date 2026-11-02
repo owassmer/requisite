@@ -57,6 +57,7 @@ from pydantic import model_validator
 from requisite import core
 from requisite.agents import runner
 from requisite.agents.answers import PacketDocument, PacketDraft, ProseDraft
+from requisite.agents.trace import made_from, record_run
 from requisite.contract import evaluate
 from requisite.contract.evaluate import Interpretation
 from requisite.core.contract import Equivalence
@@ -122,17 +123,45 @@ def resolver_template(ir: core.ContractIR) -> str:
     return "resolve_contract" + ("_" + "_".join(parts) if parts else "")
 
 
-def prose_hash(prose: ProseDraft) -> str:
-    return core.sha256(core.canonical_json(prose.model_dump(mode="json")))
+Prose = ProseDraft | core.Rulebook  # the drafter's answer, or the committed rulebook it became: sections alike
 
 
-def prose_text(prose: ProseDraft) -> str:
+def prose_hash(prose: Prose) -> str:
+    """The prose's content hash, over its sections."""
+    return core.sha256(core.canonical_json({"sections": [s.model_dump(mode="json") for s in prose.sections]}))
+
+
+def prose_text(prose: Prose) -> str:
     """The rulebook as a resolver reads it: each section with text, under its title, in spec §8.5's order."""
     by = {s.name: s for s in prose.sections}
     return "\n\n".join(f"{SECTION_TITLES[n]}\n{by[n].text.strip()}" for n in SECTION_ORDER if n in by and by[n].text.strip())
 
 
-def _check_prose(ir: core.ContractIR, prose: ProseDraft) -> dict[str, frozenset[str]]:
+def prose_problems(ir: core.ContractIR, prose: Prose) -> list[str]:
+    """What keeps prose from being this contract's rulebook (spec §8.5: the drafter adds nothing the IR lacks and leaves
+    out nothing it has): a section citing what is neither a node nor an observable of the IR, or a condition that
+    decides settlement stated by no section (a condition is stated where a section cites it, a node inside it, or an
+    observable it reads)."""
+    roots = [ir.trigger] + ([ir.payout.quantity] if ir.payout.quantity is not None else [])
+    nodes = {n.id: n for r in roots for n in core.walk(r)}
+    known = set(nodes) | {o.id for o in ir.observables}
+    out = []
+    cited: set[str] = set()
+    for section in prose.sections:
+        unknown = sorted(set(section.ir_nodes) - known)
+        if unknown:
+            out.append(f"section {section.name} cites {unknown}, which are neither node ids nor observable ids of this "
+                       f"IR; it may cite only {sorted(known)}")  # fmt: skip
+        cited |= set(section.ir_nodes)
+    for cid in evaluate.lower(ir).conditions:
+        inside = list(core.walk(nodes[cid]))
+        ids = {n.id for n in inside} | {n.observable for n in inside if isinstance(n, core.Cmp | core.ValueAt)}
+        if not ids & cited:
+            out.append(f"condition {cid}, which decides settlement, is stated by no section")
+    return out
+
+
+def _check_prose(ir: core.ContractIR, prose: Prose) -> dict[str, frozenset[str]]:
     """Each section's IR nodes, an observable's id standing for the nodes that read it; refused where a section names
     what the contract does not have, since then no clause links to its node (spec §8.5, WP16)."""
     names = [s.name for s in prose.sections]
@@ -289,7 +318,7 @@ def _documents(s: Scenario, agent: runner.AgentResult[Any], at: datetime
         content = _document_text(d).encode()
         art = core.SyntheticArtifact(
             id=synthetic_artifact_id(content), scenario=s.id, generator=f"scenario_renderer {agent.run[:16]}",
-            media_type="text/plain", size=len(content), created_at=at,
+            media_type="text/plain", size=len(content), published_at=d.published_at, created_at=at,
         )  # fmt: skip
         text = content.decode()
         claim = core.SyntheticClaim(id=f"syn_clm_{core.sha256(f'{art.id}|0:{len(text)}|{text}')}", artifact=art.id,
@@ -562,7 +591,7 @@ def _shown_metrics(m: tuple[float, float, float] | None, n: int) -> str:
 
 def run(
     ir: core.ContractIR,
-    prose: ProseDraft,
+    rulebook: core.Proposal,
     store: Store,
     *,
     providers: Sequence[str] = tuple(judging.PROVIDERS),
@@ -578,6 +607,13 @@ def run(
     agent = agent or runner.run
     if not store.synthetic:
         raise Refused("a fuzz run's packets are synthetic evidence: run it in a synthetic case (spec I4)")
+    if rulebook.kind != "clause" or rulebook.status != "active":
+        raise Refused(f"{rulebook.id} is not an active clause proposal: the prose fuzzed is a rulebook that passed its "
+                      f"gates ({rulebook.status})")  # fmt: skip
+    prose = core.Rulebook.model_validate_json(core.canonical_json(dict(rulebook.payload)))
+    if prose.contract != ir.ref:
+        raise Refused(f"{rulebook.id} is the rulebook of {prose.contract.id} v{prose.contract.version}, not of {ir.id} "
+                      f"v{ir.version}")  # fmt: skip
     sections = _check_prose(ir, prose)
     template_id = resolver_template(ir)
     resolver = library.template(template_id)
@@ -598,12 +634,68 @@ def run(
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = [ex.submit(_scenario, p, s, split[s.id], rules, key, models) for s in p.scenarios]
         resolved = [f.result() for f in futures]
-    report = _report(p, resolved, sections, key)
-    _commit(store, p, resolved, report, key)
+    packets = _propose_packets(store, p, resolved, models)
+    resolvers = [_config(pv, pid) for pv, pid in configurations]
+    report = _report(p, resolved, sections, key, rulebook.id, resolvers, packets)
+    _commit(store, p, resolved, report, key, packets)
     return Run(report, p, tuple(resolved), template_id, configurations, f"{ir.id}.v{ir.version}.{key[:16]}")
 
 
-def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozenset[str]], key: str) -> core.FuzzReport:
+def _packet_record(p: Plan, s: Scenario, packet: Packet) -> core.ScenarioPacket:
+    return core.ScenarioPacket(contract=p.ir.ref, scenario=s.id, state_hash=s.state_hash, evidence_at=p.at,
+                               documents=[a.id for a, _, _ in packet.documents])  # fmt: skip
+
+
+def _propose_packets(store: Store, p: Plan, resolved: Sequence[Resolved], m: _Models) -> dict[str, core.Proposal]:
+    """Each rendering proposed as a scenario (spec I1), in order, its documents committed first; its tests gate is the
+    rendering check, run again over the same packet (the judges' answers replay from their recordings), and it must
+    give what the check gave as the scenario was worked. Returns each scenario's last proposal."""
+    pending: dict[str, tuple[Scenario, Packet]] = {}
+
+    def gate(_: Store, proposal: core.Proposal) -> core.GateResult:
+        scenario, packet = pending[proposal.id]
+        again = Packet(packet.attempt, packet.agent, packet.agent_input, packet.documents)
+        _check(p, scenario, again, _questions(p, scenario), m)
+        if again.missed != packet.missed:
+            raise FuzzError(f"scenario {scenario.id}'s rendering check gave another result when run again: the judges' "
+                            "answers did not replay")  # fmt: skip
+        if again.missed:
+            missed = "; ".join(f"{x['condition']} (intended: {x['intended']}; judges read: {x['judges_read']})"
+                               for x in again.missed)  # fmt: skip
+            return core.GateResult(gate="tests", passed=False, detail=f"the rendering check missed: {missed}")
+        return core.GateResult(gate="tests", passed=True, detail=(
+            "the rendering check: every provider recovered each intended condition value from the packet, in the "
+            "original wording, and every document is dated by the evidence instant"))  # fmt: skip
+
+    store.register_gate("scenario", "tests", gate)
+    out: dict[str, core.Proposal] = {}
+    for r in resolved:
+        for packet in r.packets:
+            for art, content, claim in packet.documents:
+                if store.get("synthetic_artifact", art.id, core.SyntheticArtifact) is None:
+                    store.commit_synthetic_artifact(art.model_copy(update={"created_at": store.clock()}), content)
+                store.commit_synthetic_claim(claim)
+            payload = _packet_record(p, r.scenario, packet).model_dump(mode="json")
+            pid = f"scenario-{r.scenario.id}-{core.sha256(core.canonical_json(payload))[:16]}"
+            proposal = store.proposal(pid)
+            if proposal is None:
+                pending[pid] = (r.scenario, packet)
+                proposal = store.submit_proposal(core.Proposal(
+                    id=pid, case=store.case, kind="scenario", payload=payload, author=packet.agent.run[:16],
+                    rationale=f"scenario {r.scenario.id}'s evidence packet, rendering {packet.attempt + 1}",
+                    status="proposed",
+                ))  # fmt: skip
+            if (proposal.status == "active") != packet.passed:
+                raise FuzzError(f"scenario {r.scenario.id}'s proposal {pid} is {proposal.status}, where its rendering "
+                                f"check {'passed' if packet.passed else 'failed'}")  # fmt: skip
+            if store.get("agent_run", packet.agent.run[:16], core.AgentRun) is None:
+                record_run(store, packet.agent, packet.agent_input, [pid])
+            out[r.scenario.id] = proposal
+    return out
+
+
+def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozenset[str]], key: str, prose: str,
+            resolvers: Sequence[core.JudgeConfig], packets: Mapping[str, core.Proposal]) -> core.FuzzReport:  # fmt: skip
     ir = p.ir
     scenarios: list[core.FuzzScenario] = []
     for r in resolved:
@@ -611,7 +703,7 @@ def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozen
         transfers, amount, liquid = _prose_side(p, r)
         mandatory = s.id in p.mandatory
         scenarios.append(core.FuzzScenario(
-            id=s.id, state_hash=s.state_hash, split=r.split, mandatory=mandatory,
+            id=s.id, state_hash=s.state_hash, packet=packets[s.id].id, split=r.split, mandatory=mandatory,
             severity=_severity(p, s, mandatory), ir_outcome=s.evaluation.procedure_status,
             ir_evaluation=s.evaluation.content_hash(), ir_transfers=list(s.evaluation.transfers),
             rendering_passed=r.passed, resolver_outcomes=r.pooled, prose_outcome=r.outcome,
@@ -637,11 +729,15 @@ def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozen
     else:
         equivalence = "unsupported_or_unassessed"
     return core.FuzzReport(
-        contract=ir.ref, prose_hash=key, pooling_policy=core.Ref(id=EQUAL_PER_PROVIDER.name, version=EQUAL_PER_PROVIDER.version),
+        contract=ir.ref, prose=prose, prose_hash=key, resolvers=list(resolvers),
+        pooling_policy=core.Ref(id=EQUAL_PER_PROVIDER.name, version=EQUAL_PER_PROVIDER.version),
         whole_trigger=p.whole_trigger, obligations=list(p.obligations), boundaries=list(p.boundaries),
         scenarios=scenarios, fidelity=metrics[0], clarity=metrics[1], ambiguity=metrics[2], hard_gates=gates,
         attributions=attributions, equivalence=equivalence,
     )  # fmt: skip
+
+
+WORDING = ("prose_divergence", "contract_ambiguity")  # the causes that lie in the contract's wording
 
 
 def _attributions(p: Plan, resolved: Sequence[Resolved], diverged: set[str], failed: set[str],
@@ -676,9 +772,10 @@ def _attributions(p: Plan, resolved: Sequence[Resolved], diverged: set[str], fai
         causes += ["interpreter", "scenario_truth"]
         if p.lowered.constraints:
             causes.append("world_constraints")
+        wording = [(cast(core.ProseSectionName, sec), suspicion[sec]) for sec in ranked]
         for cause in causes:
-            out.append(core.Attribution(scenario=s.id, cause=cast(Cause, cause), status="open",
-                                        evidence=evidence))  # fmt: skip
+            out.append(core.Attribution(scenario=s.id, cause=cast(Cause, cause), status="open", evidence=evidence,
+                                        suspected_clauses=wording if cause in WORDING else []))  # fmt: skip
     return out
 
 
@@ -728,30 +825,18 @@ def _gates(p: Plan, resolved: Sequence[Resolved], scenarios: Sequence[core.FuzzS
 # ---------------------------------------------------------------- committed state
 
 
-def _commit(store: Store, p: Plan, resolved: Sequence[Resolved], report: core.FuzzReport, key: str) -> None:
-    """The run's records, on the caller's thread: each scenario's own record, every packet's documents and claims,
-    every judgment, every agent run, and the report. Records already committed by an earlier run (the same scenario,
-    packet or response) stand as they are."""
+def _commit(store: Store, p: Plan, resolved: Sequence[Resolved], report: core.FuzzReport, key: str,
+            packets: Mapping[str, core.Proposal]) -> None:  # fmt: skip
+    """The run's records, on the caller's thread, after its packets are proposed: each scenario's own definition, every
+    judgment, and the report. Records already committed by an earlier run stand as they are."""
     for s in p.scenarios:
         if store.get("synthetic_artifact", s.artifact, core.SyntheticArtifact) is None:
             art = core.SyntheticArtifact(id=s.artifact, scenario=s.id, generator="requisite.fuzz.scenarios v1",
-                                         media_type="application/json", size=len(s.content), created_at=store.clock())  # fmt: skip
+                                         media_type="application/json", size=len(s.content), published_at=None,
+                                         created_at=store.clock())  # fmt: skip
             store.commit_synthetic_artifact(art, s.content)
     for r in resolved:
         for packet in r.packets:
-            for art, content, claim in packet.documents:
-                if store.get("synthetic_artifact", art.id, core.SyntheticArtifact) is None:
-                    store.commit_synthetic_artifact(art.model_copy(update={"created_at": store.clock()}), content)
-                store.commit_synthetic_claim(claim)
-            run_id = packet.agent.run[:16]
-            if store.get("agent_run", run_id, core.AgentRun) is None:
-                output = packet.agent.output.model_dump(mode="json")
-                store.commit("agent_run", run_id, core.AgentRun(
-                    id=run_id, role=packet.agent.role, model=packet.agent.model, effort=packet.agent.effort,
-                    input_hash=core.sha256(core.canonical_json(packet.agent_input)),
-                    output_hash=core.sha256(core.canonical_json(output)), response=packet.agent.run, proposals=[],
-                    at=store.clock(),
-                ))  # fmt: skip
             for j in packet.judgments:
                 store.commit_judgment(j)
         for j in r.judgments:
@@ -794,37 +879,64 @@ def active_paraphrases(store: Store, template_id: str) -> core.ParaphraseSet | N
 
 
 def _prose_of(ir: core.ContractIR) -> type[ProseDraft]:
-    """ProseDraft held to this IR: every name a section cites is a node or an observable of it, so the runner returns a
-    citation the contract does not have to the drafter with the reason, as any refused answer is (spec §13)."""
-    roots = [ir.trigger] + ([ir.payout.quantity] if ir.payout.quantity is not None else [])
-    known = {n.id for r in roots for n in core.walk(r)} | {o.id for o in ir.observables}
+    """ProseDraft held to this IR as the drafter answers (prose_problems), so the runner returns what keeps it from being
+    the contract's rulebook to the drafter with the reason, as any refused answer is (spec §13)."""
 
     class ProseOfThisContract(ProseDraft):
         @model_validator(mode="after")
-        def _cites_the_contract(self) -> ProseOfThisContract:
-            for section in self.sections:
-                unknown = sorted(set(section.ir_nodes) - known)
-                if unknown:
-                    raise ValueError(f"section {section.name} cites {unknown}, which are neither node ids nor "
-                                     f"observable ids of this IR; it may cite only {sorted(known)}")  # fmt: skip
+        def _is_the_contracts(self) -> ProseOfThisContract:
+            core.Rulebook(contract=ir.ref, sections=[core.RulebookSection(name=x.name, text=x.text,
+                                                                          ir_nodes=list(x.ir_nodes))
+                                                     for x in self.sections])  # spec §8.5's sections  # fmt: skip
+            problems = prose_problems(ir, self)
+            if problems:
+                raise ValueError("; ".join(problems))
             return self
 
     return ProseOfThisContract
 
 
-def draft_prose(store: Store, ir: core.ContractIR, agent: AgentCall | None = None) -> ProseDraft:
-    """The clause drafter's rulebook prose of the IR (spec §8.5), its call recorded in the case."""
+def rulebook_gate(store: Store, proposal: core.Proposal) -> core.GateResult:
+    """The tests gate of a clause proposal: its rulebook is its contract's (prose_problems), the contract being the IR
+    committed in the case under the rulebook's reference."""
+    rb = core.Rulebook.model_validate_json(core.canonical_json(dict(proposal.payload)))
+    found = [ir for ir in store.all("contract", core.ContractIR) if ir.ref == rb.contract]
+    if not found:
+        return core.GateResult(gate="tests", passed=False,
+                               detail=f"no contract {rb.contract.id} v{rb.contract.version} is committed in this case")  # fmt: skip
+    problems = prose_problems(found[0], rb)
+    if problems:
+        return core.GateResult(gate="tests", passed=False, detail="; ".join(problems))
+    return core.GateResult(gate="tests", passed=True, detail=(
+        f"every section cites only {rb.contract.id}'s nodes and observables, and every condition that decides its "
+        "settlement is stated"))  # fmt: skip
+
+
+def propose_prose(case: Store, ir: core.ContractIR, prose: ProseDraft, author: str) -> core.Proposal:
+    """The prose proposed as the contract's rulebook (kind "clause"; spec I1), through its gates. The same prose proposed
+    again is the proposal it already is."""
+    case.register_gate("clause", "tests", rulebook_gate)
+    payload = {"contract": ir.ref.model_dump(mode="json"),  # validated by the clause's schema gate, which says why not
+               "sections": [{"name": x.name, "text": x.text, "ir_nodes": list(x.ir_nodes)} for x in prose.sections]}
+    pid = f"clause-{core.sha256(core.canonical_json(payload))[:16]}"
+    existing = case.proposal(pid)
+    if existing is not None:
+        return existing
+    return case.submit_proposal(core.Proposal(
+        id=pid, case=case.case, kind="clause", payload=payload, author=author, status="proposed",
+        rationale=f"rulebook prose of {ir.id} v{ir.version}, generated from its IR (spec §8.5)",
+    ))  # fmt: skip
+
+
+def prose_proposal(case: Store, ir: core.ContractIR, agent: AgentCall | None = None) -> core.Proposal:
+    """The clause drafter's rulebook prose of the IR (spec §8.5), proposed in the case, its run's trace beside it."""
     agent_input = {"ir": ir.model_dump(mode="json")}
     result = (agent or runner.run)("clause_drafter", agent_input, _prose_of(ir), effort="high")
-    run_id = result.run[:16]
-    if store.get("agent_run", run_id, core.AgentRun) is None:
-        store.commit("agent_run", run_id, core.AgentRun(
-            id=run_id, role=result.role, model=result.model, effort=result.effort,
-            input_hash=core.sha256(core.canonical_json(agent_input)),
-            output_hash=core.sha256(core.canonical_json(result.output.model_dump(mode="json"))), response=result.run,
-            proposals=[], at=store.clock(),
-        ))  # fmt: skip
-    return cast(ProseDraft, result.output)
+    if done := made_from(case, result):
+        return done[0]
+    proposal = propose_prose(case, ir, cast(ProseDraft, result.output), result.run[:16])
+    record_run(case, result, agent_input, [proposal.id])
+    return proposal
 
 
 def fuzz_store(case: Store, ir: core.ContractIR) -> Store:
@@ -841,12 +953,19 @@ def from_case(case_dir: Path, contract: str, *, prose: Path | None = None, refer
     reference observations given (a JSON list of core.Observation) for values the IR reads only through a computation."""
     case = open_case(case_dir)
     ir = contract_in_case(case, contract)
-    text = ProseDraft.model_validate_json(prose.read_text()) if prose is not None else draft_prose(case, ir, agent)
+    if prose is not None:
+        text = ProseDraft.model_validate_json(prose.read_text())
+        rulebook = propose_prose(case, ir, text, f"file:{core.sha256(prose.read_text())[:12]}")
+    else:
+        rulebook = prose_proposal(case, ir, agent)
+    if rulebook.status != "active":
+        detail = "; ".join(f"{g.gate}: {g.detail}" for g in rulebook.gates if not g.passed)
+        raise FuzzError(f"the prose of {ir.id} v{ir.version} is not its rulebook ({rulebook.id}, {rulebook.status}): {detail}")
     pset = active_paraphrases(case, resolver_template(ir))
     observed = ([core.Observation.model_validate_json(core.canonical_json(o)) for o in json.loads(reference.read_text())]
                 if reference is not None else [])  # fmt: skip
     store = fuzz_store(case, ir)
-    return run(ir, text, store, providers=providers, resolver_paraphrases=pset, reference=observed, judge=judge,
+    return run(ir, rulebook, store, providers=providers, resolver_paraphrases=pset, reference=observed, judge=judge,
                agent=agent, workers=workers), store  # fmt: skip
 
 
@@ -896,5 +1015,5 @@ def summary(r: Run, store: Store) -> str:
 
 __all__ = ["AMBIGUITY", "CLARITY", "FIDELITY", "RERENDERS", "STRESS", "THRESHOLDS", "Run", "active_paraphrases", "determined",
            "forced", "total",
-           "contract_in_case", "draft_prose", "from_case", "fuzz_store", "prose_hash", "prose_text", "reports",
+           "contract_in_case", "from_case", "propose_prose", "prose_problems", "prose_proposal", "rulebook_gate", "fuzz_store", "prose_hash", "prose_text", "reports",
            "resolver_template", "run", "summary"]  # fmt: skip

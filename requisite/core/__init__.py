@@ -3,6 +3,7 @@ hashing. Every package imports these; nothing defines a competing schema (addend
 
 from requisite.core.base import Day, Instant, Money, Probability, Rational, Record, Ref, canonical_json, sha256
 from requisite.core.contract import (
+    SECTION_ORDER,
     And,
     At,
     By,
@@ -33,10 +34,14 @@ from requisite.core.contract import (
     Or,
     Payout,
     ProcedureStatus,
+    ProseSectionName,
     ReadValue,
     ResolutionEvaluation,
     ResolutionProcedure,
+    Rulebook,
+    RulebookSection,
     ScenarioExample,
+    ScenarioPacket,
     SettlementBinding,
     Source,
     SyntheticObservation,
@@ -244,4 +249,9 @@ __all__ = [
     "required_gates",
     "sha256",
     "walk",
+    "ProseSectionName",
+    "Rulebook",
+    "RulebookSection",
+    "SECTION_ORDER",
+    "ScenarioPacket",
 ]

@@ -11,7 +11,8 @@ from typing import Literal
 from pydantic import model_validator
 
 from requisite.core.base import Day, Money, Probability, Rational, Record, Ref
-from requisite.core.contract import CashTransfer, Equivalence, ProcedureStatus
+from requisite.core.contract import CashTransfer, Equivalence, ProcedureStatus, ProseSectionName
+from requisite.core.judgment import JudgeConfig
 
 # ---------------------------------------------------------------- the optimizer (addendum A06, C01; spec §8.3)
 
@@ -184,6 +185,7 @@ class FuzzScenario(Record):
 
     id: str
     state_hash: str
+    packet: str
     split: Literal["development", "held_out"]
     mandatory: bool
     severity: Literal["critical", "material", "minor"]
@@ -200,12 +202,17 @@ class FuzzScenario(Record):
 
 class Attribution(Record):
     """A hypothesis about why a scenario's resolvers diverged from the IR; it stays open until a minimal counterexample
-    or human gold checks it (A09 §10.1; registry A.T18)."""
+    or human gold checks it (A09 §10.1; registry A.T18). suspected_clauses ranks the rulebook's sections the failing
+    scenario exercises (spec §8.6 step 7: "Each scenario is tagged with the clauses and conditions it exercises, so a
+    failure points to a clause"), each with a score of suspicion over the scored scenarios, a ranking that is not a
+    finding (the Ochiai coefficient: ours, design/decisions.md, "Resolvability fuzzing"); empty where the cause is not
+    the contract's wording."""
 
     scenario: str
     cause: Cause
     status: Literal["open", "confirmed", "refuted"]
     evidence: str
+    suspected_clauses: Sequence[tuple[ProseSectionName, float]] = ()  # ranked, each with its suspiciousness score
 
 
 class HardGate(Record):
@@ -240,14 +247,18 @@ HARD_GATES = (
 
 class FuzzReport(Record):
     """A fuzz run of one contract version's prose against its IR (spec §8.6; amended by addendum §12 and A09).
-    pooling_policy is how the resolvers' outcomes were pooled into each scenario's prose outcome (A01 §2.3). The hard
+    prose is the clause proposal whose rulebook was fuzzed (core.Rulebook; spec I1) and prose_hash its content's hash;
+    resolvers are the K configurations that read it (spec §8.6 step 5: "K configurations (providers × paraphrases of the
+    resolver instruction) answer: under these rules and this evidence"). pooling_policy is how the resolvers' outcomes were pooled into each scenario's prose outcome (A01 §2.3). The hard
     gates are A09 §10.4's, every one reported. equivalence is A09 §10.5's scope of the claim, and it must be the one the
     scenarios support: a counterexample where prose and IR disagree on any scenario, a tested equivalence only over a
     suite on which they all agree, an exhaustive one only over the finite domain `domain` describes, whose every state is
     listed in `domain_states` (by state hash) and run."""
 
     contract: Ref
+    prose: str
     prose_hash: str
+    resolvers: Sequence[JudgeConfig]
     pooling_policy: Ref
     domain: str | None = None
     domain_states: Sequence[str] = ()

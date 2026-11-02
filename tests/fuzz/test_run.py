@@ -28,12 +28,16 @@ UNDEFINED = "Clearance means a Glorp-certified determination by the competition 
 def prose(definitions: str = CLEARANCE) -> ProseDraft:
     return ProseDraft(sections=[
         ProseSection(name="underlying_and_definitions", text=definitions, ir_nodes=["cleared"]),
+        ProseSection(name="source_hierarchy_and_conflict_rule", text="The company's filings and the regulator's "
+                     "published decisions are the sources; where they conflict, the regulator's decision governs.",
+                     ir_nodes=[]),
         ProseSection(name="trigger", text="The contract resolves YES if, by expiration, the company's board approved the "
                      "merger agreement and the competition regulator cleared the merger.",
                      ir_nodes=["merger", "approved", "cleared"]),
         ProseSection(name="timing", text="The contract expires on June 1, 2027 at 14:00 UTC.", ir_nodes=[]),
         ProseSection(name="unknown_at_expiry", text="If either condition is not established by expiration, the contract "
                      "resolves NO.", ir_nodes=[]),
+        ProseSection(name="revisions", text="A decision later revised is read as first published.", ir_nodes=[]),
     ])  # fmt: skip
 
 
@@ -47,9 +51,19 @@ def senses(conditions: list[dict[str, str]]) -> dict[str, str]:
     return {("approved" if "board approved" in x["condition"] else "cleared"): x["value"] for x in conditions}
 
 
+def rulebook(tmp_path, text: ProseDraft | None = None) -> c.Proposal:
+    """The prose proposed as the contract's rulebook in a real case holding the contract (spec I1)."""
+    case = Store(tmp_path / "case", case="merger")
+    if case.get("contract", f"{IR.id}|{IR.version}", c.ContractIR) is None:
+        case.commit("contract", f"{IR.id}|{IR.version}", IR)
+    proposal = fuzz.propose_prose(case, IR, text or prose(), author="test")
+    assert proposal.status == "active", proposal.gates
+    return proposal
+
+
 def fuzzed(tmp_path, renderer: Renderer, judges: Judges, text: ProseDraft | None = None) -> fuzz.Run:
     store = Store(tmp_path / "fuzz", case="merger.fuzz", synthetic=True)
-    return fuzz.run(IR, text or prose(), store, judge=judges, agent=renderer, workers=1)
+    return fuzz.run(IR, rulebook(tmp_path, text), store, judge=judges, agent=renderer, workers=1)
 
 
 def by_state(r: fuzz.Run, approved: str, cleared: str, stress: str | None = None) -> fuzz.Resolved:
@@ -115,6 +129,16 @@ def test_a_packet_that_does_not_encode_its_scenario_is_caught_rendered_again_and
     assert len(store.all("judgment", c.Judgment)) == len({j.content_hash() for x in r.resolved
                                                           for j in [*x.judgments, *(j for p in x.packets for j in p.judgments)]})  # fmt: skip
     assert fuzz.reports(store) == [r.report]
+    # Each rendering is a scenario proposal (spec I1) whose tests gate is the rendering check: the failed ones rejected,
+    # the passing one active, and the report names the packet each scenario was read from.
+    proposals = {p.id: store.proposal(p.id) for p in store.all("proposal", c.Proposal)}
+    caught_ids = [pid for pid, x in proposals.items() if x is not None and x.kind == "scenario"
+                  and x.payload["scenario"] == caught.scenario.id]  # fmt: skip
+    assert sorted(proposals[i].status for i in caught_ids) == ["active", "rejected"]  # type: ignore[union-attr]
+    assert proposals[report[caught.scenario.id].packet].status == "active"  # type: ignore[union-attr]
+    never_final = proposals[report[never.scenario.id].packet]
+    assert never_final is not None and never_final.status == "rejected"
+    assert "the rendering check missed" in next(g.detail for g in never_final.gates if g.gate == "tests")
 
 
 @pytest.mark.covers("A.T18")
@@ -228,3 +252,29 @@ def test_the_drafters_prose_may_cite_only_the_contracts_own_nodes_and_observable
                                 *good["sections"][1:]]}  # fmt: skip
     with pytest.raises(ValidationError, match=r"cites \['payout'\], which are neither node ids nor observable ids"):
         held.model_validate(bad)
+
+
+def test_the_prose_fuzzed_is_a_rulebook_that_passed_its_gates(tmp_path):
+    # The clause drafter's prose enters state as a clause proposal (spec I1); its tests gate holds it to the contract's
+    # own nodes and observables and to stating every condition that decides settlement.
+    case = Store(tmp_path / "case", case="merger")
+    case.commit("contract", f"{IR.id}|{IR.version}", IR)
+    good = prose()
+    held = fuzz.propose_prose(case, IR, good, author="test")
+    assert held.kind == "clause" and held.status == "active"
+    assert fuzz.propose_prose(case, IR, good, author="test").id == held.id  # the same prose is the same proposal
+    silent = good.model_copy(update={"sections": [x.model_copy(update={"ir_nodes": [n for n in x.ir_nodes if n != "approved"]})
+                                                  for x in good.sections]})  # fmt: skip
+    rejected = fuzz.propose_prose(case, IR, silent, author="test")
+    assert rejected.status == "rejected"
+    assert "condition approved, which decides settlement, is stated by no section" in next(
+        g.detail for g in rejected.gates if g.gate == "tests")
+    lacking = good.model_copy(update={"sections": [x for x in good.sections if x.name != "revisions"]})
+    refused = fuzz.propose_prose(case, IR, lacking, author="test")  # the schema gate: spec §8.5's sections
+    assert refused.status == "rejected" and "lacks ['revisions']" in next(g.detail for g in refused.gates if g.gate == "schema")
+    store = Store(tmp_path / "fuzz", case="merger.fuzz", synthetic=True)
+    with pytest.raises(fuzz.Refused, match="not an active clause proposal"):
+        fuzz.run(IR, rejected, store, judge=Judges(careful), agent=Renderer(), workers=1)
+    # The report names its rulebook and the K configurations that read it.
+    r = fuzzed(tmp_path, Renderer(), Judges(careful))
+    assert r.report.prose == held.id and len(r.report.resolvers) == len(r.configurations) >= 2

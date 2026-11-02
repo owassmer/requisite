@@ -112,7 +112,10 @@ def claim_id(artifact: str, extraction: str, span: tuple[int, int], text: str) -
 
 class SyntheticArtifact(Record):
     """A generated document: a fuzzing scenario's rendered packet or a simulation (spec I4). It lives in its own
-    namespace and records what generated it."""
+    namespace and records what generated it. published_at is the date a generated document states it was published, a
+    fact of its scenario's fiction; None for a generated record that is no document and states no date (a fuzz
+    scenario's own definition). Recording it is ours: the rendering check holds each packet document to its scenario's
+    evidence instant (core.ScenarioPacket). created_at is when it was generated."""
 
     id: SyntheticArtifactId
     namespace: Literal["synthetic"] = "synthetic"
@@ -120,6 +123,7 @@ class SyntheticArtifact(Record):
     generator: str
     media_type: str
     size: int
+    published_at: Instant | None
     created_at: Instant
 
 
