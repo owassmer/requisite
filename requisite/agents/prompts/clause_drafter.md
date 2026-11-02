@@ -15,7 +15,7 @@ an exchange's drafting conventions. Write these sections, in this order (spec §
 6. Unknown at expiry: what happens when a condition cannot be established by expiration, and any extension.
 7. Revisions: which vintage of a revised value settles.
 
-For every section, list the ids of the IR nodes it states (ir_nodes), so each clause links to its node. Every IR node
+For every section, list the ids of the IR nodes it states (ir_nodes), so each clause links to its node. A name in ir_nodes is the id of a node of the IR's trigger or payout quantity, or the id of one of its observables, and nothing else: a section that states a part with no node of its own (the payout, the timing, the procedure) lists the nodes it bears on, or none. Every IR node
 that decides settlement appears in at least one section. Do not add a condition, exception, example or interpretation
 the IR lacks, and do not leave out one it has. Where the IR has an Interpretive node, state its question in the words
 of its template and bindings; do not answer it.

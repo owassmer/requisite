@@ -52,6 +52,8 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from pydantic import model_validator
+
 from requisite import core
 from requisite.agents import runner
 from requisite.agents.answers import PacketDocument, PacketDraft, ProseDraft
@@ -791,10 +793,29 @@ def active_paraphrases(store: Store, template_id: str) -> core.ParaphraseSet | N
     return None
 
 
+def _prose_of(ir: core.ContractIR) -> type[ProseDraft]:
+    """ProseDraft held to this IR: every name a section cites is a node or an observable of it, so the runner returns a
+    citation the contract does not have to the drafter with the reason, as any refused answer is (spec §13)."""
+    roots = [ir.trigger] + ([ir.payout.quantity] if ir.payout.quantity is not None else [])
+    known = {n.id for r in roots for n in core.walk(r)} | {o.id for o in ir.observables}
+
+    class ProseOfThisContract(ProseDraft):
+        @model_validator(mode="after")
+        def _cites_the_contract(self) -> ProseOfThisContract:
+            for section in self.sections:
+                unknown = sorted(set(section.ir_nodes) - known)
+                if unknown:
+                    raise ValueError(f"section {section.name} cites {unknown}, which are neither node ids nor "
+                                     f"observable ids of this IR; it may cite only {sorted(known)}")  # fmt: skip
+            return self
+
+    return ProseOfThisContract
+
+
 def draft_prose(store: Store, ir: core.ContractIR, agent: AgentCall | None = None) -> ProseDraft:
     """The clause drafter's rulebook prose of the IR (spec §8.5), its call recorded in the case."""
     agent_input = {"ir": ir.model_dump(mode="json")}
-    result = (agent or runner.run)("clause_drafter", agent_input, ProseDraft, effort="high")
+    result = (agent or runner.run)("clause_drafter", agent_input, _prose_of(ir), effort="high")
     run_id = result.run[:16]
     if store.get("agent_run", run_id, core.AgentRun) is None:
         store.commit("agent_run", run_id, core.AgentRun(

@@ -213,3 +213,18 @@ def test_the_cli_fuzzes_a_cases_contract_against_the_clause_drafters_prose(tmp_p
     real = Store(tmp_path / "case", case="merger")
     assert [r.role for r in real.all("agent_run", c.AgentRun)] == ["clause_drafter"]
     assert not real.all("synthetic_artifact", c.SyntheticArtifact)
+
+
+def test_the_drafters_prose_may_cite_only_the_contracts_own_nodes_and_observables():
+    # A citation the contract does not have is refused as the drafter answers, so the runner returns it with the reason.
+    from pydantic import ValidationError
+
+    from requisite.fuzz.run import _prose_of
+
+    held = _prose_of(IR)
+    good = prose().model_dump(mode="json")
+    assert held.model_validate(good)
+    bad = {**good, "sections": [{**good["sections"][0], "ir_nodes": [*good["sections"][0]["ir_nodes"], "payout"]},
+                                *good["sections"][1:]]}  # fmt: skip
+    with pytest.raises(ValidationError, match=r"cites \['payout'\], which are neither node ids nor observable ids"):
+        held.model_validate(bad)
