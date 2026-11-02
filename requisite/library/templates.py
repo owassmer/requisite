@@ -57,5 +57,6 @@ def instantiate(
     )
 
 
-def original(t: core.QuestionTemplate) -> core.Paraphrase:
+def original(t: core.QuestionTemplate | core.AtomicQuestion) -> core.Paraphrase:
+    """The original wording, paraphrase p0, of a template or of an instantiated question."""
     return core.Paraphrase(id="p0", target=t.target, meanings={a.value: a.meaning for a in t.answers})

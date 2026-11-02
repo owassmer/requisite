@@ -12,7 +12,8 @@ from provider_fixture import QUESTION, asks
 from requisite import cassettes
 from requisite.core.judgment import correct_roundoff
 from requisite.judgment.providers import PROVIDERS, ProviderError, judge, read
-from requisite.judgment.render import ask, original
+from requisite.judgment.render import ask
+from requisite.library.templates import original
 
 ASKED = ask(QUESTION, original(QUESTION))
 VALUES = {a.value for a in QUESTION.answers}

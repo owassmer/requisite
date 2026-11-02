@@ -8,8 +8,8 @@ lists A under ASSUMED (spec §6.1).
 
 The question goes to the provider as a question, never inside the state: its target with its window, and its closed
 answer set with each answer's meaning. A paraphrase replaces the target's wording and the answers' meanings with a
-frozen, reviewed rewording (spec §2.1 "Paraphrase"); the answer values stay the same, so distributions compare across
-configurations.
+frozen, reviewed rewording (spec §2.1 "Paraphrase"; core.Paraphrase, from the template's core.ParaphraseSet); the answer
+values stay the same, so distributions compare across configurations.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from requisite.core import (
     Claim,
     Definition,
     JudgmentState,
+    Paraphrase,
     SyntheticClaim,
     TimeWindow,
 )
@@ -47,20 +48,6 @@ class Render:
 TEXT = Render("text-as-listed", "text", "as_listed")
 JSON = Render("json-reversed", "json", "reversed")
 RENDERS = (TEXT, JSON)
-
-
-@dataclass(frozen=True)
-class Paraphrase:
-    """A meaning-preserving rewording of a question's target and answer meanings, from a frozen set (spec §2.1).
-    The original wording is the paraphrase with id "p0"."""
-
-    id: str
-    target: str
-    meanings: Mapping[str, str]
-
-
-def original(question: AtomicQuestion) -> Paraphrase:
-    return Paraphrase("p0", question.target, {a.value: a.meaning for a in question.answers})
 
 
 @dataclass(frozen=True)

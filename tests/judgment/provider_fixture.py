@@ -6,7 +6,8 @@ from datetime import UTC, datetime
 from requisite import core as c
 from requisite.core.evidence import artifact_id, claim_id
 from requisite.judgment.providers import PROVIDERS, Ask
-from requisite.judgment.render import RENDERS, ask, original, render_state
+from requisite.judgment.render import RENDERS, ask, render_state
+from requisite.library.templates import original
 
 AS_OF = datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
 TEXT = "Crews must stop outdoor work on any day with at least 0.10 inches of rain."
