@@ -23,11 +23,12 @@ from typing import Any
 
 from numpy import random as np_random
 
-from requisite import core
+from requisite import cassettes, core
 from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
 from requisite.agents.trace import made_from, record_run
 from requisite.discovery import labels, sampling
+from requisite.evidence.fetched import free_budget
 from requisite.evidence.frame import docket_documents, entries, frame_gate, measure_document
 from requisite.evidence.frame import frames as evidence_frames
 from requisite.evidence.items import committed, read_items
@@ -82,17 +83,29 @@ def approve(
     store: Store, proposal_id: str, *, gate: str, approver: str, decision: str, reason: str, scope: str
 ) -> core.Proposal:
     """A human's decision at a gate on one proposal, approving exactly its payload as it stands (spec §2.4; an approval
-    covers one lineage: addendum A11 §11.2)."""
+    covers one lineage: addendum A11 §11.2). The decision is recorded through the cassettes as the human's answer to
+    that gate on that payload (provider "human"), as a gold label is: a run replaying the case from a clean clone
+    replays the decision and the instant it was made, and refuses one given differently from the recording."""
     proposal = store.proposal(proposal_id)
     if proposal is None:
         raise Refused(f"no proposal {proposal_id}")
+    lineage = core.sha256(core.canonical_json(dict(proposal.payload)))
+    given = {"decision": decision, "reason": reason, "scope": scope}
+    body = {"gate": gate, "proposal": proposal_id, "lineage_hash": lineage, "approver": approver}
+    recorded = cassettes.call(cassettes.HUMAN, "approve", body, lambda: ({**given, "at": store.clock().isoformat()}, 0.0),
+                              budget=free_budget(), estimate_usd=0.0)  # fmt: skip
+    answer = dict(recorded.response)
+    differs = {k: (answer[k], v) for k, v in given.items() if answer[k] != v}
+    if differs:
+        raise Refused(f"{approver}'s recorded decision at {gate} on {proposal_id} differs from the one given: "
+                      + "; ".join(f"{k}: recorded {r!r}, given {g!r}" for k, (r, g) in differs.items()))  # fmt: skip
     approval = core.Approval(
         id=f"{gate}-{proposal_id}-{len(store.all('approval', core.Approval)) + 1}",
         gate=gate,  # type: ignore[arg-type]
         subject=core.Ref(id=proposal_id, version=1),
-        lineage_hash=core.sha256(core.canonical_json(dict(proposal.payload))),
+        lineage_hash=lineage,
         approver=approver,
-        at=store.clock(),
+        at=datetime.fromisoformat(str(answer["at"])),
         decision=decision,  # type: ignore[arg-type]
         reason=reason,
         scope=scope,

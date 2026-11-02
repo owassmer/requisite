@@ -106,6 +106,9 @@ class Recorded:
     replayed: bool
 
 
+HUMAN = "human"  # the provider of a person's recorded answers: gate decisions and gold labels, replayed like any other
+
+
 def path_for(provider: str, key: str, root: Path | None = None) -> Path:
     return (root or CASSETTES) / provider / f"{key}.json"
 

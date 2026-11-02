@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "approve",
+ "latency_ms": 0,
+ "provider": "human",
+ "recorded_at": "2026-11-02T01:04:29.801809+00:00",
+ "request": {
+  "approver": "owen",
+  "gate": "G1",
+  "lineage_hash": "9d9a70e3c9761d5513d9abeb80af3f4dd22d4be14e956d72da70397488491d5a",
+  "proposal": "objective-9d9a70e3c9761d55"
+ },
+ "response": {
+  "at": "2026-11-02T01:04:29.801809+00:00",
+  "decision": "approved",
+  "reason": "Owen, November 1: 'Approve as drafted' (the frame states its reach; the estimand is scoped to it)",
+  "scope": "wide run f4"
+ }
+}

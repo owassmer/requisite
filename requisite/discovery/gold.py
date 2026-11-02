@@ -25,7 +25,7 @@ from requisite.evidence.items import committed as read_items_of
 from requisite.store import Refused, Store
 
 UNSURE, QUIT = "u", "q"
-PROVIDER = "human"
+PROVIDER = cassettes.HUMAN
 
 
 class _Stopped(Exception):
