@@ -23,10 +23,12 @@ from __future__ import annotations
 import html
 import io
 import json
+import logging
 import re
 import shutil
 import subprocess  # noqa: S404  (poppler and tesseract, fixed arguments, no shell)
 import tempfile
+import threading
 import zipfile
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
@@ -46,7 +48,8 @@ EXTRACTOR = "requisite.evidence.extract"
 # Each reader's version: a change to what a reader returns for the same bytes is a new version, so a new extraction.
 VERSIONS: Mapping[str, int] = {
     "comment": 1,
-    "pdf": 2,  # 2 (November 2): a text layer in a font with no Unicode map is checked against OCR
+    "pdf": 3,  # 2 (November 2): a text layer in a font with no Unicode map is checked against OCR; 3 (November 2): a page
+    # pypdf could not wholly decode is read by OCR (_UNDECODED)
     "docx": 1,
     "xlsx": 1,
     "pptx": 1,
@@ -99,6 +102,14 @@ SYMBOLS = frozenset("!\"#$%&'()*+/:;<=>?@[\\]^_`{|}~")
 SYMBOLS_ABOVE = 0.15
 RENDER_TIMEOUT_S = 300
 OCR_TIMEOUT_S = 600
+# pypdf reads a page's text layer and, where it cannot decode a form XObject the page draws, leaves that form's text out
+# and says so only in a logged warning, with this template (pypdf 6.21, _page.py; seen November 2 in F4: "Impossible to
+# decode XFormObject /Group_93: Reached maximum number of tokens per stream", a form past pypdf's parsing budget). Such
+# a page's layer is known to lack part of the page, so the page is read by OCR, which reads the rendered page whole (ours).
+_UNDECODED = "Impossible to decode XFormObject %(operand)s: %(exception)s"
+# pdf/3 reads a file as pdf/2 did wherever pypdf decodes every part of every page (the one change from 2 to 3), so pdf/2's
+# recorded reading of the same bytes is pdf/3's there, and its OCR is not run again (_earlier).
+SAME_AS_PDF_2 = 2
 
 
 class ExtractionError(RuntimeError):
@@ -126,16 +137,41 @@ class Extraction:
         return Extraction(kept["reader"], kept["id"], kept["text"], tuple(kept["pages"]), tuple(kept["unreadable"]))
 
 
+def _body(reader: str, artifact: str, version: int) -> dict[str, Any]:
+    return {"artifact": artifact, "extractor": f"{EXTRACTOR}.{reader}", "version": version}
+
+
 def extract(reader: str, artifact: str, content: bytes, *, root: Path | None = None,
             budget: cassettes.Budget | None = None) -> Extraction:  # fmt: skip
     """The artifact's text by `reader`, replayed from its cassette or read once here and recorded."""
     if reader not in VERSIONS:
         raise ValueError(f"no reader {reader!r}")
-    body = {"artifact": artifact, "extractor": f"{EXTRACTOR}.{reader}", "version": VERSIONS[reader]}
-    recorded = cassettes.call(
-        PROVIDER, reader, body, lambda: (read(reader, content).kept(), 0.0), budget=budget, estimate_usd=0.0, root=root
-    )
+
+    def live() -> tuple[dict[str, Any], float]:
+        earlier = _earlier(artifact, content, root) if reader == "pdf" else None
+        return (earlier or read(reader, content)).kept(), 0.0
+
+    body = _body(reader, artifact, VERSIONS[reader])
+    recorded = cassettes.call(PROVIDER, reader, body, live, budget=budget, estimate_usd=0.0, root=root)
     return Extraction.from_kept(recorded.response)
+
+
+def _earlier(artifact: str, content: bytes, root: Path | None) -> Extraction | None:
+    """pdf/2's recorded reading of these bytes, as this version's, where it is this version's (SAME_AS_PDF_2): where pypdf
+    decodes every part of every page, or cannot open the file at all (both versions then render it by poppler alike)."""
+    path = cassettes.path_for(PROVIDER, cassettes.request_key(PROVIDER, "pdf", _body("pdf", artifact, SAME_AS_PDF_2)), root)
+    if not path.exists():
+        return None
+    layers, _ = _layers(content)
+    if layers is not None and any(undecoded for _, _, _, undecoded in layers):
+        return None
+    kept = json.loads(path.read_text())["response"]
+    if kept["id"] is not None:
+        old = f"pdf/{SAME_AS_PDF_2}"
+        if not kept["id"].startswith(old):
+            raise ValueError(f"{artifact}: pdf/{SAME_AS_PDF_2}'s recorded reading names another reader ({kept['id']})")
+        kept["id"] = _id("pdf") + kept["id"].removeprefix(old)
+    return Extraction.from_kept(kept)
 
 
 def read(reader: str, content: bytes) -> Extraction:
@@ -380,19 +416,59 @@ def carried(layer: str, ocr: str) -> float | None:
     return sum(w in have for w in seen) / len(seen)
 
 
-def _pdf(content: bytes) -> Extraction:
-    """Each page by its text layer (pypdf), and by OCR where it has none or where its text layer, set in a font with no
-    Unicode map, does not carry the page's words (module constants). A file pypdf cannot open is rendered and read page
-    by page by poppler and tesseract; one neither can read is unreadable, with both reasons."""
-    layers: list[tuple[str, bool, bool]] | None
+class _Undecoded(logging.Handler):
+    """pypdf's reports, on this thread, that it left part of a page's text out (_UNDECODED)."""
+
+    def __init__(self) -> None:
+        super().__init__(logging.WARNING)
+        self.thread = threading.get_ident()
+        self.seen: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if record.thread == self.thread and record.msg == _UNDECODED:
+            self.seen.append(record.getMessage())
+
+
+def _layer(page: pypdf.PageObject) -> tuple[str, list[str]]:
+    """A page's text layer, and what pypdf reports it could not decode in it."""
+    log = logging.getLogger("pypdf._page")
+    if not log.isEnabledFor(logging.WARNING):
+        raise ExtractionError("pypdf's warnings are silenced here, so a page it cannot wholly decode would pass as read")
+    handler = _Undecoded()
+    log.addHandler(handler)
+    try:
+        return page.extract_text() or "", handler.seen
+    finally:
+        log.removeHandler(handler)
+
+
+Layer = tuple[str, bool, bool, list[str]]
+
+
+def _layers(content: bytes) -> tuple[list[Layer] | None, str | None]:
+    """Each page's text layer, whether it has images, whether its font has no Unicode map, and what pypdf could not
+    decode in it; or None and why, where pypdf cannot read the file."""
     try:
         reader = pypdf.PdfReader(io.BytesIO(content))
         if reader.is_encrypted:
             reader.decrypt("")  # a file restricted only by an owner password opens with the empty user password
-        layers = [(page.extract_text() or "", _has_images(page), _unmapped(page)) for page in reader.pages]
-        failure = None
+        pages: list[Layer] = []
+        for page in reader.pages:
+            text, undecoded = _layer(page)
+            pages.append((text, _has_images(page), _unmapped(page), undecoded))
+        return pages, None
+    except ExtractionError:
+        raise
     except Exception as e:  # pypdf raises many types on malformed files; the reason is kept, and poppler tries
-        layers, failure = None, f"pypdf could not read it ({type(e).__name__}: {e})"
+        return None, f"pypdf could not read it ({type(e).__name__}: {e})"
+
+
+def _pdf(content: bytes) -> Extraction:
+    """Each page by its text layer (pypdf), and by OCR where it has none, where pypdf could not decode part of it
+    (_UNDECODED), or where its text layer, set in a font with no Unicode map, does not carry the page's words (module
+    constants). A file pypdf cannot open is rendered and read page by page by poppler and tesseract; one neither can read
+    is unreadable, with both reasons."""
+    layers, failure = _layers(content)
     methods: list[str] = []
     texts: list[str] = []
     unreadable: list[str] = []
@@ -405,9 +481,21 @@ def _pdf(content: bytes) -> Extraction:
             count = _page_count(pdf)
             if count is None:
                 return _unreadable("pdf", f"{failure}; poppler could not read it either")
-            layers = [("", True, False)] * count
-        for number, (layer, images, unmapped) in enumerate(layers, start=1):
+            layers = [("", True, False, [])] * count
+        for number, (layer, images, unmapped, undecoded) in enumerate(layers, start=1):
             letters = sum(ch.isalnum() for ch in layer)
+            if undecoded:
+                why = "; ".join(undecoded)
+                _versions()
+                try:
+                    texts.append(_ocr_page(pdf, number, work))
+                    methods.append(f"OCR (pypdf could not decode part of its text layer: {why})")
+                    ocr = True
+                except _Unreadable as e:
+                    methods.append("text layer, in part")
+                    texts.append(layer)
+                    unreadable.append(f"page {number}: pypdf could not decode part of its text layer ({why}), and {e}")
+                continue
             if letters and not (images and letters < SCANNED_BELOW):
                 if unmapped or suspect(layer):
                     _versions()

@@ -4,13 +4,16 @@ recorded with its reason. Extractions are recorded, and a replay never re-runs O
 
 import io
 import json
+import logging
 import pathlib
 import sys
+import threading
 import zipfile
 
 import pypdf
 import pytest
 from fake_api import fixture_pdf, load
+from pypdf.generic import ArrayObject, DecodedStreamObject, DictionaryObject, NameObject, NumberObject
 
 from requisite import cassettes
 from requisite.core.evidence import artifact_id
@@ -139,7 +142,92 @@ def test_a_text_layer_in_a_font_with_no_unicode_map_that_does_not_carry_the_page
     first = x.text.split("[page 2 of", 1)[0]
     share = extract.carried(layer, first)
     assert share is not None and share < extract.CARRIES_AT_LEAST  # the rule, read from the page's own two readings
-    assert extract._WORD.findall(first) and "OCR by pdftoppm" in str(x.id) and x.id.startswith("pdf/2")
+    assert extract._WORD.findall(first) and "OCR by pdftoppm" in str(x.id) and x.id.startswith(f"pdf/{extract.VERSIONS['pdf']} ")
+
+
+def form_page(visible: str, hidden: str, padding: int) -> bytes:
+    """One page that sets `visible` in its own content and draws a form XObject that sets `hidden` after `padding` path
+    operators, so the form's stream can be past a parsing budget the page's own stream is within."""
+    writer = pypdf.PdfWriter()
+    page = writer.add_blank_page(612, 792)
+    font = writer._add_object(DictionaryObject({NameObject("/Type"): NameObject("/Font"),
+                                                NameObject("/Subtype"): NameObject("/Type1"),
+                                                NameObject("/BaseFont"): NameObject("/Helvetica")}))  # fmt: skip
+    fonts = DictionaryObject({NameObject("/F1"): font})
+    form = DecodedStreamObject()
+    form.set_data(("0 0 m\n" * padding + f"BT /F1 28 Tf 72 300 Td ({hidden}) Tj ET").encode())
+    form.update({NameObject("/Type"): NameObject("/XObject"), NameObject("/Subtype"): NameObject("/Form"),
+                 NameObject("/BBox"): ArrayObject([NumberObject(0), NumberObject(0), NumberObject(612), NumberObject(792)]),
+                 NameObject("/Resources"): DictionaryObject({NameObject("/Font"): fonts})})  # fmt: skip
+    content = DecodedStreamObject()
+    content.set_data(f"BT /F1 28 Tf 72 600 Td ({visible}) Tj ET q /Fx0 Do Q".encode())
+    page[NameObject("/Contents")] = writer._add_object(content)
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): fonts, NameObject("/XObject"): DictionaryObject({NameObject("/Fx0"): writer._add_object(form)})})
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+# A budget between the page's own stream (a few tokens) and its form's (thousands): pypdf parses the page and gives up on
+# the form, as it gave up on F4's /Group_93 past its default budget (November 2).
+BETWEEN = 3000
+
+
+def test_a_page_pypdf_cannot_wholly_decode_is_read_whole_by_ocr():
+    content = form_page("Visible page heading", "Hidden form caption", padding=4000)
+    whole = extract.read("pdf", content)
+    assert whole.pages == ("text layer",) and "Hidden form caption" in whole.text  # within its budget, read whole
+    with pypdf.apply_configuration(stream_parsing_work_maximum_count=BETWEEN):
+        layer, undecoded = extract._layer(pypdf.PdfReader(io.BytesIO(content)).pages[0])
+        assert "Visible page heading" in layer and "Hidden" not in layer  # pypdf left the form out, and said so
+        assert len(undecoded) == 1 and "Reached maximum number of tokens per stream" in undecoded[0]
+        x = extract.read("pdf", content)
+    assert x.pages == (f"OCR (pypdf could not decode part of its text layer: {undecoded[0]})",) and x.unreadable == ()
+    for words in ("Visible page heading", "Hidden form caption"):
+        assert words in x.text
+
+
+def test_pypdfs_report_is_read_from_the_thread_reading_the_page():
+    handler = extract._Undecoded()
+    log = logging.getLogger("pypdf._page")
+    log.addHandler(handler)
+    try:
+        other = threading.Thread(target=lambda: log.warning(extract._UNDECODED, {"operand": "/A", "exception": "x"}))
+        other.start()
+        other.join()
+        assert handler.seen == []  # another thread's page
+        log.warning(extract._UNDECODED, {"operand": "/B", "exception": "y"})
+        log.warning("Ignoring wrong pointing object %(n)s", {"n": 6})  # a repair pypdf made, no text left out
+    finally:
+        log.removeHandler(handler)
+    assert handler.seen == ["Impossible to decode XFormObject /B: y"]
+
+
+def test_pdf_3_takes_pdf_2s_recorded_reading_where_pypdf_decodes_every_part_and_reads_afresh_where_not(live):
+    spend = cassettes.Budget(run_usd=0.0, run_calls=sys.maxsize, day_usd=float("inf"), log=live / "spend.jsonl")
+    root = live / "cassettes"
+    assert extract.VERSIONS["pdf"] == extract.SAME_AS_PDF_2 + 1
+
+    def recorded_by_pdf_2(content: bytes) -> extract.Extraction:
+        # A reading pdf/2 recorded, told apart from anything read here by its text, so taking it is seen.
+        art = artifact_id(content)
+        kept = extract.Extraction("pdf", "pdf/2 pypdf 0.0; OCR by pdftoppm 0 and tesseract 0", f"read by pdf/2: {art}",
+                                  ("OCR",))  # fmt: skip
+        body = extract._body("pdf", art, extract.SAME_AS_PDF_2)
+        cassettes.call("extraction", "pdf", body, lambda: (kept.kept(), 0.0), budget=spend, estimate_usd=0.0, root=root)
+        return kept
+
+    content = form_page("Visible page heading", "Hidden form caption", padding=4000)
+    earlier = recorded_by_pdf_2(content)
+    x = extract.extract("pdf", artifact_id(content), content, root=root, budget=spend)
+    assert x.text == earlier.text and x.pages == earlier.pages
+    assert x.id == f"pdf/{extract.VERSIONS['pdf']} pypdf 0.0; OCR by pdftoppm 0 and tesseract 0"
+    other = form_page("Another page heading", "Another form caption", padding=4000)
+    recorded_by_pdf_2(other)
+    with pypdf.apply_configuration(stream_parsing_work_maximum_count=BETWEEN):
+        y = extract.extract("pdf", artifact_id(other), other, root=root, budget=spend)
+    assert y.pages[0].startswith("OCR (pypdf could not decode part of its text layer") and "Another form caption" in y.text
 
 
 def test_typed_prose_and_a_table_of_contents_are_not_suspect():

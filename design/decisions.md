@@ -254,6 +254,33 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   - The design the draws name is committed (core.SamplingDesign, kind sampling_design) with the gold draw, when its
     phase-2 cells exist. The coverage simulation before the gold is a statement about the design under a label model:
     where that model puts no item in the denominator it says the ratio is undefined and the gold is drawn regardless.
+- F4's reading, after the read and before the gold draw (coordinator, November 2, 17:30 ET; each found in F4's own
+  items before any gold label or estimate, so fixed at its source and the run continued from the same objective and
+  as_of, with no item chosen by hand):
+  - A PDF text layer can carry glyph codes, not characters (TREAS-DO-2026-0232-0055: a font with no Unicode map on page
+    1, fonts whose Unicode map is wrong on pages 2-6, all read as punctuation and recorded as read). The PDF reader
+    (pdf/2) verifies a suspect page against OCR, an independent reading of the same page, and uses OCR's text where the
+    layer carries under half of OCR's words, saying so in the page's method. Suspect: set in a subset font with no
+    Unicode map, or more than 15% symbols prose rarely holds (F4's 6,850 text-layer pages: the glyph-coded 0.63-0.65,
+    the next 0.46, prose about 0.01). A page that passes the screen is taken from its layer unverified, and a garbling
+    into plain letters would pass it; verifying every page by OCR was the alternative, read twice over thousands of pages.
+  - An item is the filing frozen when the sample was read: a re-fetch never replaces it, but a newer reader's reading of
+    the same retrieved bytes does (items.committed), and `wide read` re-reads each sample item's files that an older
+    reader read, keeping every part that reads the same, so its record stays true of what read it.
+  - A provider that declines an input over its size limit (openai_decisions: 262,144 serialized bytes; 8 sampled filings
+    are larger, up to 6.5 MB of exhibits) has refused to read it: its words are kept and read as a refusal, never an
+    error that stops the run or an answer it did not give. The phase-1 rule fixed before the data then applies (a refused
+    question takes its stratum's mean as the item's prediction), and the item can still be drawn for the gold sample,
+    read whole by its labeller, so the estimate stays unbiased; such an item cannot rank as a lead on judges' answers it
+    does not have.
+  - pypdf leaves out the text of a form XObject it cannot decode and says so only in a logged warning (F4's read: "Impossible
+    to decode XFormObject /Group_93: Reached maximum number of tokens per stream", a form past pypdf's parsing budget),
+    and the page was recorded as read whole from its text layer (coordinator, November 2, 17:40 ET). The PDF reader
+    (pdf/3) reads such a page by OCR, which reads the rendered page whole, and says why in the page's method; where OCR
+    cannot read it either, the layer's text stands and the page is recorded as read in part. Its precondition is held:
+    pypdf's warnings silenced would make every page pass, so the reader then refuses to run. pdf/3 reads as pdf/2
+    wherever pypdf decodes every part of every page, so pdf/2's recorded reading of the same bytes is taken as pdf/3's
+    there and its OCR is not run again (136 minutes of serial OCR); no label had been asked over these readings.
 - A frame item is a comment, held once (coordinator, November 2, 15:45 ET). The live F4 frame failed to freeze because
   regulations.gov listed one comment id, CMS-2025-0058-0103, for two records (a withdrawn one posted February 2 and one
   posted February 25, distinct objectIds), and the frame refuses an item twice. The frame now holds each comment id once,
