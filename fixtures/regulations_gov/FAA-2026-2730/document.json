@@ -1,0 +1,126 @@
+{
+ "request": {
+  "path": "documents/FAA-2026-2730-0006",
+  "params": {
+   "include": "attachments"
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/vnd.api+json;charset=utf-8",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "995"
+ },
+ "body": {
+  "data": {
+   "id": "FAA-2026-2730-0006",
+   "type": "documents",
+   "links": {
+    "self": "https://api.regulations.gov/v4/documents/FAA-2026-2730-0006"
+   },
+   "attributes": {
+    "additionalRins": null,
+    "allowLateComments": false,
+    "authorDate": null,
+    "authors": null,
+    "cfrPart": "14 CFR Part 39",
+    "commentEndDate": null,
+    "commentStartDate": "2026-10-01T04:00:00Z",
+    "effectiveDate": null,
+    "exhibitLocation": null,
+    "exhibitType": null,
+    "frDocNum": "2026-20120",
+    "frVolNum": null,
+    "implementationDate": null,
+    "media": null,
+    "ombApproval": null,
+    "paperLength": 0,
+    "paperWidth": 0,
+    "regWriterInstruction": null,
+    "sourceCitation": null,
+    "startEndPage": "62299 - 62301",
+    "subject": null,
+    "topics": [
+     "Air Transportation",
+     "Aircraft",
+     "Aviation Safety",
+     "Incorporation by Reference",
+     "Safety"
+    ],
+    "address1": null,
+    "address2": null,
+    "agencyId": "FAA",
+    "city": null,
+    "category": null,
+    "comment": null,
+    "country": null,
+    "displayProperties": [
+     {
+      "name": "pageCount",
+      "label": "Page Count",
+      "tooltip": "Number of pages In the content file"
+     }
+    ],
+    "docAbstract": null,
+    "docketId": "FAA-2026-2730",
+    "documentType": "Rule",
+    "email": null,
+    "fax": null,
+    "field1": null,
+    "field2": null,
+    "fileFormats": [
+     {
+      "fileUrl": "https://downloads.regulations.gov/FAA-2026-2730-0006/content.pdf",
+      "format": "pdf",
+      "size": 244491
+     },
+     {
+      "fileUrl": "https://downloads.regulations.gov/FAA-2026-2730-0006/content.html",
+      "format": "html",
+      "size": 19325
+     }
+    ],
+    "firstName": null,
+    "govAgency": null,
+    "govAgencyType": null,
+    "objectId": "09000064b95fa64c",
+    "lastName": null,
+    "legacyId": null,
+    "modifyDate": "2026-10-01T16:42:20Z",
+    "organization": null,
+    "originalDocumentId": "FAA_FRDOC_0001-28469",
+    "pageCount": 3,
+    "phone": null,
+    "postedDate": "2026-10-01T04:00:00Z",
+    "postmarkDate": null,
+    "reasonWithdrawn": null,
+    "receiveDate": "2026-10-01T04:00:00Z",
+    "restrictReason": null,
+    "restrictReasonType": null,
+    "stateProvinceRegion": null,
+    "submitterRep": null,
+    "submitterRepAddress": null,
+    "submitterRepCityState": null,
+    "subtype": "Final Rule",
+    "title": "Airworthiness Directives: The Boeing Company Airplanes",
+    "trackingNbr": null,
+    "withdrawn": false,
+    "zip": null,
+    "withinCommentPeriod": false,
+    "openForComment": false
+   },
+   "relationships": {
+    "attachments": {
+     "data": [],
+     "links": {
+      "self": "https://api.regulations.gov/v4/documents/FAA-2026-2730-0006/relationships/attachments",
+      "related": "https://api.regulations.gov/v4/documents/FAA-2026-2730-0006/attachments"
+     }
+    }
+   }
+  },
+  "links": {
+   "self": "https://regulations.gov/v4/documents/FAA-2026-2730-0006?include=attachments"
+  }
+ }
+}

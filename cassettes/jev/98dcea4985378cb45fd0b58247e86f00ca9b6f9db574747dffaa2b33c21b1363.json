@@ -1,0 +1,46 @@
+{
+ "cost_usd": 2.2722e-05,
+ "endpoint": "openrouter/api/v1/systemone",
+ "latency_ms": 450,
+ "provider": "jev",
+ "recorded_at": "2026-11-02T00:02:23.421335+00:00",
+ "request": {
+  "model": "typesafe/jev-1.13",
+  "questions": {
+   "fixture.stop_at_0.15.v1": {
+    "criteria": {
+     "no": "the rule does not require it",
+     "not_established": "the state does not establish it",
+     "yes": "the rule requires crews to stop that day"
+    },
+    "instructions": "Does the rule require crews to stop outdoor work on a day with 0.15 inches of rain?\nAnswer from the state alone. Rely on what is under OBSERVED; treat what is under ASSUMED as hypothetical, given only for this question. If the state does not establish the answer, choose the answer that says so.",
+    "type": "choice"
+   }
+  },
+  "state": {
+   "state": "AS OF: 2026-11-01T12:00:00+00:00\nOBSERVED (sourced; may be relied on):\n  [C1] Crews must stop outdoor work on any day with at least 0.10 inches of rain. \u2014 a city ordinance (fixture), published 2026-03-01, artifact 1c184595838e\nASSUMED FOR THIS QUESTION (hypothetical; not established):\n  (none)\nDEFINITIONS:\n  (none)"
+  }
+ },
+ "response": {
+  "answers": {
+   "fixture.stop_at_0.15.v1": {
+    "choice": "yes",
+    "confidence": 1,
+    "probabilities": {
+     "no": 0,
+     "not_established": 0,
+     "yes": 1
+    },
+    "type": "choice"
+   }
+  },
+  "id": "gen-dec-1793577743-6vqsOE4TQlPm1dGSkqGG",
+  "model": "typesafe/jev-1.13-20260917",
+  "provider": "TypeSafe",
+  "usage": {
+   "cost": 2.2722e-05,
+   "input_tokens": 541,
+   "output_tokens": 51
+  }
+ }
+}

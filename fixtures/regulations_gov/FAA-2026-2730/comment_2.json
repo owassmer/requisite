@@ -1,0 +1,115 @@
+{
+ "request": {
+  "path": "comments/FAA-2026-2730-0003",
+  "params": {
+   "include": "attachments"
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/vnd.api+json;charset=utf-8",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "992"
+ },
+ "body": {
+  "data": {
+   "id": "FAA-2026-2730-0003",
+   "type": "comments",
+   "links": {
+    "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0003"
+   },
+   "attributes": {
+    "commentOn": "09000064b924b533",
+    "commentOnDocumentId": "FAA-2026-2730-0001",
+    "duplicateComments": 0,
+    "address1": null,
+    "address2": null,
+    "agencyId": "FAA",
+    "city": null,
+    "category": null,
+    "comment": "Concur, no additional comments will be forthcoming",
+    "country": null,
+    "displayProperties": null,
+    "docAbstract": null,
+    "docketId": "FAA-2026-2730",
+    "documentType": "Public Submission",
+    "email": null,
+    "fax": null,
+    "field1": null,
+    "field2": null,
+    "fileFormats": null,
+    "firstName": null,
+    "govAgency": null,
+    "govAgencyType": null,
+    "objectId": "09000064b92c8c83",
+    "lastName": null,
+    "legacyId": null,
+    "modifyDate": "2026-05-07T22:31:47Z",
+    "organization": "Boeing Commercial Airplanes",
+    "originalDocumentId": null,
+    "pageCount": 0,
+    "phone": null,
+    "postedDate": "2026-05-07T04:00:00Z",
+    "postmarkDate": null,
+    "reasonWithdrawn": null,
+    "receiveDate": "2026-05-07T04:00:00Z",
+    "restrictReason": null,
+    "restrictReasonType": null,
+    "stateProvinceRegion": null,
+    "submitterRep": null,
+    "submitterRepAddress": null,
+    "submitterRepCityState": null,
+    "subtype": "Comment(s)",
+    "title": "Comment from Boeing Commercial Airplanes",
+    "trackingNbr": "mov-ssrs-kic9",
+    "withdrawn": false,
+    "zip": null,
+    "openForComment": false
+   },
+   "relationships": {
+    "attachments": {
+     "data": [
+      {
+       "id": "09000064b92c8c84",
+       "type": "attachments"
+      }
+     ],
+     "links": {
+      "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0003/relationships/attachments",
+      "related": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0003/attachments"
+     }
+    }
+   }
+  },
+  "included": [
+   {
+    "id": "09000064b92c8c84",
+    "type": "attachments",
+    "links": {
+     "self": "https://api.regulations.gov/v4/attachments/09000064b92c8c84"
+    },
+    "attributes": {
+     "agencyNote": null,
+     "authors": null,
+     "docAbstract": null,
+     "docOrder": 1,
+     "fileFormats": [
+      {
+       "fileUrl": "https://downloads.regulations.gov/FAA-2026-2730-0003/attachment_1.pdf",
+       "format": "pdf",
+       "size": 111581
+      }
+     ],
+     "modifyDate": "2026-05-07T18:06:49Z",
+     "publication": null,
+     "restrictReason": null,
+     "restrictReasonType": null,
+     "title": "RA-26-01938"
+    }
+   }
+  ],
+  "links": {
+   "self": "https://regulations.gov/v4/comments/FAA-2026-2730-0003?include=attachments"
+  }
+ }
+}

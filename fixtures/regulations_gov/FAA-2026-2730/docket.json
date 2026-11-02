@@ -1,0 +1,50 @@
+{
+ "request": {
+  "path": "dockets/FAA-2026-2730",
+  "params": null
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/vnd.api+json;charset=utf-8",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "996"
+ },
+ "body": {
+  "data": {
+   "id": "FAA-2026-2730",
+   "type": "dockets",
+   "attributes": {
+    "displayProperties": [
+     {
+      "name": "category",
+      "label": "Disposition",
+      "tooltip": "An agency specific docket category indicating the status of a regulatory action."
+     }
+    ],
+    "keywords": null,
+    "modifyDate": "2026-10-01T12:42:20Z",
+    "dkAbstract": "Airworthiness Directives\n",
+    "agencyId": "FAA",
+    "program": null,
+    "shortTitle": null,
+    "subType2": null,
+    "title": "AD-2025-01579-T; The Boeing Company Model 757-300 Series airplanes; Inspection of Section 46 frame splices between Stringers S-13 and S-14 from STA 1380 to STA 1620",
+    "generic": null,
+    "field1": null,
+    "docketType": "Rulemaking",
+    "petitionNbr": null,
+    "rin": "2120-AA64",
+    "organization": null,
+    "legacyId": null,
+    "subType": "Airworthiness Directives",
+    "category": "Pending",
+    "field2": null,
+    "effectiveDate": null,
+    "objectId": "0b000064b91ee3e5"
+   },
+   "links": {
+    "self": "https://api.regulations.gov/v4/dockets/FAA-2026-2730"
+   }
+  }
+ }
+}

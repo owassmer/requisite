@@ -1,0 +1,73 @@
+{
+  "source": "spec §7.2 step 2 (the starting set of item templates); event families from spec §7.1 step 2 (the library's families); quantified_impact is extracted by an agent as a Claim proposal (spec §7.2), so it is not a decision-model template here",
+  "templates": [
+    {
+      "id": "is_operator_voice", "version": 1, "task": "classify", "slots": [],
+      "target": "Who is speaking in the filing under OBSERVED: a business, or someone speaking for one, or an individual speaking for themselves?",
+      "answers": [
+        {"value": "business", "meaning": "a business, or someone speaking for one (an owner, officer, employee or representative writing for the business)", "status": "affirmative"},
+        {"value": "individual", "meaning": "an individual speaking for themselves, not for a business", "status": "negative"},
+        {"value": "not_established", "meaning": "the filing does not establish who is speaking", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "external_event_exposure", "version": 1, "task": "interpret", "slots": [],
+      "target": "Does the filing under OBSERVED describe its author's exposure to an identifiable external event whose outcome is still uncertain (an action the author does not control, such as a pending rule, law, rate change or ruling)?",
+      "answers": [
+        {"value": "describes_exposure", "meaning": "it describes how such an uncertain external event would affect the author", "status": "affirmative"},
+        {"value": "does_not", "meaning": "it describes no such exposure", "status": "negative"},
+        {"value": "not_established", "meaning": "the filing does not establish whether it does", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "event_family", "version": 1, "task": "classify", "slots": [],
+      "target": "Which family does the uncertain external event the filing under OBSERVED is about belong to?",
+      "answers": [
+        {"value": "legislation_regulation", "meaning": "legislation or regulation", "status": "affirmative"},
+        {"value": "administrative_rates", "meaning": "administrative rates and indices", "status": "affirmative"},
+        {"value": "trade_actions", "meaning": "trade actions", "status": "affirmative"},
+        {"value": "statistical_releases", "meaning": "statistical releases", "status": "affirmative"},
+        {"value": "weather", "meaning": "weather", "status": "affirmative"},
+        {"value": "commodity_prices", "meaning": "commodity prices", "status": "affirmative"},
+        {"value": "court_rulings", "meaning": "court rulings", "status": "affirmative"},
+        {"value": "permits_licensing", "meaning": "permits and licensing", "status": "affirmative"},
+        {"value": "counterparty_events", "meaning": "counterparty events", "status": "affirmative"},
+        {"value": "other", "meaning": "an event of another family", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the filing does not establish what event it is about", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "cost_driver", "version": 1, "task": "classify", "slots": [],
+      "target": "Through which part of the author's economics does the event the filing under OBSERVED describes act, as the filing tells it?",
+      "answers": [
+        {"value": "labor", "meaning": "labor costs", "status": "affirmative"},
+        {"value": "inputs", "meaning": "the costs of inputs", "status": "affirmative"},
+        {"value": "energy", "meaning": "energy costs", "status": "affirmative"},
+        {"value": "financing", "meaning": "financing costs", "status": "affirmative"},
+        {"value": "revenue", "meaning": "revenue", "status": "affirmative"},
+        {"value": "compliance", "meaning": "the costs of compliance", "status": "affirmative"},
+        {"value": "other", "meaning": "another part of its economics", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the filing does not establish how the event acts on the author", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "direction", "version": 1, "task": "classify", "slots": [],
+      "target": "If the event the filing under OBSERVED describes happens, what does the filing say it would do to its author?",
+      "answers": [
+        {"value": "cost_increase", "meaning": "raise its costs", "status": "affirmative"},
+        {"value": "cost_decrease", "meaning": "lower its costs", "status": "affirmative"},
+        {"value": "revenue_loss", "meaning": "reduce its revenue", "status": "affirmative"},
+        {"value": "not_established", "meaning": "the filing does not establish the direction", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "seeks_certainty", "version": 1, "task": "classify", "slots": [],
+      "target": "Does the filing under OBSERVED ask for relief, protection or predictability against the event it describes?",
+      "answers": [
+        {"value": "asks", "meaning": "it asks for relief, protection or predictability", "status": "affirmative"},
+        {"value": "does_not", "meaning": "it does not ask for any", "status": "negative"},
+        {"value": "not_established", "meaning": "the filing does not establish whether it does", "status": "not_established"}
+      ]
+    }
+  ]
+}

@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -48,7 +49,11 @@ class Budget:
     day_usd: float = float(os.environ.get("REQUISITE_DAY_USD_CAP", "100"))
     spent_usd: float = 0.0
     calls: int = 0
+    reserved_usd: float = 0.0
+    reserved_calls: int = 0
     log: Path = field(default_factory=lambda: SPEND_LOG)
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+    day_before: float | None = field(default=None, repr=False, compare=False)
 
     def day_spent(self, today: date | None = None) -> float:
         today = today or datetime.now(UTC).date()
@@ -61,20 +66,34 @@ class Budget:
                 total += float(e["cost_usd"])
         return total
 
-    def check(self, estimate_usd: float) -> None:
-        if self.calls + 1 > self.run_calls:
-            raise OverBudget(f"run call cap {self.run_calls} reached")
-        if self.spent_usd + estimate_usd > self.run_usd:
-            raise OverBudget(f"run cap ${self.run_usd:.2f} would be passed (spent ${self.spent_usd:.2f})")
-        if self.day_spent() + estimate_usd > self.day_usd:
-            raise OverBudget(f"day cap ${self.day_usd:.2f} would be passed")
+    def reserve(self, estimate_usd: float) -> None:
+        """Check the caps for one more call and hold its estimate, atomically: calls made at once from several threads
+        cannot together pass a cap that each alone would respect."""
+        with self.lock:
+            if self.calls + self.reserved_calls + 1 > self.run_calls:
+                raise OverBudget(f"run call cap {self.run_calls} reached")
+            if self.spent_usd + self.reserved_usd + estimate_usd > self.run_usd:
+                raise OverBudget(f"run cap ${self.run_usd:.2f} would be passed (spent ${self.spent_usd:.2f})")
+            if self.day_before is None:  # what earlier runs spent today, read once; this run's spend is added to it
+                self.day_before = self.day_spent()
+            if self.day_before + self.spent_usd + self.reserved_usd + estimate_usd > self.day_usd:
+                raise OverBudget(f"day cap ${self.day_usd:.2f} would be passed")
+            self.reserved_usd += estimate_usd
+            self.reserved_calls += 1
 
-    def charge(self, provider: str, cost_usd: float) -> None:
-        self.calls += 1
-        self.spent_usd += cost_usd
-        self.log.parent.mkdir(parents=True, exist_ok=True)
-        with self.log.open("a") as f:
-            f.write(json.dumps({"at": datetime.now(UTC).isoformat(), "provider": provider, "cost_usd": cost_usd}) + "\n")
+    def settle(self, provider: str, estimate_usd: float, cost_usd: float | None) -> None:
+        """Release a reservation and charge what the call cost (None: it failed before the provider billed)."""
+        with self.lock:
+            self.reserved_usd -= estimate_usd
+            self.reserved_calls -= 1
+            if cost_usd is None:
+                return
+            self.calls += 1
+            self.spent_usd += cost_usd
+            self.log.parent.mkdir(parents=True, exist_ok=True)
+            with self.log.open("a") as f:
+                entry = {"at": datetime.now(UTC).isoformat(), "provider": provider, "cost_usd": cost_usd}
+                f.write(json.dumps(entry) + "\n")
 
 
 @dataclass(frozen=True)
@@ -110,11 +129,15 @@ def call(
     if replay_only():
         raise CassetteMissing(f"no cassette for {provider} {endpoint} request {key[:12]}; record it outside the sandbox")
     budget = budget or Budget()
-    budget.check(estimate_usd)
+    budget.reserve(estimate_usd)
     started = time.monotonic()
-    response, cost = live()
+    try:
+        response, cost = live()
+    except BaseException:
+        budget.settle(provider, estimate_usd, None)
+        raise
     latency = int((time.monotonic() - started) * 1000)
-    budget.charge(provider, cost)
+    budget.settle(provider, estimate_usd, cost)
     kept = {
         "provider": provider,
         "endpoint": endpoint,

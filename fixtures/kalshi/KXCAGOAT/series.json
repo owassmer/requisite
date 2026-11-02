@@ -1,0 +1,35 @@
+{
+ "request": {
+  "path": "/series/KXCAGOAT",
+  "params": null
+ },
+ "status": 200,
+ "body": {
+  "series": {
+   "additional_prohibitions": [
+    "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+    "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+   ],
+   "categories": [
+    "Politics"
+   ],
+   "category": "Politics",
+   "contract_terms_url": "https://assets.kalshi.com/contract_terms/CAGOATWAGE.pdf",
+   "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/CAGOATWAGE.pdf",
+   "exchange_index": 0,
+   "fee_multiplier": 1,
+   "fee_type": "quadratic",
+   "frequency": "one_off",
+   "last_updated_ts": "2026-09-29T17:19:02.307426Z",
+   "settlement_sources": [
+    {
+     "name": "California",
+     "url": "https://leginfo.legislature.ca.gov/faces/home.xhtml"
+    }
+   ],
+   "tags": null,
+   "ticker": "KXCAGOAT",
+   "title": "California goat herder wage obligations"
+  }
+ }
+}
