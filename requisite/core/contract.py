@@ -14,7 +14,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, model_validator
 
 from requisite.core.base import Day, Instant, Money, Record, Ref
-from requisite.core.judgment import TimeWindow
+from requisite.core.judgment import TimeWindow, require_zone
 from requisite.core.kleene import Kleene
 
 # ---------------------------------------------------------------- observables
@@ -203,16 +203,64 @@ class CountTrue(Record):
 
 class DurationIn(Record):
     """The time within the window during which the condition holds, in `unit` (spec §4); an interval over unknowns, as
-    CountTrue's is."""
+    CountTrue's is. calendar_day counts calendar days of the window's time zone; elapsed_day counts 24-hour periods, so
+    a daylight-saving change does not change it (A05 §5.4: "Define ... day-count conventions")."""
 
     kind: Literal["duration_in"] = "duration_in"
     id: str
     expr: Expr
     window: TimeWindow
-    unit: Literal["day", "hour"]
+    unit: Literal["calendar_day", "elapsed_day", "hour"]
 
 
-NumExpr = Annotated[CountTrue | DurationIn, Field(discriminator="kind")]
+class ReadValue(Record):
+    """A number a resolver reads from text, with its unit: a term an instrument sets (an alternative monthly wage, a
+    modified overtime threshold). Decision models answer it as a closed set of bands (spec §4: a question answered by a
+    distribution over a closed set), so its value is the interval of the band the resolved answer names, and unknown is
+    the whole range (A05 §5.3: a number left open by unknowns is an interval, never a guess). Each band is [low, high),
+    the last [low, high], so a value on a shared endpoint belongs to the band above it (A05 §5.4: "Define open/closed
+    interval endpoints"). Ours: spec §9.3's specimen tests a cost computed from such terms, and spec §4's Interpretive
+    yields only a truth."""
+
+    kind: Literal["read_value"] = "read_value"
+    id: str
+    question_template: str
+    bindings: Mapping[str, Any]
+    unit: str
+    bands: Sequence[tuple[Money, Money]]
+
+    @model_validator(mode="after")
+    def _bands(self) -> ReadValue:
+        if not self.bands or any(lo >= hi for lo, hi in self.bands[:-1]) or self.bands[-1][0] > self.bands[-1][1]:
+            raise ValueError("a reading's bands are nonempty intervals [low, high), the last [low, high]")
+        if any(a[1] > b[0] for a, b in zip(self.bands, self.bands[1:], strict=False)):
+            raise ValueError("a reading's bands are ordered and do not overlap")
+        return self
+
+
+class ValueAt(Record):
+    """A numeric observable's value at an instant, selected by the contract's revision and conflict policies (spec §4
+    Observable; ours: a computed test reads published rates, such as a minimum wage in effect on a day)."""
+
+    kind: Literal["value_at"] = "value_at"
+    id: str
+    observable: str
+    at: Instant
+
+
+class Computed(Record):
+    """A number computed by a registered consequence node from numeric sub-expressions (spec §5: "The contract IR
+    compiles into the computation layer, so the settlement function and the hedge payoff are the same code"; I7: code
+    owns consequences). The node is pure and registered (spec §4 @node), so the same arithmetic settles, prices and
+    fuzzes; over interval inputs its value is the interval of its outputs."""
+
+    kind: Literal["computed"] = "computed"
+    id: str
+    node: Ref
+    inputs: Mapping[str, NumExpr]
+
+
+NumExpr = Annotated[CountTrue | DurationIn | ReadValue | ValueAt | Computed, Field(discriminator="kind")]
 
 
 class NumCmp(Record):
@@ -232,7 +280,7 @@ Expr = Annotated[
     Field(discriminator="kind"),
 ]
 
-for _m in (And, Or, Not, By, At, Throughout, CountTrue, DurationIn, NumCmp):
+for _m in (And, Or, Not, By, At, Throughout, CountTrue, DurationIn, ReadValue, ValueAt, Computed, NumCmp):
     _m.model_rebuild()
 
 
@@ -248,6 +296,9 @@ def walk(expr: Any) -> Iterator[Any]:
         yield from walk(expr.expr)
     elif isinstance(expr, NumCmp):
         yield from walk(expr.expr)
+    elif isinstance(expr, Computed):
+        for sub in expr.inputs.values():
+            yield from walk(sub)
 
 
 # ---------------------------------------------------------------- payout, timing, procedure
@@ -285,7 +336,11 @@ class Payout(Record):
 class Timing(Record):
     """The contract's dates (spec §4), with the cutoff for observations and the payment lag distinguished from the
     settlement determination (A05 §5.3: event, publication, observation cutoff, settlement determination and payment
-    dates are different dates)."""
+    dates are different dates). Lags count calendar days or business days, in the time zone `tz` (A05 §5.4: "Define ...
+    timezone, day-count conventions"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose
+    one registered calendar is the United States federal holidays of 5 U.S.C. §6103 (ours: the calendar the contracts
+    we build settle against; another is registered here before a contract can use it, A05 §5.4 "Mechanical policies
+    must be executable")."""
 
     open: Instant
     close: Instant
@@ -293,6 +348,9 @@ class Timing(Record):
     observation_cutoff: Instant
     settlement_lag_days: int
     payment_lag_days: int
+    lag_days: Literal["calendar", "business"]
+    holiday_calendar: Literal["us_federal"] | None
+    tz: str
 
     @model_validator(mode="after")
     def _order(self) -> Timing:
@@ -300,6 +358,9 @@ class Timing(Record):
             raise ValueError("open <= close <= expiration")
         if self.settlement_lag_days < 0 or self.payment_lag_days < 0:
             raise ValueError("lags are non-negative")
+        if (self.lag_days == "business") != (self.holiday_calendar is not None):
+            raise ValueError("business-day lags name their holiday calendar, and only they do")
+        require_zone(self.tz)
         return self
 
 
@@ -403,7 +464,7 @@ class ContractIR(Record):
         if len(declared) != len(self.observables):
             raise ValueError("observable ids are distinct")
         used = [n.observable for e in (self.trigger, self.payout.quantity) if e is not None for n in walk(e)
-                if isinstance(n, Cmp)]  # fmt: skip
+                if isinstance(n, Cmp | ValueAt)]  # fmt: skip
         missing = sorted(set(used) - declared)
         if missing:
             raise ValueError(f"the IR references undeclared observables: {missing}")
@@ -417,6 +478,8 @@ class ContractIR(Record):
             for n in walk(e) if e is not None else ():
                 if isinstance(n, Cmp) and n.value.kind != kinds[n.observable]:
                     raise ValueError(f"{n.id} compares {n.observable}, a {kinds[n.observable]}, with a {n.value.kind}")
+                if isinstance(n, ValueAt) and kinds[n.observable] != "number":
+                    raise ValueError(f"{n.id} reads {n.observable}'s value as a number; it is a {kinds[n.observable]}")
         nodes: dict[str, Any] = {}
         for e in (self.trigger, self.payout.quantity):
             for n in walk(e) if e is not None else ():

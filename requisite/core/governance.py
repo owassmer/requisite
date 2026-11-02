@@ -28,6 +28,7 @@ ProposalKind = Literal[
     "decision_spec",  # the objective, horizon and loss an agent drafts for G1 (spec §2.4 G1; addendum §12 DecisionSpec)
     "frame",  # the wide flow's frame criteria, drawn from the approved objective (decisions, "Discovery finds ...")
     "contract",  # a whole filed contract read into the IR (spec §9.3, WP12)
+    "objective",  # a wide run's objective an agent drafts for G1 (spec §2.4 G1; §7.2; decisions, "Discovery finds ...")
 ]
 ProposalStatus = Literal["proposed", "validated", "active", "promoted", "rejected", "retired"]
 
@@ -90,7 +91,8 @@ class Proposal(Record):
 #   §5 "Supports (with a span)"), proposition and constraint (spec §5: SAT consistency, acyclic conditioning), scenario
 #   (feasible under the world constraints: addendum A09 §10.2), frame (its criteria run and freeze a frame).
 # - relevance for a question: it reaches a decision (spec §2.2; spec §4 AtomicQuestion.reaches).
-# - human where a gate G1-G4 is the human's: decision_spec (G1: "the objective, horizon and loss definition").
+# - human where a gate G1-G4 is the human's: decision_spec and objective (G1: "the objective, horizon and loss
+#   definition"; decision_spec is a deep case's, objective a wide run's).
 #   G2 (contested diagnosis), G3 (contract acceptance) and G4 (template promotion) are approvals of committed state, not
 #   of a proposal becoming active, and are recorded as Approvals.
 # Stability is not a gate to become active: it is measured on active questions in the requisite loop (spec §2.3), and a
@@ -109,6 +111,7 @@ REQUIRED_GATES: Mapping[str, tuple[Gate, ...]] = {
     "decision_spec": ("schema", "human"),
     "frame": ("schema", "tests"),
     "contract": ("schema", "tests"),
+    "objective": ("schema", "human"),
 }
 # A question proposed to replace a parent (a split) passes stability (spec §2.1: "A proposed split yields stable
 # sub-questions") and relevance (spec §2.2: "A split is admitted only if it raises relevance or is needed for
@@ -254,8 +257,10 @@ class RefinementWitness(Record):
 
     @model_validator(mode="after")
     def _witness(self) -> RefinementWitness:
-        if len(self.states) < 2 or len(self.states) != len(self.acceptable_actions):
-            raise ValueError("a witness is two or more feasible states, each with its acceptable actions")
+        if len(set(self.states)) < 2 or len(self.states) != len(self.acceptable_actions):
+            raise ValueError("a witness is two or more distinct feasible states, each with its acceptable actions")
+        if len(set(self.states)) != len(self.states):
+            raise ValueError("a witness's states are distinct: one state has one acceptable set")
         sets = [set(a) for a in self.acceptable_actions]
         divergent = not set.intersection(*sets)
         material = self.value_discrepancy is not None and self.value_discrepancy > self.tolerance
@@ -325,6 +330,21 @@ class SamplingDesign(Record):
     def _strata(self) -> SamplingDesign:
         if sum(s.frame_size for s in self.phase1) != self.frame_size:
             raise ValueError("phase-1 strata partition the frame")
+        if self.sample == "independent_two_sample":
+            # Two samples drawn independently from the frame (A07 §8.2: "an unlabeled sample and a separate labeled
+            # correction sample"): the labelled one is not a subsample of the other, so no nesting applies; each of its
+            # strata is a stratum of the frame.
+            frame = {s.name: s for s in self.phase1}
+            if any(s.parent not in frame for s in self.phase2):
+                raise ValueError("an independent labelled sample's strata are strata of the frame")
+            for stratum in self.phase1:
+                labelled = [s for s in self.phase2 if s.parent == stratum.name]
+                if stratum.frame_size and not any(s.sample_size for s in labelled):
+                    raise ValueError(f"frame stratum {stratum.name} has items and no labelled sample: their inclusion "
+                                     "is zero (A07 §8.2: pi_i > 0)")  # fmt: skip
+                if any(s.phase1_count != stratum.frame_size for s in labelled):
+                    raise ValueError("an independent labelled stratum is drawn from its whole frame stratum")
+            return self
         parents = {s.name: s for s in self.phase1}
         if any(s.parent not in parents for s in self.phase2):
             raise ValueError("every phase-2 stratum is nested in a phase-1 stratum")
@@ -334,6 +354,19 @@ class SamplingDesign(Record):
                 raise ValueError(f"the phase-2 strata of {name} partition its {stratum.sample_size} phase-1 items")
         if self.sample == "census_then_gold" and any(s.sample_size != s.frame_size for s in self.phase1):
             raise ValueError("a census reads every item of the frame")
+        # Every unit has a positive chance of a gold label (addendum A07 §8.2: "inclusion probabilities pi_i > 0"):
+        # every nonempty phase-1 stratum is sampled, its phase-1 sample is partitioned into phase-2 strata, and each
+        # nonempty phase-2 stratum gets at least min(2, its items) gold labels (decisions: at least 2, or the whole
+        # stratum when it is that small).
+        for stratum in self.phase1:
+            if stratum.frame_size and not stratum.sample_size:
+                raise ValueError(f"phase-1 stratum {stratum.name} has items and no sample: their inclusion is zero")
+            if stratum.sample_size and not [s for s in self.phase2 if s.parent == stratum.name]:
+                raise ValueError(f"phase-1 stratum {stratum.name}'s sample has no phase-2 strata to draw gold from")
+        for sub in self.phase2:
+            if sub.sample_size < min(2, sub.phase1_count):
+                raise ValueError(f"phase-2 stratum {sub.name} draws {sub.sample_size} of {sub.phase1_count}: at least "
+                                 "min(2, its items)")  # fmt: skip
         return self
 
 
@@ -382,3 +415,130 @@ class DerivationReceipt(Record):
     lineage_hash: str
     inputs: Sequence[InputReceipt]
     computed_at: Instant
+
+
+# ---------------------------------------------------------------- wide runs (spec §7.2-7.3; decisions, "Discovery finds ...")
+
+
+class WideObjective(Record):
+    """What a wide run looks for, approved at G1 (spec §2.4: "the objective, horizon and loss definition"). The flow
+    derives its frame from this and from nothing else, so which corpus and which leads it reaches are its findings
+    (decisions, "Discovery finds what it analyzes"). population: whose exposure; events: the class of pending external
+    change; horizon: the window the exposure matters over; loss_definition: what counts as the loss; estimand: what the
+    run's prevalences estimate, in its unit (A07 §8.1: "The target is not implicit")."""
+
+    id: str
+    version: int
+    population: str
+    events: str
+    horizon: TimeWindow
+    loss_definition: str
+    estimand: str
+    unit: Literal["item"]
+
+
+DocumentType = Literal["Proposed Rule", "Rule", "Notice"]  # regulations.gov's document types that state a change
+CommentStatus = Literal["open", "closed_pending_final", "either"]
+
+
+class FrameCriteria(Record):
+    """How the flow reaches its frame in the public record, derived from an approved WideObjective. The corpus is the
+    public record of affected parties, regulatory comment dockets first, through the regulations.gov API (spec §7.3);
+    the frame is snapshot into immutable artifacts and split into items (spec §7.2 step 1). The criteria are ours, the
+    regulations.gov search's own terms for what to reach: documents of the given types, posted in the window, matching
+    any search term, with their dockets' public comments; comment_status narrows to open comment periods, closed ones
+    whose rule is still pending, or either, since the objective's events are pending changes (spec §12: "F2 and F4 use
+    forward, currently unresolved events. The factory queries regulations.gov for open comment periods"; the choice of
+    docket is the flow's, decisions, "Discovery finds what it analyzes"); min_comments excludes dockets too small to
+    estimate a prevalence over. Code runs the criteria at `as_of`, and the frame is whatever they return, frozen."""
+
+    id: str
+    version: int
+    objective: Ref
+    source: Literal["regulations.gov"]
+    as_of: Instant
+    search_terms: Sequence[str]
+    document_types: Sequence[DocumentType]
+    posted_from: Day
+    posted_to: Day | None
+    agencies: Sequence[str]
+    comment_status: CommentStatus
+    min_comments: int
+
+    @model_validator(mode="after")
+    def _criteria(self) -> FrameCriteria:
+        if not self.search_terms or not self.document_types:
+            raise ValueError("a frame names its search terms and the document types it reaches")
+        if self.posted_to is not None and self.posted_to < self.posted_from:
+            raise ValueError("a frame's posting window starts before it ends")
+        if self.min_comments < 1:
+            raise ValueError("a frame's dockets have at least one comment")
+        return self
+
+
+class FrameSearch(Record):
+    """One search the frame ran: its request (the API path and parameters, never the key) and how many documents it
+    returned."""
+
+    term: str
+    request: str
+    documents: int
+
+
+class FrameDocket(Record):
+    """A docket the searches reached, kept in the frame or dropped, with why (its comment status, its comment count)."""
+
+    docket: str
+    kept: bool
+    reason: str
+    comments: int
+
+
+class FrameItem(Record):
+    id: str
+    docket: str
+    posted_at: Instant
+
+
+class Frame(Record):
+    """A wide run's frozen frame: what its criteria searched, which dockets they reached and kept, and every item of the
+    kept dockets posted by as_of (spec §7.2 step 1: a snapshot of the corpus, split into items). Its content hash is the
+    frame_hash a SamplingDesign names (addendum A07 §8.1), so the frame a sample was drawn from is the frame recorded."""
+
+    id: str
+    criteria: Ref
+    as_of: Instant
+    searches: Sequence[FrameSearch]
+    dockets: Sequence[FrameDocket]
+    items: Sequence[FrameItem]
+
+    @model_validator(mode="after")
+    def _items(self) -> Frame:
+        kept = {d.docket for d in self.dockets if d.kept}
+        if any(i.docket not in kept for i in self.items):
+            raise ValueError("a frame's items come from the dockets it kept")
+        if any(i.posted_at > self.as_of for i in self.items):
+            raise ValueError("a frame holds the items posted by its as_of (spec I3)")
+        ids = [i.id for i in self.items]
+        if len(set(ids)) != len(ids):
+            raise ValueError("a frame lists each item once")
+        return self
+
+
+# ---------------------------------------------------------------- agent runs (spec §13 WP15)
+
+
+class AgentRun(Record):
+    """One agent call, its trace (spec §13 WP15: "each run leaves a trace of Proposals and gate results"). `response` is
+    the cassette key of the recorded call, so the run's input, prompt and answer are kept whole; `proposals` are the ids
+    of the Proposals code made from its answer, whose gate results the store holds."""
+
+    id: str
+    role: str
+    model: str
+    effort: str
+    input_hash: str
+    output_hash: str
+    response: str
+    proposals: Sequence[str]
+    at: Instant

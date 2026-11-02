@@ -42,3 +42,33 @@ def test_an_instant_carries_its_zone():
 
     with pytest.raises(ValidationError, match="time zone"):
         c.JudgmentState(as_of=datetime(2026, 11, 1, 12, 0), observed=[])
+
+
+@pytest.mark.covers("I3")
+def test_a_claim_is_observable_only_from_an_artifact_published_and_available_by_as_of():
+    from datetime import timedelta
+
+    from requisite.core import observable_at
+
+    day = timedelta(days=1)
+    artifact = c.Artifact(
+        id=ART, locator="x", source="x", media_type="text/plain", size=len(TEXT), published_at=T0,
+        published_at_basis="postedDate", observed_at=T0 + day, availability="retrieved",
+    )  # fmt: skip
+    now = T0 + 3 * day
+    assert observable_at(artifact, as_of=T0 + day, evaluated_at=now)
+    # Spec I3: a later publication is excluded by as_of; a retrieval after the evaluation time is not observed yet.
+    assert not observable_at(artifact, as_of=T0 - day, evaluated_at=now)
+    assert not observable_at(artifact, as_of=T0 + day, evaluated_at=T0)
+    # A11 §11.3: published at T0 but fetched a day later, the text is not evidenced to exist at T0; only a state that
+    # says it is a retrospective reconstruction may use it there.
+    assert not observable_at(artifact, as_of=T0, evaluated_at=now)
+    assert observable_at(artifact, as_of=T0, evaluated_at=now, mode="retrospective_reconstruction")
+    # An archive snapshot evidences the text from its own time.
+    archived = c.Artifact(**{**artifact.model_dump(), "availability": "archived",
+                             "archive_locator": "https://web.archive.org/x", "archived_at": T0})  # fmt: skip
+    assert observable_at(archived, as_of=T0, evaluated_at=now, mode="historical_replay")
+    # With no stated publication date, the text counts from when it is evidenced to exist, never from an assumed date.
+    undated = c.Artifact(**{**artifact.model_dump(), "published_at": None})
+    assert not observable_at(undated, as_of=T0, evaluated_at=now)
+    assert observable_at(undated, as_of=T0 + day, evaluated_at=now)

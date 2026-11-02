@@ -8,7 +8,7 @@ from fractions import Fraction as F
 from requisite import core as c
 from requisite.core.evidence import artifact_id, claim_id
 from requisite.core.governance import FloorPoint, InputReceipt
-from requisite.core.results import HardGate
+from requisite.core.results import HARD_GATES, HardGate
 from requisite.core.world import ConditioningStep
 
 T0 = datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
@@ -35,8 +35,8 @@ JUDGMENT = c.Judgment(
     question=REF,
     state_hash=H,
     config=CONFIG,
+    reported={"yes": 0.7, "no": 0.2, "ne": 0.1},
     distribution={"yes": 0.7, "no": 0.2, "ne": 0.1},
-    roundoff=0.0,
     precision=0.0001,
     response=H,
     latency_ms=120,
@@ -65,7 +65,8 @@ PROCEDURE = c.ResolutionProcedure(
     void_transfer=c.VoidTransfer(returns="premium"),
 )
 TIMING = c.Timing(
-    open=T0, close=T1, expiration=T1, observation_cutoff=T1, settlement_lag_days=3, payment_lag_days=2
+    open=T0, close=T1, expiration=T1, observation_cutoff=T1, settlement_lag_days=3, payment_lag_days=2,
+    lag_days="calendar", holiday_calendar=None, tz="America/New_York",
 )
 PAYOUT = c.Payout(
     kind="per_unit",
@@ -114,6 +115,16 @@ def examples() -> list[c.Record]:
         c.SyntheticJudgmentState(as_of=T0, observed=["syn_clm_" + "2" * 64], scenario="s1"),
         CONFIG,
         JUDGMENT,
+        c.QuestionTemplate(id="t.cover", version=1, task="interpret", target="Does {provision} cover {party} in 2027?",
+                           slots=["provision", "party"], answers=ANSWERS, paraphrase_set="ps.cover"),  # fmt: skip
+        c.Paraphrase(id="p0", target="Does {provision} cover {party} in 2027?",
+                     meanings={"yes": "covered", "no": "not covered", "ne": "unsettled"}),  # fmt: skip
+        c.ParaphraseSet(
+            id="ps.cover", version=1, template=c.Ref(id="t.cover", version=1), slots=["provision", "party"],
+            answers=["yes", "no", "ne"],
+            paraphrases=[c.Paraphrase(id="p0", target="Does {provision} cover {party} in 2027?",
+                                      meanings={"yes": "covered", "no": "not covered", "ne": "unsettled"})],
+        ),  # fmt: skip
         c.ProbeResult(probe="paraphrase_provider", fired=False, indicates=None, scores={"s_arg": 1.0}, detail="-"),
         c.ResolvedJudgment(
             question=REF,
@@ -143,6 +154,8 @@ def examples() -> list[c.Record]:
             observed_at=T0,
             availability="retrieved",
         ),
+        c.Item(id="COMMENT-1", source="regulations.gov", container="DOCKET-1", posted_at=T0, submitter="A Company",
+               artifacts=[ART], text=TEXT, extractions=["rg-comment-text-v1"]),  # fmt: skip
         c.Claim(id=CLM, artifact=ART, extraction="plain-v1", span=(4, 10), text=TEXT[4:10], authority="a commenter"),
         c.SyntheticArtifact(id=SYN_ART, scenario="s1", generator="run-1", media_type="text/plain", size=5,
                             created_at=T0),  # fmt: skip
@@ -199,7 +212,12 @@ def examples() -> list[c.Record]:
         c.Category(value="granted"),
         c.Flag(value=True),
         c.OnDay(value=date(2027, 4, 1)),
-        c.DurationIn(id="dur", expr=WET, window=WINDOW, unit="day"),
+        c.DurationIn(id="dur", expr=WET, window=WINDOW, unit="calendar_day"),
+        c.ReadValue(id="wage", question_template="qt.monthly_wage", bindings={"instrument": "X"}, unit="USD/month",
+                    bands=[(D("0"), D("3000")), (D("3000"), D("6000"))]),  # fmt: skip
+        c.ValueAt(id="minwage", observable="rain", at=T1),
+        c.Computed(id="net_cost", node=c.Ref(id="net_monthly_cost", version=1),
+                   inputs={"wage": c.ValueAt(id="minwage", observable="rain", at=T1)}),  # fmt: skip
         TRIGGER,
         PAYOUT,
         TIMING,
@@ -317,6 +335,25 @@ def examples() -> list[c.Record]:
             labeled_at=T0,
             blind=True,
         ),
+        c.WideObjective(
+            id="obj", version=1, population="U.S. businesses", events="pending federal rules changing labor or input costs",
+            horizon=WINDOW, loss_definition="incremental operating cash cost",
+            estimand="share of comments in a business's voice describing exposure, by event family", unit="item",
+        ),  # fmt: skip
+        c.FrameCriteria(
+            id="frame", version=1, objective=c.Ref(id="obj", version=1), source="regulations.gov", as_of=T0,
+            search_terms=["wage"], document_types=["Proposed Rule"], posted_from=date(2026, 1, 1), posted_to=None,
+            agencies=[], comment_status="either", min_comments=50,
+        ),  # fmt: skip
+        c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3),
+        c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120),
+        c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0),
+        c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0,
+                searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3)],
+                dockets=[c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120)],
+                items=[c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0)]),  # fmt: skip
+        c.AgentRun(id="run1", role="objective_drafter", model="claude-opus-5-5", effort="high", input_hash=H,
+                   output_hash=H, response=H, proposals=["pr1"], at=T0),  # fmt: skip
         InputReceipt(name="x", value_hash=H, lineage_hash=H),
         c.DerivationReceipt(node=c.Ref(id="n", version=1), value_hash=H, lineage_hash=H,
                             inputs=[InputReceipt(name="x", value_hash=H, lineage_hash=H)], computed_at=T0),  # fmt: skip
@@ -350,9 +387,9 @@ def examples() -> list[c.Record]:
             budget_dual=D("0"),
             reduced_costs=[c.ReducedCost(candidate="y", value=D("-110"), measured_improvement=F(20))],
         ),
-        c.CoverageObligation(condition="A", status="met", witnesses=["s1", "s2"], proof=None),
+        c.CoverageObligation(conditions=["A"], status="met", witnesses=["s1", "s2"], proof=None),
         c.BoundaryPoint(condition="rain_ge_0.10", point="0.09", feasible=True, scenario="s3"),
-        c.FuzzScenario(id="s1", split="held_out", mandatory=True, severity="critical", ir_outcome="resolved_yes",
+        c.FuzzScenario(id="s1", state_hash=H, split="held_out", mandatory=True, severity="critical", ir_outcome="resolved_yes",
                        ir_evaluation=H, ir_transfers=[c.CashTransfer(at=T1, amount=D("100"), currency="USD",
                        basis="payout")], rendering_passed=True, resolver_outcomes={"resolved_yes": 1.0},
                        prose_outcome="resolved_yes", prose_transfers=[c.CashTransfer(at=T1, amount=D("100"),
@@ -362,15 +399,17 @@ def examples() -> list[c.Record]:
         c.FuzzReport(
             contract=c.Ref(id="wet-spring", version=1),
             prose_hash=H,
+            pooling_policy=c.Ref(id="equal_per_provider_split_among_configurations", version=1),
             whole_trigger="ok",
-            obligations=[c.CoverageObligation(condition="B", status="redundant", witnesses=[], proof="UNSAT")],
+            obligations=[c.CoverageObligation(conditions=["B"], status="redundant", witnesses=[], proof="UNSAT"),
+                         c.CoverageObligation(conditions=["A", "B"], status="uncovered", witnesses=[], proof=None)],
             boundaries=[],
             scenarios=[],
             fidelity=1.0,
             clarity=1.0,
             ambiguity=0.0,
-            hard_gates=[HardGate(name="g", passed=True, detail="-")],
+            hard_gates=[HardGate(name=n, passed=True, detail="-") for n in HARD_GATES],
             attributions=[],
-            equivalence="tested_equivalent_on_suite",
+            equivalence="unsupported_or_unassessed",
         ),
     ]

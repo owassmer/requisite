@@ -6,6 +6,7 @@ an observed one is required (spec I4: "enforce this at the type level").
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Annotated, Literal
 
 from pydantic import StringConstraints, model_validator
@@ -139,4 +140,47 @@ class SyntheticClaim(Record):
             raise ValueError("a synthetic claim's text is exactly its span")
         if self.id != f"syn_clm_{sha256(f'{self.artifact}|{start}:{end}|{self.text}')}":
             raise ValueError("a synthetic claim's id is the hash of its artifact, span and text")
+        return self
+
+
+def observable_at(artifact: Artifact, as_of: Instant, evaluated_at: Instant, mode: str = "prospective") -> bool:
+    """Whether a claim from this artifact may stand as observed in a state as of `as_of`, judged at `evaluated_at`.
+
+    Spec I3: "Observed claims come only from artifacts with published_at <= as_of and observed_at <= the evaluation
+    time." An artifact whose source states no publication date counts from when its text is evidenced to exist. And a
+    publication date does not establish that the text as fetched was available then (addendum A11 §11.3), so the text
+    must be evidenced to exist by as_of (`available_from`: its retrieval, or an archive snapshot) unless the state is a
+    retrospective reconstruction, which says so of itself and is never a clean prospective or replayed evaluation.
+    The one place this rule is written: everything that builds a JudgmentState selects evidence through it."""
+    published = artifact.published_at if artifact.published_at is not None else artifact.available_from
+    if not (published <= as_of and artifact.observed_at <= evaluated_at):
+        return False
+    return mode == "retrospective_reconstruction" or artifact.available_from <= as_of
+
+
+class Item(Record):
+    """One unit of a wide corpus (spec §7.2: "split it into items: comments, letters, filings, posts"): what one
+    submitter filed, read whole (decisions: an item's text is everything filed, scans read by OCR).
+
+    container: the docket or collection it was filed in. submitter: the name or organization the submitter gave, as the
+    source publishes it, or None where none is given. artifacts: the filing's record and each attachment, in order.
+    text: the comment and each attachment's extracted text, in that order, each part headed by the artifact it came from.
+    extractions: the extraction ids that produced the text. unreadable: any attachment whose text could not be read, with
+    the reason; the item still stands, and what could not be read is stated rather than dropped.
+    """
+
+    id: str
+    source: str
+    container: str
+    posted_at: Instant
+    submitter: str | None
+    artifacts: Sequence[ArtifactId]
+    text: str
+    extractions: Sequence[str]
+    unreadable: Sequence[str] = ()
+
+    @model_validator(mode="after")
+    def _whole(self) -> Item:
+        if not self.artifacts:
+            raise ValueError("an item is read from at least its own record")
         return self

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
+from fractions import Fraction
 from typing import Any, Literal
 
 from pydantic import model_validator
@@ -26,6 +27,17 @@ class AnswerValue(Record):
     binds: Mapping[str, Any] = {}
 
 
+def require_zone(tz: str) -> None:
+    """A time zone is a real IANA zone, so a day count in it can be executed (A05 §5.4: "Mechanical policies must be
+    executable")."""
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    try:
+        ZoneInfo(tz)
+    except (ZoneInfoNotFoundError, ValueError) as e:
+        raise ValueError(f"{tz!r} is not an IANA time zone") from e
+
+
 class TimeWindow(Record):
     """A window of time (spec §4), with each endpoint's inclusion stated (addendum A05 §5.4: "Define open/closed interval
     endpoints, timezone"). `tz` is the IANA zone in which calendar days of the window are counted."""
@@ -38,6 +50,7 @@ class TimeWindow(Record):
 
     @model_validator(mode="after")
     def _order(self) -> TimeWindow:
+        require_zone(self.tz)
         if self.start is not None and self.end is not None and not self.start <= self.end:
             raise ValueError("a window's start is not after its end")
         return self
@@ -95,6 +108,71 @@ class AtomicQuestion(Record):
     @property
     def ref(self) -> Ref:
         return Ref(id=self.id, version=self.version)
+
+
+class Paraphrase(Record):
+    """One meaning-preserving rewording of a template's target and its answers' meanings (spec §2.1 "Paraphrase:
+    meaning-preserving rewordings of the target and answer meanings"). The original wording is the paraphrase "p0"."""
+
+    id: str
+    target: str
+    meanings: Mapping[str, str]
+
+
+class QuestionTemplate(Record):
+    """A reusable question with slots (spec §9 library objects: "QuestionTemplate (slots, answer semantics, frozen
+    paraphrase set)"). `target` names each slot as {slot}; an AtomicQuestion instantiates it with bindings (spec §4
+    AtomicQuestion.template_id and bindings), inheriting its answers and its paraphrase set."""
+
+    id: str
+    version: int
+    task: Task
+    target: str
+    slots: Sequence[str]
+    answers: Sequence[AnswerValue]
+    paraphrase_set: str | None = None
+
+    @model_validator(mode="after")
+    def _slots(self) -> QuestionTemplate:
+        import string
+
+        named = {f for _, f, _, _ in string.Formatter().parse(self.target) if f}
+        if named != set(self.slots):
+            raise ValueError(f"the target's placeholders {sorted(named)} are the template's slots {sorted(self.slots)}")
+        values = [a.value for a in self.answers]
+        if len(values) < 2 or len(set(values)) != len(values):
+            raise ValueError("a template's answers are a closed set of at least two distinct values")
+        if self.task != "forecast" and not any(a.status == "not_established" for a in self.answers):
+            raise ValueError("a non-forecast template includes a not_established answer (spec §4)")
+        return self
+
+
+class ParaphraseSet(Record):
+    """A template's frozen set of paraphrases (spec §2.1: "from a frozen, reviewed set per template"; spec §3: agents
+    propose paraphrase sets). Frozen: a changed set is a new version, so a stability score names the set it used. Every
+    paraphrase words every answer of the template, and keeps the template's slots."""
+
+    id: str
+    version: int
+    template: Ref
+    slots: Sequence[str]
+    answers: Sequence[str]
+    paraphrases: Sequence[Paraphrase]
+
+    @model_validator(mode="after")
+    def _paraphrases(self) -> ParaphraseSet:
+        import string
+
+        ids = [p.id for p in self.paraphrases]
+        if len(set(ids)) != len(ids) or "p0" not in ids:
+            raise ValueError("a paraphrase set has distinct ids and includes the original wording, p0")
+        for p in self.paraphrases:
+            if set(p.meanings) != set(self.answers):
+                raise ValueError(f"paraphrase {p.id} words answers {sorted(p.meanings)}, not {sorted(self.answers)}")
+            named = {f for _, f, _, _ in string.Formatter().parse(p.target) if f}
+            if named != set(self.slots):
+                raise ValueError(f"paraphrase {p.id} keeps the template's slots {sorted(self.slots)}")
+        return self
 
 
 # ---------------------------------------------------------------- state
@@ -156,14 +234,46 @@ class JudgeConfig(Record):
 SUM_TOLERANCE = 1e-10  # the oracle's (spec/verify_math.py `distribution`); decisions, "Numbers"
 
 
+def correct_roundoff(reported: Sequence[float], step: float) -> list[float] | None:
+    """The distribution closest to the reported values (in squared distance) among those the reported vector is a
+    rounding of: each value within half a step of its reported value, and summing to one. That is an equal shift of every
+    value, clipped to its interval [max(0, r - step/2), min(1, r + step/2)], with the shift that makes the sum one. None
+    when no distribution rounds to the reported values: then they are not a rounding, and are refused, never normalized
+    (addendum A04 §4.2). Computed exactly: each reported value and the step are read as the decimals they print as, the
+    feasibility test is exact, and the shift is solved exactly on the piecewise-linear sum; only the result is a float.
+    The definition of a round-off correction: the provider layer applies it, and every Judgment is checked against it."""
+    r = [Fraction(repr(float(v))) for v in reported]
+    half = Fraction(repr(float(step))) / 2
+    lo = [max(Fraction(0), v - half) for v in r]
+    hi = [min(Fraction(1), v + half) for v in r]
+    if sum(lo) > 1 or sum(hi) < 1:
+        return None
+
+    def total(shift: Fraction) -> Fraction:
+        return sum((min(h, max(lw, v + shift)) for v, lw, h in zip(r, lo, hi, strict=True)), Fraction(0))
+
+    # The sum is piecewise linear and nondecreasing in the shift, with breakpoints where a value meets an end of its
+    # interval: find the segment where it crosses one and solve on it.
+    points = sorted({lw - v for v, lw in zip(r, lo, strict=True)} | {h - v for v, h in zip(r, hi, strict=True)})
+    left = next(x for x in reversed(points) if total(x) <= 1)
+    right = next((x for x in points if total(x) >= 1), left)
+    if total(left) == 1 or right == left:
+        shift = left
+    else:
+        shift = left + (1 - total(left)) * (right - left) / (total(right) - total(left))
+    exact = [min(h, max(lw, v + shift)) for v, lw, h in zip(r, lo, hi, strict=True)]
+    assert sum(exact) == 1
+    return [float(x) for x in exact]
+
+
 class Judgment(Record):
     """One configuration's answer to one question over one state (spec §4).
 
-    distribution: probabilities over the question's answer values, summing to one within 1e-10. A provider reports at a
-    fixed step (`precision`); where its reported vector's sum is off one by no more than half a step per answer, the
-    vector is a rounding, corrected proportionally, and `roundoff` (one minus the reported sum) records the correction
-    (addendum A04 §4.2: "Numerical round-off corrections need a declared tolerance and log"). Beyond that it is no
-    rounding, and the judgment has no distribution, never a normalized one. refusal: where the provider returned no usable distribution (a
+    reported: the probabilities as the provider reported them, at its reporting step (`precision`). distribution: a
+    distribution over the question's answer values, summing to one within 1e-10, each value within half a step of its
+    reported value: the reported vector is a rounding of it. A reported vector that is no rounding of any distribution
+    has no distribution, never a normalized one; the correction from reported to distribution is the log of the
+    round-off (addendum A04 §4.2: "Numerical round-off corrections need a declared tolerance and log"). refusal: where the provider returned no usable distribution (a
     refusal, or probabilities that fail the check), what it returned instead; a refusal is an answer with no
     probabilities, never a zero (ours, from Slope's Decisions client). Exactly one of the two is set.
     response: the cassette key of the recorded response this judgment was read from (ours: every judgment shown is a
@@ -174,9 +284,9 @@ class Judgment(Record):
     question: Ref
     state_hash: str
     config: JudgeConfig
+    reported: Mapping[str, float] | None
     distribution: Mapping[str, float] | None
     refusal: str | None = None
-    roundoff: float
     precision: float
     response: str
     latency_ms: int
@@ -189,8 +299,18 @@ class Judgment(Record):
             raise ValueError("a judgment has a distribution or a refusal, exactly one")
         if self.distribution is not None:
             check_distribution(self.distribution)
-            if not 0 < self.precision <= 1 or abs(self.roundoff) > len(self.distribution) * self.precision / 2 + 1e-12:
-                raise ValueError("a corrected round-off is within half a reporting step per answer")
+            if self.reported is None or set(self.reported) != set(self.distribution):
+                raise ValueError("a distribution is a correction of the reported probabilities, over the same answers")
+            if any(not math.isfinite(v) or not 0 <= v <= 1 for v in self.reported.values()):
+                raise ValueError("reported probabilities are finite and in [0, 1]")
+            if not 0 < self.precision <= 1:
+                raise ValueError("a reporting step lies in (0, 1]")
+            answers = list(self.reported)
+            corrected = correct_roundoff([self.reported[a] for a in answers], self.precision)
+            if corrected is None:
+                raise ValueError("no distribution rounds to the reported values: they are refused, never corrected")
+            if any(self.distribution[a] != p for a, p in zip(answers, corrected, strict=True)):
+                raise ValueError("the distribution is the round-off correction of the reported values (correct_roundoff)")
         return self
 
 
