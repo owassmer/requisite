@@ -13,9 +13,9 @@ FAKE = "sk-test-0123456789abcdef"
 def live_allowed(monkeypatch, tmp_path):
     monkeypatch.delenv("REQUISITE_REPLAY_ONLY", raising=False)
     monkeypatch.setenv("OPENAI_DECISIONS_API_KEY", FAKE)
-    secrets.secret.cache_clear()
+    secrets._found.cache_clear()
     yield tmp_path
-    secrets.secret.cache_clear()
+    secrets._found.cache_clear()
 
 
 @pytest.mark.covers("WP0.secrets")
@@ -52,7 +52,7 @@ def test_replay_returns_the_recorded_response_without_calling(live_allowed, monk
 
 def test_replay_only_refuses_a_missing_cassette_and_any_secret(monkeypatch, tmp_path):
     monkeypatch.setenv("REQUISITE_REPLAY_ONLY", "1")
-    secrets.secret.cache_clear()
+    secrets._found.cache_clear()
     with pytest.raises(cassettes.CassetteMissing):
         cassettes.call("clef", "/run", {"q": "new"}, lambda: ({}, 0.0), root=tmp_path)
     with pytest.raises(secrets.ReplayOnly):
