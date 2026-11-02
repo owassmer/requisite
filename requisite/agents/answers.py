@@ -42,3 +42,15 @@ class FrameDraft(_Answer):
     min_comments: int
     rationale: str
     expected_misses: str
+
+
+class ParaphraseDraft(_Answer):
+    id: str
+    target: str
+    meanings: dict[str, str]
+
+
+class ParaphrasesDraft(_Answer):
+    """paraphrase_writer: two rewordings of a template (core.ParaphraseSet holds them with the original, p0)."""
+
+    paraphrases: Sequence[ParaphraseDraft]

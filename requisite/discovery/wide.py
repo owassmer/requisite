@@ -20,7 +20,8 @@ from pydantic import BaseModel
 
 from requisite import core
 from requisite.agents import runner
-from requisite.agents.answers import FrameDraft, ObjectiveDraft
+from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
+from requisite.library import templates as library
 from requisite.store import Refused, Store
 
 
@@ -157,3 +158,45 @@ def draft_frame(store: Store, as_of: datetime) -> core.Proposal:
     )
     _record_run(store, result, input, [proposal.id])
     return proposal
+
+
+def draft_paraphrases(store: Store, template_id: str) -> core.Proposal:
+    """A template's frozen paraphrase set (spec §2.1: "from a frozen, reviewed set per template"): the paraphrase_writer's
+    two rewordings with the original, p0, submitted as a paraphrase_set proposal. Its schema gate checks every
+    paraphrase keeps the template's slots and words every answer (core.ParaphraseSet)."""
+    t = library.template(template_id)
+    input = {"template": t.model_dump(mode="json")}
+    result = runner.run("paraphrase_writer", input, ParaphrasesDraft, effort="high")
+    paraphrases = [library.original(t)] + [
+        core.Paraphrase(id=p.id, target=p.target, meanings=p.meanings) for p in result.output.paraphrases
+    ]
+    pset = core.ParaphraseSet(
+        id=f"ps.{t.id}",
+        version=t.version,
+        template=core.Ref(id=t.id, version=t.version),
+        slots=list(t.slots),
+        answers=[a.value for a in t.answers],
+        paraphrases=paraphrases,
+    )
+    payload = pset.model_dump(mode="json")
+    proposal = store.submit_proposal(
+        core.Proposal(
+            id=_proposal_id("paraphrase_set", payload),
+            case=store.case,
+            kind="paraphrase_set",
+            payload=payload,
+            author=result.run[:16],
+            rationale=f"paraphrases of {t.id} v{t.version}",
+            status="proposed",
+        )
+    )
+    _record_run(store, result, input, [proposal.id])
+    return proposal
+
+
+def paraphrase_set(store: Store, template_id: str) -> core.ParaphraseSet:
+    """The case's active paraphrase set for a template."""
+    for p in _proposals(store, "paraphrase_set"):
+        if p.status == "active" and p.payload.get("template", {}).get("id") == template_id:
+            return core.ParaphraseSet.model_validate_json(core.canonical_json(dict(p.payload)))
+    raise Refused(f"no active paraphrase set for template {template_id}")

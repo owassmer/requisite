@@ -1,0 +1,27 @@
+{
+  "source": "The indicators a wide run's approved objective (core.WideObjective) defines, as question templates whose slots its terms fill: the population (who counts as writing in scope) and the loss (exposure through a cost channel within the horizon). Spec §7.2 step 2's starting set (items.json) are the library's general item templates; these two ask exactly what the objective's estimand counts, so its gold labels and its model labels are answers to the same question. Ours, November 1.",
+  "templates": [
+    {
+      "id": "voice_in_population", "version": 1, "task": "classify",
+      "slots": ["population"],
+      "target": "Is the filing under OBSERVED written by or for a single entity that meets the population definition below, speaking about its own operations?\nPopulation definition: {population}",
+      "answers": [
+        {"value": "in_population", "meaning": "yes: it is written by or for one such entity, about its own operations", "status": "affirmative"},
+        {"value": "other_author", "meaning": "no: its author is not such an entity, or it speaks for others (an association, advocate, consultant, worker, consumer, resident or public body)", "status": "negative"},
+        {"value": "not_established", "meaning": "the filing does not establish who its author is or whether the author meets the definition", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "exposure_to_measure", "version": 1, "task": "interpret",
+      "slots": ["measure", "loss_definition"],
+      "target": "Does the filing under OBSERVED say or clearly imply that this pending measure would cause its author the loss defined below, and through which costs?\nMeasure: {measure}\nLoss definition: {loss_definition}",
+      "answers": [
+        {"value": "labor", "meaning": "yes, through the author's labor costs", "status": "affirmative"},
+        {"value": "inputs", "meaning": "yes, through the author's input costs", "status": "affirmative"},
+        {"value": "labor_and_inputs", "meaning": "yes, through both its labor and its input costs", "status": "affirmative"},
+        {"value": "no_loss", "meaning": "no: it describes no such loss to its author from this measure", "status": "negative"},
+        {"value": "not_established", "meaning": "the filing does not establish whether the measure would cause its author such a loss", "status": "not_established"}
+      ]
+    }
+  ]
+}
