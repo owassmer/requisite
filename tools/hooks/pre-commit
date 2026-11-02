@@ -1,3 +1,11 @@
 #!/usr/bin/env bash
-# The definition is committed only once the other family has judged the staged change HOLDS (scripts/review).
-exec "$(git rev-parse --show-toplevel)/scripts/review" --check
+# The definition is committed only once the other family has judged the staged change HOLDS (scripts/review). Product
+# code and tests are committed only once the full gates pass (lint, type check, every test), read by their exit status:
+# on November 2 the coordinator judged a test run by its last printed line, which a hanging test had cut short, and
+# committed the hang. The gates run on the working tree, so stage what you mean to commit and leave nothing else changed.
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+"$root/scripts/review" --check
+if git diff --cached --name-only | grep -qE '^(requisite|tests)/'; then
+  "$root/tools/gates/gates" >/dev/null 2>&1 || { echo "pre-commit: gates failed; run tools/gates/gates to see why" >&2; exit 1; }
+fi
