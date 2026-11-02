@@ -98,9 +98,10 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   normalized (addendum §4.2), with a float refused. Expectations under them (CVaR, E[D], a breach probability) are exact
   Fractions, since a third of a dollar has no finite Decimal. A decision model's answer distribution is the provider's
   float output, read at the step the provider reports at (measured November 1: Decisions two decimals, Clef four, Jev
-  one). A reported vector whose sum is off one by at most half a step per answer is a rounding: it is corrected
-  proportionally to sum to one, and the correction is recorded on the Judgment (addendum A04 §4.2: "Numerical round-off
-  corrections need a declared tolerance and log"). Beyond that tolerance it is no rounding, and the judgment has no
+  one). A reported vector is a rounding when some distribution lies within half a step of every reported value: it is
+  corrected to the closest such distribution (an equal shift of every value, clipped to its own interval), and the
+  Judgment keeps both the reported and the corrected values (addendum A04 §4.2: "Numerical round-off corrections need a
+  declared tolerance and log"). Beyond that tolerance it is no rounding, and the judgment has no
   distribution, with the reason; it is never normalized. The stability kernel then computes over distributions that sum
   to one within the oracle's 1e-10 (worker on 000-1 and coordinator, November 1). Money is Decimal, and the optimizer's
   cash accounting is exact Decimal, in which a rounding raises.
