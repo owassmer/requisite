@@ -14,8 +14,12 @@ Pacing. The key allows 1,000 requests in any rolling hour (api.data.gov: "The ho
 a rolling basis"; research/sources/api-data-gov-developer-manual-web-service-rate-limits.md). Every response states how
 many remain (x-ratelimit-remaining). One Pacer, shared by every thread of a run, lets a request go while more than a
 small reserve remains beyond those in flight, and otherwise waits until the oldest of its own requests leaves the hour,
-which frees a slot: a long read slows to the rate the hour frees requests and never runs the key dry. A 429 is waited out
-and retried, never dropped. Pacing applies only to live calls: a replay has nothing to pace.
+which frees a slot: a long read slows to the rate the hour frees requests and never runs the key dry. The key's hour is
+also spent by others (another process, an earlier run), whose requests leave it unseen by this one, so a run that waits
+lets one request go each probe interval with nothing in flight while others hold part of the hour (its limit, less what
+remains, less this run's own requests in it), and that request's response states the count afresh
+(November 1: a run that began with the key nearly spent by an earlier run stayed at that small share each hour after the
+earlier requests had left it). A 429 is waited out and retried, never dropped; a refused request spends nothing. Pacing applies only to live calls: a replay has nothing to pace.
 
 Listings. The API serves at most 20 pages of at most 250 results per query (its OpenAPI specification;
 research/sources/gsa-the-regulations-gov-api-v4-openapi-specification-commit-.md). A listing is sorted by
@@ -51,7 +55,7 @@ MAX_PAGES = 20  # the API's last page of a query (OpenAPI: page[number] "between
 EASTERN = ZoneInfo("America/New_York")  # the API reads a lastModifiedDate filter in Eastern time (its documentation)
 WINDOW_S = 3600.0  # api.data.gov's rolling hour
 RESERVE = 10  # requests left unused beyond those in flight, so responses that arrive out of order cannot overdraw the key
-PROBE_S = 60.0  # how long to wait when the key is spent and none of the spending is this run's (another process's)
+PROBE_S = 60.0  # how long a waiting run goes before one request reads the key's count afresh (others spend it too)
 RETRIES = 6  # attempts after the first, for a failure that may pass (a dropped connection, a 5xx)
 PASSES = 3  # listings of one query, where the record changes under the first (Listing)
 LIMIT_WAIT_S = 2 * WINDOW_S  # a 429 lasting longer than this is no rate limit the rolling hour explains: it raises
@@ -133,6 +137,8 @@ class Pacer:
         self._sent: deque[float] = deque()  # this run's requests within the last window
         self._inflight = 0
         self._resume: float | None = None  # a 429's Retry-After: no request goes before it
+        self._probe_at: float | None = None  # while waiting: when one request goes to read the count afresh
+        self._limit: int | None = None  # the key's hourly limit, as the API states it
 
     def _expire(self, now: float, *, frees: bool) -> None:
         while self._sent and self._sent[0] <= now - self.window:
@@ -140,13 +146,25 @@ class Pacer:
             if frees and self._remaining is not None:
                 self._remaining += 1  # a request of ours left the hour: its slot is free again
 
+    def _others(self) -> bool:
+        """Whether requests not this run's hold part of the hour, so the count can rise without this run's own leaving
+        it: unknown counts as yes (the count is then read afresh, never assumed)."""
+        if self._remaining is None or self._limit is None:
+            return True
+        return self._limit - self._remaining - len(self._sent) > 0
+
     def _wait(self, now: float) -> float:
-        """How long until a slot frees: when the oldest of this run's requests leaves the hour, or, where none of the
-        spending is this run's, a probe interval after which one request reads the count afresh."""
-        if self._sent:
-            return max(self._sent[0] + self.window - now, 0.0)
-        self._remaining = None
-        return self.probe
+        """How long until a request may go: until the oldest of this run's requests leaves the hour, freeing a slot, or,
+        where others hold part of the hour, until the probe interval has passed, whichever is sooner."""
+        until = self._sent[0] + self.window - now if self._sent else None
+        if self._others() or until is None:
+            if self._probe_at is None:
+                self._probe_at = now + self.probe
+            probe = self._probe_at - now
+            until = probe if until is None else min(until, probe)
+        else:
+            self._probe_at = None
+        return max(until, 0.0)
 
     def acquire(self) -> float:
         """Wait until a request may go without spending the key's last requests, then count it as sent; returns when."""
@@ -158,16 +176,21 @@ class Pacer:
                 else:
                     self._resume = None
                     self._expire(now, frees=True)
-                    if self._remaining is None or self._remaining - self._inflight > self.reserve:
+                    room = self._remaining is None or self._remaining - self._inflight > self.reserve
+                    probe = self._inflight == 0 and self._probe_at is not None and now >= self._probe_at
+                    if room or probe:
+                        self._probe_at = None
                         self._inflight += 1
                         self._sent.append(now)
                         return now
                     wait = self._wait(now)
             self.sleep(wait)
 
-    def settle(self, remaining: int | None) -> None:
-        """A request came back, stating (or not) how many requests remain in the hour."""
+    def settle(self, remaining: int | None, limit: int | None = None) -> None:
+        """A request came back, stating (or not) how many requests remain in the hour, and the hour's limit."""
         with self._lock:
+            if limit is not None:
+                self._limit = limit
             self._inflight -= 1
             self._expire(self.clock(), frees=False)  # the count just stated already excludes what has left the hour
             if remaining is not None:
@@ -186,9 +209,13 @@ class Pacer:
                 self._remaining = 0
 
 
-def _remaining(response: httpx.Response) -> int | None:
-    value = response.headers.get("x-ratelimit-remaining")
+def _stated(response: httpx.Response, header: str) -> int | None:
+    value = response.headers.get(header)
     return int(value) if value is not None and value.strip().isdigit() else None
+
+
+def _remaining(response: httpx.Response) -> int | None:
+    return _stated(response, "x-ratelimit-remaining")
 
 
 def _retry_after(response: httpx.Response) -> float | None:
@@ -246,7 +273,7 @@ class RegulationsGov:
                 self.pacer.sleep(_backoff(failures))
                 continue
             if api:
-                self.pacer.settle(_remaining(response))
+                self.pacer.settle(_remaining(response), _stated(response, "x-ratelimit-limit"))
             status = response.status_code
             if status == 200 or status in keep:
                 return kept(response, KEPT_HEADERS)

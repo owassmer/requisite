@@ -144,5 +144,27 @@ def test_the_pacer_lets_requests_go_while_the_reserve_holds_beyond_those_in_flig
     pacer.settle(5)  # 5 remain and 2 are in flight: 3 beyond the reserve
     pacer.acquire()  # goes: now 3 in flight, 2 beyond the reserve
     assert time.slept == []
-    pacer.acquire()  # at the reserve: it waits for the oldest of its requests to leave the hour
+    pacer.acquire()  # at the reserve, with requests in flight: it waits for the oldest of its requests to leave the hour
     assert time.slept == [3600.0]
+
+
+def test_a_waiting_pacer_reads_the_count_afresh_each_probe_interval_since_others_spend_the_key_too():
+    # The key's hour was nearly spent by an earlier run: this run's own requests are few, and the others' leave the hour
+    # unseen by it. With nothing in flight it lets one request go each probe interval, and its response states the count.
+    time = FakeTime()
+    pacer = Pacer(time.clock, time.sleep, reserve=10, probe=60.0)
+    pacer.acquire()
+    pacer.settle(8, limit=1000)  # 8 remain of 1,000, and this run has sent one: others hold the rest of the hour
+    pacer.acquire()  # waits one probe interval, not until its own request leaves the hour, then goes
+    assert time.slept == [60.0]
+    pacer.settle(840, limit=1000)  # the earlier run's requests have left the hour
+    for _ in range(5):
+        pacer.acquire()
+    assert time.slept == [60.0]  # requests go freely again
+    # A probe answered 429 spends nothing; the next probe goes an interval later.
+    for _ in range(5):
+        pacer.settle(None)
+    sent = pacer.acquire()
+    pacer.refused(sent, None)  # nothing remains, and the refused request is not counted
+    pacer.acquire()
+    assert time.slept == [60.0, 60.0]
