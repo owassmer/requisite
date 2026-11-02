@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -140,3 +140,44 @@ class ImpactsDraft(_Answer):
     amount, currency and period; none where the filing states none."""
 
     impacts: Sequence[ImpactDraft]
+
+
+class DraftAnswer(_Answer):
+    """One answer of a drafted question (core.AnswerValue's fields): its value, what choosing it asserts, its status, and
+    what it binds (the parent question's values it implies, or nothing where the next sub-question decides)."""
+
+    value: str
+    meaning: str
+    status: Literal["affirmative", "negative", "not_established"]
+    binds: dict[str, Any]
+
+
+class DraftQuestion(_Answer):
+    """A drafted question: its target (subject, predicate and window stated explicitly), its closed answer set, and two
+    meaning-preserving rewordings of the target and the answers' meanings (ids p1 and p2) for its frozen paraphrase set."""
+
+    target: str
+    answers: Sequence[DraftAnswer]
+    paraphrases: Sequence[ParaphraseDraft]
+
+
+class QuestionsDraft(_Answer):
+    """question_refiner: the questions that replace one question of a case (core.AtomicQuestion with `replaces`): one
+    refined question, or a split's sub-questions in the order they are asked (requisite/library/nodes/compose.py)."""
+
+    questions: Sequence[DraftQuestion]
+    rationale: str
+
+
+class CategoriesDraft(_Answer):
+    """market_scout, first pass: the listing categories in which a contract settling on the event could be listed."""
+
+    categories: Sequence[str]
+    rationale: str
+
+
+class MarketsDraft(_Answer):
+    """market_scout, second pass: the listed series (by ticker) whose settlement could track the event, or none."""
+
+    tickers: Sequence[str]
+    rationale: str

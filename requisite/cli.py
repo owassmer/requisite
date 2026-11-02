@@ -269,6 +269,83 @@ def _dossier(args: argparse.Namespace) -> int:
     return 0
 
 
+def _deep_store(args: argparse.Namespace):  # noqa: ANN202
+    from requisite.store import open_case
+
+    return open_case(Path(args.case))
+
+
+def _deep_sensitivities(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    case, res = deep.sensitivities(_deep_store(args))
+    print(deep.render_sensitivities(case, res))
+    return 0
+
+
+def _deep_materiality(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    case, _, rt, _ = deep.recompute(_deep_store(args))
+    print(deep.render_materiality(case, rt))
+    return 0
+
+
+def _deep_hedge(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    case, scr = deep.run_screen(_deep_store(args))
+    print(deep.render_screen(case, scr))
+    return 0
+
+
+def _deep_register(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    an, reg = deep.run_register(_deep_store(args), args.k)
+    print(deep.render_register(an, reg))
+    return 0
+
+
+def _deep_loop(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    out = deep.loop(_deep_store(args), args.k, budget=args.budget)
+    print(deep.render_register(out.analysis, out.register))
+    print()
+    print(deep.render_run(out.run))
+    return 0
+
+
+def _deep_queue(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    print(deep.render_run(deep.latest_run(_deep_store(args), args.k)))
+    return 0
+
+
+def _deep_approve(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    a = deep.approve_question(_deep_store(args), args.question, approver=args.approver, decision=args.decision,
+                              reason=args.reason, scope=args.scope)  # fmt: skip
+    print(f"{a.id}: {a.gate} {a.decision} by {a.approver} at {a.at.isoformat()}, covering lineage {a.lineage_hash[:12]} "
+          f"of {a.subject.id}")  # fmt: skip
+    return 0
+
+
+def _deep_diff(args: argparse.Namespace) -> int:
+    from requisite.discovery import deep
+
+    diff = deep.compare(_deep_store(args), args.before, args.after)
+    print(f"entity model v{args.before} -> v{args.after}: {len(diff.value_changes())} value(s) changed, "
+          f"{len(diff.lineage_changes())} justification(s) changed with the same value; recomputed "
+          f"{', '.join(diff.recomputed) or 'nothing'}")  # fmt: skip
+    for line in diff.lines():
+        print(f"  {line}")
+    return 0
+
+
 def _show(args: argparse.Namespace) -> int:
     p = _store(args).proposal(args.proposal)
     if p is None:
@@ -324,6 +401,44 @@ def main(argv: list[str] | None = None) -> int:
         if parallel:
             w.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
         w.set_defaults(run=run)
+    dp = sub.add_parser("deep", help="deep discovery after G1 (spec §7.1 steps 3-5, the requisite loop over them)")
+    dsub = dp.add_subparsers(dest="step", required=True)
+    deep_steps = (
+        ("sensitivities", "the sensitivity questions and each event's forecast, judged and resolved", _deep_sensitivities, False),
+        ("materiality", "dated cash impacts, expected and tail impact and breach flags, computed by registered nodes",
+         _deep_materiality, False),
+        ("hedge", "the hedgeability screen: observables, the business's influence, listed markets close", _deep_hedge, False),
+        ("register", "the exposure register, every number from the graph and every row traced", _deep_register, True),
+        ("loop", "the requisite loop for the decision 'enters the top k of the register'", _deep_loop, True),
+        ("queue", "the latest requisite run: its review queue and the questions informational for its decision",
+         _deep_queue, None),
+    )  # fmt: skip
+    for name, text, run, takes_k in deep_steps:
+        d = dsub.add_parser(name, help=text)
+        d.add_argument("--case", required=True, help="the case's directory (its store)")
+        if takes_k:
+            d.add_argument("--k", type=int, required=True, help="the register's top k: the decision relevance is for")
+        elif takes_k is None:
+            d.add_argument("--k", type=int, help="the run's k (default: the latest run)")
+        if name == "loop":
+            from requisite.discovery.deep import DEFAULT_BUDGET
+
+            d.add_argument("--budget", type=int, default=DEFAULT_BUDGET, help="judge and agent calls the loop may make "
+                           f"beyond the base run (default {DEFAULT_BUDGET}); spent, the run stops as a blocked draft")  # fmt: skip
+        d.set_defaults(run=run)
+    d = dsub.add_parser("approve", help="G2: a human decides on a contested relevant question, as it now stands")
+    d.add_argument("--case", required=True, help="the case's directory (its store)")
+    d.add_argument("--question", required=True, help="the contested question's id")
+    d.add_argument("--approver", required=True)
+    d.add_argument("--decision", default="approved", choices=["approved", "approved_with_edits", "rejected"])
+    d.add_argument("--reason", required=True)
+    d.add_argument("--scope", required=True)
+    d.set_defaults(run=_deep_approve)
+    d = dsub.add_parser("diff", help="what changes between two G1-approved versions of the entity model")
+    d.add_argument("--case", required=True, help="the case's directory (its store)")
+    d.add_argument("--from", dest="before", type=int, required=True, help="the earlier entity model version")
+    d.add_argument("--to", dest="after", type=int, required=True, help="the later entity model version")
+    d.set_defaults(run=_deep_diff)
     ph = sub.add_parser("paraphrases", help="an agent writes a library template's frozen paraphrase set (spec §2.1)")
     case_args(ph)
     ph.add_argument("--template", required=True, help="the library template's id")

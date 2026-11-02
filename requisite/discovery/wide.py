@@ -57,7 +57,7 @@ def draft_objective(store: Store, brief: str, today: date) -> core.Proposal:
     draft = result.output
     objective = core.WideObjective(
         id="objective",
-        version=1 + len(_proposals(store, "objective")),
+        version=1 + len(proposals(store, "objective")),
         population=draft.population,
         events=draft.events,
         horizon=draft.horizon,
@@ -92,19 +92,32 @@ def approve(
     if proposal is None:
         raise Refused(f"no proposal {proposal_id}")
     lineage = core.sha256(core.canonical_json(dict(proposal.payload)))
+    human_decision(store, gate, "proposal", proposal_id, 1, lineage, approver=approver, decision=decision, reason=reason,
+                   scope=scope)  # fmt: skip
+    return store.resubmit_after_approval(proposal_id)
+
+
+def human_decision(
+    store: Store, gate: str, kind: str, subject: str, version: int, lineage: str, *, approver: str, decision: str,
+    reason: str, scope: str,
+) -> core.Approval:
+    """A human's decision at a gate on one subject at one lineage, recorded through the cassettes as the human's answer
+    (provider "human"), as a gold label is: a run replaying the case from a clean clone replays the decision and the
+    instant it was made, and refuses one given differently from the recording. `kind` names the subject in the
+    recorded request ("proposal", "question")."""
     given = {"decision": decision, "reason": reason, "scope": scope}
-    body = {"gate": gate, "proposal": proposal_id, "lineage_hash": lineage, "approver": approver}
+    body = {"gate": gate, kind: subject, "lineage_hash": lineage, "approver": approver}
     recorded = cassettes.call(cassettes.HUMAN, "approve", body, lambda: ({**given, "at": store.clock().isoformat()}, 0.0),
                               budget=free_budget(), estimate_usd=0.0)  # fmt: skip
     answer = dict(recorded.response)
     differs = {k: (answer[k], v) for k, v in given.items() if answer[k] != v}
     if differs:
-        raise Refused(f"{approver}'s recorded decision at {gate} on {proposal_id} differs from the one given: "
+        raise Refused(f"{approver}'s recorded decision at {gate} on {subject} differs from the one given: "
                       + "; ".join(f"{k}: recorded {r!r}, given {g!r}" for k, (r, g) in differs.items()))  # fmt: skip
     approval = core.Approval(
-        id=f"{gate}-{proposal_id}-{len(store.all('approval', core.Approval)) + 1}",
+        id=f"{gate}-{subject}-{len(store.all('approval', core.Approval)) + 1}",
         gate=gate,  # type: ignore[arg-type]
-        subject=core.Ref(id=proposal_id, version=1),
+        subject=core.Ref(id=subject, version=version),
         lineage_hash=lineage,
         approver=approver,
         at=datetime.fromisoformat(str(answer["at"])),
@@ -113,10 +126,10 @@ def approve(
         scope=scope,
     )
     store.commit_approval(approval)
-    return store.resubmit_after_approval(proposal_id)
+    return approval
 
 
-def _proposals(store: Store, kind: str) -> list[core.Proposal]:
+def proposals(store: Store, kind: str) -> list[core.Proposal]:
     """This case's proposals of a kind, each as it now stands."""
     out = []
     for p in store.all("proposal", core.Proposal):
@@ -128,7 +141,7 @@ def _proposals(store: Store, kind: str) -> list[core.Proposal]:
 
 def approved_objective(store: Store) -> core.WideObjective:
     """The case's objective that passed G1: its one active objective proposal."""
-    active = [p for p in _proposals(store, "objective") if p.status == "active"]
+    active = [p for p in proposals(store, "objective") if p.status == "active"]
     if not active:
         raise Refused("no objective has passed G1 in this case: draft one and have it approved")
     if len(active) > 1:
@@ -150,7 +163,7 @@ def draft_frame(
     d = result.output
     criteria = core.FrameCriteria(
         id="frame",
-        version=1 + len(_proposals(store, "frame")),
+        version=1 + len(proposals(store, "frame")),
         objective=core.Ref(id=objective.id, version=objective.version),
         source="regulations.gov",
         as_of=as_of,
@@ -214,15 +227,20 @@ def draft_paraphrases(store: Store, template_id: str) -> core.Proposal:
     return proposal
 
 
-def paraphrase_set(store: Store, template_id: str) -> core.ParaphraseSet:
-    """The case's active paraphrase set for the library's current version of a template (a set of an earlier version
-    words an earlier question)."""
-    version = library.template(template_id).version
-    for p in _proposals(store, "paraphrase_set"):
+def library_ref(template_id: str) -> core.Ref:
+    """A library template as its current version."""
+    return core.Ref(id=template_id, version=library.template(template_id).version)
+
+
+def paraphrase_set(store: Store, template: core.Ref) -> core.ParaphraseSet:
+    """The case's active paraphrase set for exactly this template version: a set words one version of one question
+    template (a library template at the library's version, a case's refined question at its own), and a set of another
+    version words another question."""
+    for p in proposals(store, "paraphrase_set"):
         t = p.payload.get("template", {})
-        if p.status == "active" and t.get("id") == template_id and t.get("version") == version:
+        if p.status == "active" and t.get("id") == template.id and t.get("version") == template.version:
             return core.ParaphraseSet.model_validate_json(core.canonical_json(dict(p.payload)))
-    raise Refused(f"no active paraphrase set for template {template_id} v{version}: run `requisite paraphrases`")
+    raise Refused(f"no active paraphrase set for template {template.id} v{template.version}: run `requisite paraphrases`")
 
 
 # ---------------------------------------------------------------- the sample (decisions, "F4's sample design")
@@ -245,7 +263,7 @@ BANDS: tuple[tuple[int | None, str], ...] = (
 
 def the_frame(store: Store) -> core.Frame:
     """The frame the case's active frame proposal froze."""
-    active = [p for p in _proposals(store, "frame") if p.status == "active"]
+    active = [p for p in proposals(store, "frame") if p.status == "active"]
     if len(active) != 1:
         raise Refused(f"{len(active)} frame proposals are active in this case; a run has one" if active
                       else "no frame proposal has passed its gates in this case: run `wide frame`")  # fmt: skip
@@ -403,7 +421,7 @@ def _judge(
     on_done: Callable[[int, int], None] | None,
 ) -> Labelled:  # fmt: skip
     objective = approved_objective(store)
-    psets = {t: paraphrase_set(store, t) for t in labels.OBJECTIVE_TEMPLATES}
+    psets = {t: paraphrase_set(store, library_ref(t)) for t in labels.OBJECTIVE_TEMPLATES}
     states, unreadable = _states(store, ids)
     ms = measures(store, [st.item.id for st in states])
     asks = [a for st in states for a in labels.asks(st, labels.questions(objective, ms, st.item), psets, configs)]

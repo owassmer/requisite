@@ -88,7 +88,7 @@ def draft_families(store: Store, agent: Callable[..., Any] | None = None) -> cor
 
 
 def the_families(store: Store) -> tuple[core.Proposal, core.EventFamilies]:
-    active = [p for p in wide._proposals(store, "event_families") if p.status == "active"]
+    active = [p for p in wide.proposals(store, "event_families") if p.status == "active"]
     if len(active) != 1:
         raise Refused(f"{len(active)} event_families proposals are active; run `wide families`" if not active
                       else f"{len(active)} event_families proposals are active; a run has one")  # fmt: skip

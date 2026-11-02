@@ -18,6 +18,7 @@ from requisite import core
 from requisite.judgment import providers
 from requisite.judgment.render import RENDERS, Render, ask, render_state
 from requisite.library import templates as library
+from requisite.stability.diagnose import S_ARG, S_PROB
 from requisite.stability.scores import scores
 from requisite.store import Refused, Store
 
@@ -158,7 +159,6 @@ class TemplateStability:
     refusals: int
 
 
-S_ARG, S_PROB = 0.9, 0.85  # spec §2.1's starting thresholds
 
 
 def template_stability(template_id: str, judgments: Sequence[core.Judgment]) -> TemplateStability:

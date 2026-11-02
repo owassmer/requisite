@@ -16,6 +16,11 @@ Rows are the feasible answers only: not_established is an evidence status, not a
 caller passes the substantive answers and the model compatible with each. Costs and eps are taken as exact values
 (int, float, Decimal or Fraction, each converted without rounding) and the result is exact: no float rounding moves an
 action across the tolerance.
+
+A cost may be unbounded, given as None: under that answer the action's objective has no finite bound (a consequence
+interval open at one end, addendum A04 §4.1), so its regret there is unbounded and it is in no eps-optimal set. Where an
+answer leaves every action unbounded, no action has a bounded regret under it, and rho is unbounded (None) for the
+question. An unbounded value is never replaced by a finite stand-in.
 """
 
 from __future__ import annotations
@@ -33,11 +38,11 @@ Number = int | float | Decimal | Fraction
 class Regret:
     """Min-max conditional regret of a decision over a question's feasible answers."""
 
-    regret: Fraction  # rho: min over actions of the worst regret over answers
+    regret: Fraction | None  # rho: min over actions of the worst regret over answers (None: unbounded)
     epsilon: Fraction  # the economic tolerance the sets below are taken at
     acceptable: frozenset[str]  # the common acceptable actions: worst regret <= eps, the intersection of the A_eps(a)
     minimax: frozenset[str]  # the actions attaining rho
-    worst_regret: Mapping[str, Fraction]  # each action's worst regret over the answers
+    worst_regret: Mapping[str, Fraction | None]  # each action's worst regret over the answers (None: unbounded)
     optimal_sets: Mapping[str, frozenset[str]]  # each answer's eps-optimal actions A_eps(a)
 
 
@@ -49,7 +54,7 @@ def _exact(x: Number, what: str) -> Fraction:
     return Fraction(x)
 
 
-def minmax_regret(costs: Mapping[str, Mapping[str, Number]], *, epsilon: Number) -> Regret:
+def minmax_regret(costs: Mapping[str, Mapping[str, Number | None]], *, epsilon: Number) -> Regret:
     """rho(Q, D) and the actions acceptable under every feasible answer, from costs[answer][action] = J_a(d)."""
     eps = _exact(epsilon, "epsilon")
     if eps < 0:
@@ -63,18 +68,23 @@ def minmax_regret(costs: Mapping[str, Mapping[str, Number]], *, epsilon: Number)
     for answer, row in rows:
         if frozenset(row) != actions:
             raise ValueError(f"answer {answer!r} is costed over {sorted(row)}, not the menu {sorted(actions)}")
-    regrets: dict[str, dict[str, Fraction]] = {}
+    regrets: dict[str, dict[str, Fraction | None]] = {}
     for answer, row in rows:
-        exact = {d: _exact(c, f"cost of {d!r} under {answer!r}") for d, c in row.items()}
-        best = min(exact.values())
-        regrets[answer] = {d: c - best for d, c in exact.items()}
-    worst = {d: max(r[d] for r in regrets.values()) for d in actions}
-    rho = min(worst.values())
+        exact = {d: None if c is None else _exact(c, f"cost of {d!r} under {answer!r}") for d, c in row.items()}
+        bounded = [c for c in exact.values() if c is not None]
+        best = min(bounded) if bounded else None
+        regrets[answer] = {d: None if c is None or best is None else c - best for d, c in exact.items()}
+    worst: dict[str, Fraction | None] = {}
+    for d in actions:
+        rs = [r[d] for r in regrets.values()]
+        worst[d] = None if any(x is None for x in rs) else max(x for x in rs if x is not None)
+    finite = [w for w in worst.values() if w is not None]
+    rho = min(finite) if finite else None
     return Regret(
         regret=rho,
         epsilon=eps,
-        acceptable=frozenset(d for d, w in worst.items() if w <= eps),
+        acceptable=frozenset(d for d, w in worst.items() if w is not None and w <= eps),
         minimax=frozenset(d for d, w in worst.items() if w == rho),
         worst_regret=worst,
-        optimal_sets={a: frozenset(d for d, r in rs.items() if r <= eps) for a, rs in regrets.items()},
+        optimal_sets={a: frozenset(d for d, r in rs.items() if r is not None and r <= eps) for a, rs in regrets.items()},
     )
