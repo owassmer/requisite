@@ -54,7 +54,11 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   enumeration. The unit is the item, so a wide prevalence is the frame share of items (comments) whose indicator holds,
   for example "in a business's voice and describing exposure to this event family" (spec §7.2: items are comments,
   letters, filings, posts). A share of businesses would need a cluster design over submitters, which the product does not
-  draw and so does not claim.
+  draw and so does not claim. Phase-2 strata are nested in phase-1 strata and formed from the model's phase-1 labels;
+  each nonempty phase-2 stratum is allocated at least two gold items, or all of its items when it has fewer, so every
+  item has a positive inclusion probability (A07 §8.2: pi_i > 0) and every stratum's residual variance can be
+  estimated from its own gold (coordinator's reasoning: one gold item gives no within-stratum variance, and the design's
+  unbiased variance estimator needs one; the 000-2 task, November 1).
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
