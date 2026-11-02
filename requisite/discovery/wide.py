@@ -460,29 +460,34 @@ def gold_allocation(strata: Sequence[str]) -> dict[tuple[str, int], int]:
 COVERAGE_DRAWS = 1000
 
 
-def gold_coverage(store: Store) -> sampling.CoverageReport:
-    """The gold design's measured coverage before the gold is drawn (decisions, "Phase-2 allocation": measure_coverage
-    on the actual phase-1 predictions). No label is known before the gold, so the labels are simulated from the judge's
-    own probability of the estimand's numerator, P(in_population) x P(exposed), seeded from the phase-1 draw; the phase-1
-    sample is the simulated frame, taken whole, so what is measured is the gold design's own: each phase-2 stratum's
-    expected gold and positives, and the interval's coverage if the judge were calibrated. It is a statement about the
-    design under that label model, not about the frame's truth."""
+def gold_coverage(store: Store) -> sampling.RatioCoverageReport:
+    """The gold design's measured coverage of the approved estimand, a ratio (items exposed among items in the
+    population's voice; decisions, "Wide inference as built"), before the gold is drawn (decisions, "Phase-2
+    allocation"). No label is known before the gold, so labels are simulated from the judge's own probabilities, seeded
+    from the phase-1 draw: an item is in the denominator with P(in_population), and in the numerator with that times
+    P(exposed); the phase-1 sample is the simulated frame, taken whole, so what is measured is the gold design's own:
+    each phase-2 stratum's expected gold, denominator and numerator items, and the ratio interval's coverage if the
+    judge were calibrated. It is a statement about the design under that label model, not about the frame's truth."""
     draw = drawn(store, 1)
     f = predictions(store)
     missing = [d.item for d in draw.items if d.item not in f]
     if missing:
         raise Refused(f"{len(missing)} phase-1 item(s) have no phase-1 prediction: {', '.join(missing[:10])}")
     rng = np_random.default_rng(seed(draw.content_hash(), "coverage"))
-    frame: dict[str, tuple[list[int], list[float], list[float]]] = {}
+    cols: dict[str, tuple[list[int], list[float], list[int], list[float], list[float]]] = {}
     for d in draw.items:
-        p = f[d.item][0] * f[d.item][1]
-        y, fs, ss = frame.setdefault(d.stratum, ([], [], []))
-        y.append(int(rng.random() < p))
-        fs.append(p)
-        ss.append(p)
-    strata = list(frame)
-    return sampling.measure_coverage(
-        frame=frame, phase1_sample_sizes={h: len(frame[h][0]) for h in strata}, phase2_cuts=[PHASE2_CUT],
+        voice, exposed = f[d.item]
+        yd, fd, yn, fn, st = cols.setdefault(d.stratum, ([], [], [], [], []))
+        in_voice = int(rng.random() < voice)
+        yd.append(in_voice)
+        fd.append(voice)
+        yn.append(in_voice * int(rng.random() < exposed))
+        fn.append(voice * exposed)
+        st.append(voice * exposed)
+    strata = list(cols)
+    frame = {h: (yd, fd, {"exposed": (yn, fn)}, st) for h, (yd, fd, yn, fn, st) in cols.items()}
+    return sampling.measure_ratio_coverage(
+        frame=frame, phase1_sample_sizes={h: len(cols[h][0]) for h in strata}, phase2_cuts=[PHASE2_CUT],
         phase2_allocation=gold_allocation(strata), draws=COVERAGE_DRAWS, seed=seed(draw.content_hash(), "coverage"),
     )  # fmt: skip
 

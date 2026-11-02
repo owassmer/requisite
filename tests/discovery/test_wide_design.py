@@ -25,6 +25,7 @@ def test_a_small_stratum_is_taken_whole_and_what_it_leaves_is_shared():
     assert allocate({"a": 3, "b": 4}, 1200) == {"a": 3, "b": 4}  # a frame this small is a census
     assert allocate({"a": 500, "b": 500, "c": 500}, 1001) == {"a": 334, "b": 334, "c": 333}  # remainder in order
     assert allocate({"a": 28, "b": 29, "c": 29}, 82) == {"a": 28, "b": 27, "c": 27}  # the remainder completes a
+    assert allocate({"a": 1, "b": 6, "c": 869, "d": 869}, 1744) == {"a": 1, "b": 6, "c": 869, "d": 868}
 
 
 @given(st.dictionaries(st.sampled_from("abcd"), st.integers(1, 3_000), min_size=1), st.integers(4, 2_000))

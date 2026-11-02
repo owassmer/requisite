@@ -94,7 +94,7 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     assert all(abs(v[0] - 0.8) < 1e-9 and abs(v[1] - 0.8) < 1e-9 for v in f.values()), f
     assert not done.unreadable, done.unreadable  # every fixture filing has text (0003 by OCR)
     report = wide.gold_coverage(store)
-    assert report.draws == wide.COVERAGE_DRAWS and report.intervals
+    assert report.draws == wide.COVERAGE_DRAWS and [r.numerator for r in report.ratios] == ["exposed"]
     assert [(g.stratum, g.bin) for g in report.gold if g.expected_gold > 0] == [("under_100", 1)]
     gold = wide.draw_gold(store)
     # Every item's probability, 0.64, is above the cut: the above-cut stratum of 26 holds them all and takes them whole.

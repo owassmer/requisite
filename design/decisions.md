@@ -177,6 +177,16 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   the held-out share is 30%, seeded by the contract version alone so a scenario keeps its set when the prose is
   revised. A failing scenario opens every live hypothesis, each open until checked (A09 §10.1); suspected clauses are
   ranked by the Ochiai coefficient over the scored scenarios.
+- F4's estimand is a ratio, estimated as one (002-2, accepted by the coordinator, November 2). two_phase_ratio estimates
+  R = theta_num / theta_den from the plain difference estimates; the variance of theta_num_hat - R theta_den_hat is the
+  design's own unbiased estimator, one bilinear definition (_design_covariance) shared with the mean, exact for every
+  fixed R (proved by enumerating every sample). Fieller's set is reported raw (two rays or the whole line where
+  theta_den is not distinguishable from zero) and within [0, 1]. The interval to read is the score set, the variance
+  evaluated at category probabilities restricted to the tested R, because Fieller covered 0.913 in F4's shape, every
+  miss above, when the heaviest stratum's gold held no numerator item. Measured at 0.945 to 0.983 over four settings;
+  it over-covers in F4's shape (0.983) because the stratum holding 65% of the frame expects 0.64 numerator items in its
+  gold, which is valid and wide for that reason. Each family's interval is marginal. The gold-draw's coverage report
+  measures this ratio (sampling.measure_ratio_coverage), not the numerator's frame share.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0

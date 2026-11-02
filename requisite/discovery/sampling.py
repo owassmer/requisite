@@ -8,7 +8,9 @@ strata defined once, in inference.py. A draw is a pure function of its seed.
 measure_coverage is addendum A07 §8.5's repeated-simulation test under the exact implemented design: over a frame whose
 labels are known, it draws the design many times and reports each interval's coverage with its Monte Carlo standard
 error, its misses on each side, its mean width, the coverage of each phase-1 stratum's own interval, and what each
-phase-2 stratum's gold is expected to hold. One frame is one setting: a regression result, not a general guarantee.
+phase-2 stratum's gold is expected to hold. measure_ratio_coverage is the same for the share of a denominator's items in
+each numerator (two_phase_ratio): its score interval, Fieller's set beside it, and the naive ratio of the model's
+probabilities. One frame is one setting: a regression result, not a general guarantee.
 """
 
 from __future__ import annotations
@@ -21,9 +23,11 @@ from numpy.typing import ArrayLike, NDArray
 from scipy import stats
 
 from requisite.discovery.inference import (
+    RatioSet,
     _phase2_strata,
     two_phase_difference,
     two_phase_difference_tuned,
+    two_phase_ratio,
 )
 
 
@@ -258,5 +262,214 @@ def measure_coverage(
         draws=draws,
         seed=seed,
         intervals=tuple(intervals),
+        gold=tuple(expected),
+    )
+
+
+# ------------------------------------------------------------------------------------------------------------- ratios
+
+
+@dataclass(frozen=True)
+class RatioIntervalCoverage:
+    """How often one estimator's set of ratios held the frame's ratio over the draws."""
+
+    estimator: str
+    coverage: float
+    monte_carlo_se: float  # sqrt(c (1 - c) / draws)
+    missed_below: float  # the truth was below every point of the set
+    missed_above: float  # above every point of it
+    missed_between: float  # in a gap between its pieces (between Fieller's rays), or the set was empty
+    mean_width: float  # of the set within [0, 1]
+    unbounded: float  # draws whose set is not one bounded interval of the real line (Fieller's rays or line)
+    whole_unit: float  # draws whose set holds all of [0, 1]
+
+
+@dataclass(frozen=True)
+class RatioCoverage:
+    numerator: str
+    truth: float
+    intervals: tuple[RatioIntervalCoverage, ...]  # the score interval, Fieller's set, and the naive comparator
+
+
+@dataclass(frozen=True)
+class RatioGoldExpectation:
+    """What one phase-2 stratum's gold is expected to hold under the design, from the frame's known labels."""
+
+    stratum: str
+    bin: int
+    frame_share: float
+    expected_gold: float  # E[min(allocation, phase-1 items in the stratum)], exactly, over the hypergeometric phase 1
+    expected_denominator: float  # of which in the denominator
+    expected_numerators: Mapping[str, float]  # and in each numerator
+
+
+@dataclass(frozen=True)
+class RatioCoverageReport:
+    denominator_truth: float  # the frame share of items in the denominator
+    level: float
+    draws: int
+    seed: int
+    ratios: tuple[RatioCoverage, ...]
+    gold: tuple[RatioGoldExpectation, ...]
+
+
+NAIVE_RATIO = (
+    "naive: the ratio of the phase-1 means of the model's probabilities for the numerator and the denominator, read as "
+    "labels, with its phase-1 sampling error by the delta method"
+)
+
+
+def _set_coverage(
+    estimator: str, sets: Sequence[RatioSet], within: Sequence[RatioSet], truth: float
+) -> RatioIntervalCoverage:
+    held = np.array([truth in s for s in sets])
+    below = np.array([bool(s.pieces) and truth < s.pieces[0][0] for s in sets])
+    above = np.array([bool(s.pieces) and truth > s.pieces[-1][1] for s in sets])
+    c, n = float(held.mean()), len(sets)
+    return RatioIntervalCoverage(
+        estimator=estimator,
+        coverage=c,
+        monte_carlo_se=float(np.sqrt(c * (1 - c) / n)),
+        missed_below=float(below.mean()),
+        missed_above=float(above.mean()),
+        missed_between=float(np.mean(~held & ~below & ~above)),
+        mean_width=float(np.mean([s.width for s in within])),
+        unbounded=float(np.mean([s.kind not in ("interval", "union", "empty") for s in sets])),
+        whole_unit=float(np.mean([any(lo <= 0.0 and hi >= 1.0 for lo, hi in s.pieces) for s in within])),
+    )
+
+
+def measure_ratio_coverage(
+    *,
+    frame: Mapping[str, tuple[ArrayLike, ArrayLike, Mapping[str, tuple[ArrayLike, ArrayLike]], ArrayLike]],
+    phase1_sample_sizes: Mapping[str, int],
+    phase2_cuts: Sequence[float],
+    phase2_allocation: Mapping[tuple[str, int], int],
+    draws: int,
+    seed: int,
+    level: float = 0.95,
+    unit: str = "item",
+) -> RatioCoverageReport:
+    """Coverage of two_phase_ratio's sets (its score interval and Fieller's set) and of the naive comparator under the
+    exact design, over a frame with known labels: frame[stratum] = (denominator labels in {0, 1}, the denominator's
+    predictions, {numerator: (labels, predictions)}, stratifier values), one entry per frame item, each numerator's
+    items among the denominator's. Each draw is the design's (_phase1, _phase2) and each set the product's own output
+    for it. Seeded and reproducible."""
+    names = tuple(frame)
+    yd = {s: np.asarray(frame[s][0], dtype=float) for s in names}
+    fd = {s: np.asarray(frame[s][1], dtype=float) for s in names}
+    ss = {s: np.asarray(frame[s][3], dtype=float) for s in names}
+    numerators = tuple(frame[names[0]][2])
+    if any(tuple(frame[s][2]) != numerators for s in names):
+        raise ValueError("every stratum of a simulated frame carries the same numerators")
+    yn = {(s, k): np.asarray(frame[s][2][k][0], dtype=float) for s in names for k in numerators}
+    fn = {(s, k): np.asarray(frame[s][2][k][1], dtype=float) for s in names for k in numerators}
+    for s in names:
+        if np.any((yd[s] != 0) & (yd[s] != 1)) or any(np.any((yn[s, k] != 0) & (yn[s, k] != 1)) for k in numerators):
+            raise ValueError("a simulated frame's labels are known, 0 or 1")
+        if any(np.any(yn[s, k] > yd[s]) for k in numerators):
+            raise ValueError("a numerator's items are among the denominator's")
+    if draws < 1:
+        raise ValueError("at least one draw")
+    N_h = {s: len(yd[s]) for s in names}
+    N = sum(N_h.values())
+    den_total = sum(float(yd[s].sum()) for s in names)
+    truths = {k: sum(float(yn[s, k].sum()) for s in names) / den_total for k in numerators}
+    z = float(stats.norm.ppf(0.5 + level / 2))
+    W = np.array([N_h[s] / N for s in names])
+    n_h = np.array([phase1_sample_sizes[s] for s in names], dtype=float)
+    fpc = 1 - n_h / np.array([N_h[s] for s in names])
+
+    rng = np.random.default_rng(seed)
+    score: dict[str, list[RatioSet]] = {k: [] for k in numerators}
+    fieller: dict[str, list[RatioSet]] = {k: [] for k in numerators}
+    fieller_unit: dict[str, list[RatioSet]] = {k: [] for k in numerators}
+    naive: dict[str, list[RatioSet]] = {k: [] for k in numerators}
+    for _ in range(draws):
+        picks = _phase1(rng, N_h, phase1_sample_sizes)
+        stratum = np.concatenate([np.full(len(picks[s]), s) for s in names])
+        st = np.concatenate([ss[s][picks[s]] for s in names])
+        gold = _phase2(rng, names, stratum, st, phase2_cuts, phase2_allocation)
+        y_den = np.concatenate([yd[s][picks[s]] for s in names])
+        f_den = np.concatenate([fd[s][picks[s]] for s in names])
+        nums = {}
+        for k in numerators:
+            y = np.concatenate([yn[s, k][picks[s]] for s in names])
+            nums[k] = (np.concatenate([fn[s, k][picks[s]] for s in names]), np.where(gold, y, np.nan))
+        out = two_phase_ratio(
+            frame_size=N,
+            unit=unit,
+            phase1_frame_sizes=N_h,
+            phase1_sample_sizes=phase1_sample_sizes,
+            phase2_cuts=phase2_cuts,
+            phase2_allocation=phase2_allocation,
+            phase1_stratum=stratum,
+            stratifier=st,
+            gold=gold,
+            f_den=f_den,
+            y_den=np.where(gold, y_den, np.nan),
+            numerators=nums,
+            level=level,
+        )
+        for k in numerators:
+            score[k].append(out[k].interval)
+            fieller[k].append(out[k].fieller)
+            fieller_unit[k].append(out[k].fieller_unit)
+            mean_den = np.array([fd[s][picks[s]].mean() for s in names])
+            mean_num = np.array([fn[s, k][picks[s]].mean() for s in names])
+            ratio = float(W @ mean_num) / float(W @ mean_den)
+            resid = [fn[s, k][picks[s]] - ratio * fd[s][picks[s]] for s in names]
+            var = np.array([r.var(ddof=1) if len(r) > 1 else 0.0 for r in resid])
+            se = float(np.sqrt(np.sum(W**2 * fpc * var / n_h))) / float(W @ mean_den)
+            interval = (ratio - z * se, ratio + z * se)
+            naive[k].append(RatioSet(pieces=(interval,), kind="interval", reason=NAIVE_RATIO))
+
+    ratios = []
+    for k in numerators:
+        clipped = [
+            RatioSet(((max(lo, 0.0), min(hi, 1.0)),) if lo <= 1.0 and hi >= 0.0 else (), "interval", NAIVE_RATIO)
+            for ((lo, hi),) in (s.pieces for s in naive[k])
+        ]
+        ratios.append(
+            RatioCoverage(
+                numerator=k,
+                truth=truths[k],
+                intervals=(
+                    _set_coverage("score", score[k], score[k], truths[k]),
+                    _set_coverage("Fieller", fieller[k], fieller_unit[k], truths[k]),
+                    _set_coverage(NAIVE_RATIO, naive[k], clipped, truths[k]),
+                ),
+            )
+        )
+
+    expected = []
+    for s in names:
+        p2 = _phase2_strata(
+            (s,), np.full(N_h[s], s), ss[s], phase2_cuts, {key: v for key, v in phase2_allocation.items() if key[0] == s}
+        )
+        for b in range(p2.bins):
+            in_cell = p2.cell == b
+            K = int(in_cell.sum())
+            if K == 0:
+                continue
+            m = np.arange(0, min(K, phase1_sample_sizes[s]) + 1)
+            pm = stats.hypergeom.pmf(m, N_h[s], K, phase1_sample_sizes[s])
+            e_gold = float(np.sum(pm * np.minimum(p2.allocation[b], m)))
+            expected.append(
+                RatioGoldExpectation(
+                    stratum=s,
+                    bin=b,
+                    frame_share=K / N,
+                    expected_gold=e_gold,
+                    expected_denominator=e_gold * float(yd[s][in_cell].mean()),
+                    expected_numerators={k: e_gold * float(yn[s, k][in_cell].mean()) for k in numerators},
+                )
+            )
+    return RatioCoverageReport(
+        denominator_truth=den_total / N,
+        level=level,
+        draws=draws,
+        seed=seed,
+        ratios=tuple(ratios),
         gold=tuple(expected),
     )

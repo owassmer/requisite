@@ -1,4 +1,5 @@
-"""Wide-mode inference: the frame share of items whose indicator holds, estimated under the design that drew the samples.
+"""Wide-mode inference: the frame share of items whose indicator holds, and the share of one indicator's items in
+another's, estimated under the design that drew the samples.
 
 The design admitted here is two-phase. Phase 1 is a stratified simple random sample without replacement (SRSWOR) of
 the frame; every phase-1 item carries a model prediction f in [0, 1], fixed before any gold label is seen (spec §7.4:
@@ -24,6 +25,14 @@ Sources, each formula beside the one it rests on:
   inference", JASA 22: the variance is evaluated at the value tested, not at the estimate), carried to this design by our
   reasoning: see _score_bounds. Its coverage is measured by simulation (tests/discovery/test_wide_coverage.py), as A07 §8.5
   asks, and is a regression result for the settings simulated, not a guarantee for every design.
+- The ratio of two such shares, the numerator's items a subset of the denominator's (two_phase_ratio), is tested
+  through the combination y_num - R y_den (Fieller 1954, "Some problems in interval estimation", JRSS B 16): its
+  plain difference estimate and the design's own unbiased variance (_design_covariance, bilinear, so exact for every
+  fixed R; tests/discovery/test_two_phase_ratio.py enumerates it). Fieller's set is reported as it is, unbounded
+  where the denominator is not distinguishable from zero; the interval to read is the score set, the variance evaluated
+  at category probabilities restricted to each tested R (_RatioScore, our reasoning from Wilson's, as for the mean, with
+  Owen's empirical-likelihood weights, Biometrika 75, 1988, for the path), whose coverage is measured
+  (tests/discovery/test_wide_ratio_coverage.py).
 - Spec §7.4 and PPI++ (Angelopoulos, Duchi and Zrnic, arXiv:2311.01453): the two-sample PPI++ mean, for a design the
   caller declares as two independent samples and only there (A07 §8.2: a gold subset of a frame is another design).
 
@@ -219,13 +228,46 @@ def _cell_sum(c: _Cells, values: FloatArray, gold_only: bool) -> FloatArray:
     return np.bincount(idx, weights=v, minlength=c.n_cells)
 
 
-def _cell_var(c: _Cells, values: FloatArray) -> FloatArray:
-    """Sample variance (ddof 1) of values over each cell's gold items; 0 where a cell has fewer than 2."""
-    r = c.r
-    mean = _cell_sum(c, values, True) / np.maximum(r, 1)
-    dev = values - mean[c.unit_cell]
-    ss = _cell_sum(c, dev * dev, True)
-    return np.where(r >= 2, ss / np.maximum(r - 1, 1), 0.0)
+def _gold_cov(c: _Cells, u: FloatArray, v: FloatArray) -> FloatArray:
+    """Sample covariance (ddof 1) of u and v over each cell's gold items; 0 where a cell has fewer than 2."""
+    r1 = np.maximum(c.r, 1)
+    du = u - (_cell_sum(c, u, True) / r1)[c.unit_cell]
+    dv = v - (_cell_sum(c, v, True) / r1)[c.unit_cell]
+    ss = _cell_sum(c, du * dv, True)
+    return np.where(c.r >= 2, ss / np.maximum(c.r - 1, 1), 0.0)
+
+
+def _design_covariance(
+    c: _Cells, u: FloatArray, eu: FloatArray, v: FloatArray, ev: FloatArray
+) -> tuple[FloatArray, FloatArray]:
+    """The design's estimate of Cov(theta_hat_u, theta_hat_v), per phase-1 stratum, phase 1 and phase 2: for two
+    difference estimates on the same sample, of targets u and v (read on the gold) with residuals eu and ev. Bilinear
+    and symmetric, so the variance of any linear combination of estimates is this of the combination; with u = v,
+    eu = ev, it is the estimator's variance. Exactly unbiased for any targets, 0/1 or not.
+
+    Phase 2, on the residuals: sum_k (W_h m_k / n_h)^2 (1 - r_k / m_k) s_eu,ev,k / r_k over cells; 0 for a cell taken
+    whole. Phase 1, on the targets: W_h^2 (1 - n_h / N_h) S_uv,h / n_h, with S_uv,h (the phase-1 sample covariance of u
+    and v in the stratum) estimated without bias from the gold as [Q - (T_u T_v - C_T) / n_h] / (n_h - 1): Q = sum_k m_k
+    mean_gold,k(u v) estimates the stratum's phase-1 total of u v, T_u = sum_k m_k mean_gold,k(u) its total of u, and
+    C_T = sum_k m_k^2 (1 - r_k / m_k) s_uv,k / r_k the phase-2 covariance estimate of T_u and T_v, so that T_u T_v - C_T
+    is unbiased for the product of the totals. For 0/1 targets with u = v, Q = T and this is [T - (T^2 - V(T)) / n_h] /
+    (n_h - 1), which is >= 0 since 0 <= T <= n_h."""
+    H = len(c.names)
+    h = c.cell_stratum
+    w = c.cell_weight()
+    q = c.phase2_factor()
+    W = c.frame_sizes / c.frame_size
+    n_h = c.sample_sizes
+    v2 = np.bincount(h, weights=w * w * q * _gold_cov(c, eu, ev), minlength=H)
+    r1 = np.maximum(c.r, 1)
+    Tu = np.bincount(h, weights=c.m * _cell_sum(c, u, True) / r1, minlength=H)
+    Tv = np.bincount(h, weights=c.m * _cell_sum(c, v, True) / r1, minlength=H)
+    Q = np.bincount(h, weights=c.m * _cell_sum(c, u * v, True) / r1, minlength=H)
+    CT = np.bincount(h, weights=c.m * c.m * q * _gold_cov(c, u, v), minlength=H)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        s_uv = np.where(n_h >= 2, (Q - (Tu * Tv - CT) / n_h) / (n_h - 1), 0.0)
+    v1 = W * W * (1 - n_h / c.frame_sizes) * s_uv / n_h
+    return v1, v2
 
 
 def _phase1_var(c: _Cells, values: FloatArray) -> FloatArray:
@@ -391,7 +433,7 @@ class FrameMean:
 @dataclass(frozen=True)
 class _CellEstimates:
     mu: FloatArray  # each cell's estimated phase-1 mean of y
-    s2e: FloatArray  # gold residual variance in each cell
+    resid: FloatArray  # each gold item's residual (0 where not gold; never read there)
     lam: FloatArray  # the lam each cell's estimate used
 
 
@@ -408,24 +450,11 @@ def _assemble(c: _Cells, est: _CellEstimates, *, unit: str, lam: float, lam_rule
     h = c.cell_stratum
     H = len(c.names)
     W = c.frame_sizes / c.frame_size
-    n_h = c.sample_sizes
     occupied = c.m > 0
     mu = np.where(occupied, est.mu, 0.0)
-    q = c.phase2_factor()
 
-    # Phase 2, on the residuals: (W_h m_k / n_h)^2 (1 - r_k / m_k) s2_e,k / r_k over cells; 0 for a cell taken whole.
-    v2_h = np.bincount(h, weights=w * w * q * est.s2e, minlength=H)
-
-    # Phase 1, on the target: W_h^2 (1 - n_h / N_h) S2_y,h / n_h over strata, with S2_y,h (the phase-1 sample variance
-    # of y) estimated without bias from the gold. For 0/1 labels it is [T - (T^2 - V(T)) / n_h] / (n_h - 1), where
-    # T = sum_k m_k ybar_k estimates the stratum's phase-1 total of y and V(T) is its phase-2 variance estimate, so that
-    # T^2 - V(T) is unbiased for the squared total. It is >= 0, since 0 <= T <= n_h.
-    ybar = np.where(c.r > 0, _cell_sum(c, c.y, True) / np.maximum(c.r, 1), 0.0)
-    T = np.bincount(h, weights=c.m * ybar, minlength=H)
-    VT = np.bincount(h, weights=c.m * c.m * q * _cell_var(c, c.y), minlength=H)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        s2y = np.where(n_h >= 2, (T - (T * T - VT) / n_h) / (n_h - 1), 0.0)
-    v1_h = W * W * (1 - n_h / c.frame_sizes) * s2y / n_h
+    # Phase 1 on the target, phase 2 on the residuals (_design_covariance).
+    v1_h, v2_h = _design_covariance(c, c.y, est.resid, c.y, est.resid)
     est_h = np.bincount(h, weights=w * mu, minlength=H)
 
     sc = _score_model(c, mu, est.lam)
@@ -520,12 +549,17 @@ def two_phase_difference(
     )
     if not np.isfinite(lam):
         raise ValueError("lam is a finite number fixed before the gold is seen")
+    est = _CellEstimates(mu=_difference_means(c, lam), resid=c.y - lam * c.f, lam=np.full(c.n_cells, lam))
+    return _assemble(c, est, unit=unit, lam=lam, lam_rule="fixed", level=level)
+
+
+def _difference_means(c: _Cells, lam: float) -> FloatArray:
+    """Each cell's difference estimate of its phase-1 mean of y: ybar_gold + lam (fbar_phase1 - fbar_gold)."""
     r1 = np.maximum(c.r, 1)
     ybar = _cell_sum(c, c.y, True) / r1
     f2 = _cell_sum(c, c.f, True) / r1
     f1 = _cell_sum(c, c.f, False) / np.maximum(c.m, 1)
-    est = _CellEstimates(mu=ybar + lam * (f1 - f2), s2e=_cell_var(c, c.y - lam * c.f), lam=np.full(c.n_cells, lam))
-    return _assemble(c, est, unit=unit, lam=lam, lam_rule="fixed", level=level)
+    return np.asarray(ybar + lam * (f1 - f2), dtype=float)
 
 
 LAM_RULE = (
@@ -631,7 +665,7 @@ def two_phase_difference_tuned(
     mu = (Sy + lam_bar * (F1 - Sf) + (c.m - r) * (Sy / r1 - lf_bar)) / m1
     resid = np.zeros(len(c.f))
     resid[gi] = yg - lam_i * fg
-    est = _CellEstimates(mu=mu, s2e=_cell_var(c, resid), lam=lam_bar)
+    est = _CellEstimates(mu=mu, resid=resid, lam=lam_bar)
     lam_mean = float(lam_i.mean()) if len(lam_i) else 1.0
     result = _assemble(c, est, unit=unit, lam=lam_mean, lam_rule=LAM_RULE, level=level)
     return TunedFrameMean(
@@ -642,6 +676,588 @@ def two_phase_difference_tuned(
         lam_untuned_items=int(np.sum(~fitted)),
         assumptions=LAM_ASSUMPTIONS,
     )
+
+
+# ---------------------------------------------------------------------------------------------------------------- ratios
+#
+# The share of the denominator's items that are in the numerator: R = theta_num / theta_den, the frame means of two
+# indicators observed on the same gold items, the numerator's items a subset of the denominator's. A ratio of two means
+# is not a mean, and the ends of two intervals divided give an interval with no stated coverage; so R is tested through
+# the linear combination y_num - R y_den, whose frame mean is zero exactly at the true R (Fieller 1954, "Some problems
+# in interval estimation", JRSS B 16). Its plain (lam = 1) difference estimate is theta_num_hat - R theta_den_hat, and
+# its variance estimate, the design's own (_design_covariance), is a quadratic in R. The point estimate is the ratio of
+# the two plain difference estimates, so it lies in every set below that it can lie in.
+
+
+@dataclass(frozen=True)
+class RatioSet:
+    """A set of ratios: a union of closed intervals in increasing order, an end possibly infinite. ``kind`` names its
+    shape, read from the pieces: "empty"; "interval" (one bounded piece, a single point where both ends agree); "ray"
+    (one piece with one infinite end); "two_rays" (the line without an open interval); "line" (every real number);
+    "union" (any other several pieces). ``reason`` says why it has that shape."""
+
+    pieces: tuple[tuple[float, float], ...]
+    kind: Literal["empty", "interval", "ray", "two_rays", "line", "union"]
+    reason: str
+
+    def __contains__(self, value: object) -> bool:
+        return isinstance(value, int | float) and any(lo <= value <= hi for lo, hi in self.pieces)
+
+    @property
+    def width(self) -> float:
+        """The total length of the pieces (infinite for an unbounded set)."""
+        return float(sum(hi - lo for lo, hi in self.pieces))
+
+
+def _ratio_set(pieces: Sequence[tuple[float, float]], reason: str) -> RatioSet:
+    ps = tuple(sorted((float(lo), float(hi)) for lo, hi in pieces))
+    kind: Literal["empty", "interval", "ray", "two_rays", "line", "union"]
+    if not ps:
+        kind = "empty"
+    elif len(ps) == 1:
+        lo, hi = ps[0]
+        unbounded = int(lo == -np.inf) + int(hi == np.inf)
+        kind = ("interval", "ray", "line")[unbounded]
+    elif len(ps) == 2 and ps[0][0] == -np.inf and ps[1][1] == np.inf:
+        kind = "two_rays"
+    else:
+        kind = "union"
+    return RatioSet(pieces=ps, kind=kind, reason=reason)
+
+
+def _within_unit(s: RatioSet, reason: str) -> RatioSet:
+    """The set's intersection with [0, 1], where the ratio lies (the numerator's items are among the denominator's)."""
+    pieces = [(max(lo, 0.0), min(hi, 1.0)) for lo, hi in s.pieces if lo <= 1.0 and hi >= 0.0]
+    return _ratio_set(pieces, reason)
+
+
+def _fieller(tn: float, td: float, a: float, b: float, cc: float, z: float) -> RatioSet:
+    """{R: (tn - R td)^2 <= z^2 (a - 2 R b + R^2 cc)}: A R^2 - 2 B R + C <= 0 with A = td^2 - z^2 cc, B = tn td - z^2 b,
+    C = tn^2 - z^2 a. Since a - 2 R b + R^2 cc >= 0 for every R (it is a variance estimate), the estimate tn / td lies
+    in the set whenever td != 0, so A > 0 gives a bounded interval; A < 0 (td^2 < z^2 cc: theta_den is not
+    distinguishable from zero at this level) gives two rays, or the whole line when no R is excluded."""
+    z2 = z * z
+    A, B, C = td * td - z2 * cc, tn * td - z2 * b, tn * tn - z2 * a
+    D = B * B - A * C
+    near_zero = (
+        f"theta_den_hat^2 = {td * td:.3g} {'<' if A < 0 else '='} z^2 Var(theta_den_hat) = {z2 * cc:.3g}: theta_den "
+        f"is not distinguishable from zero at this level, so every ratio far enough from the estimate fits the data"
+    )
+    if A > 0:
+        root = float(np.sqrt(max(D, 0.0)))
+        qv = B + np.copysign(root, B) if B != 0 else root
+        r1, r2 = (qv / A, C / qv) if qv != 0 else (0.0, 0.0)
+        return _ratio_set(
+            [(min(r1, r2), max(r1, r2))],
+            f"theta_den_hat^2 = {td * td:.3g} > z^2 Var(theta_den_hat) = {z2 * cc:.3g}: theta_den is distinguishable "
+            "from zero at this level, so the set is a bounded interval",
+        )
+    if A < 0:
+        if D < 0:
+            return _ratio_set([(-np.inf, np.inf)], f"{near_zero}, on both sides: no ratio is excluded")
+        root = float(np.sqrt(D))
+        qv = B + np.copysign(root, B) if B != 0 else root
+        r1, r2 = (qv / A, C / qv) if qv != 0 else (0.0, 0.0)
+        lo, hi = min(r1, r2), max(r1, r2)
+        return _ratio_set(
+            [(-np.inf, lo), (hi, np.inf)], f"{near_zero}: the ratios in ({lo:.6g}, {hi:.6g}) are excluded"
+        )
+    # A == 0: the test is linear in R.
+    if B > 0:
+        return _ratio_set([(C / (2 * B), np.inf)], f"{near_zero}, above the estimate")
+    if B < 0:
+        return _ratio_set([(-np.inf, C / (2 * B))], f"{near_zero}, below the estimate")
+    if C <= 0:
+        return _ratio_set([(-np.inf, np.inf)], f"{near_zero}, on both sides: no ratio is excluded")
+    return _ratio_set([], "theta_den_hat is zero with no estimated variance while theta_num_hat is not: no ratio fits")
+
+
+# Categories of an item by its two labels, under the subset: 0 neither, 1 denominator only, 2 numerator (and so
+# denominator). _LABELS[j, c] is indicator j's label (0 numerator, 1 denominator) in category c.
+_LABELS = np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 1.0]])
+
+
+def _combination(R: FloatArray) -> FloatArray:
+    """y_num - R y_den in each category, one row per R: (0, -R, 1 - R)."""
+    out: FloatArray = np.stack([np.zeros_like(R), -R, 1.0 - R], axis=1)
+    return out
+
+
+def _tilt(pihat: FloatArray, lam: FloatArray, z: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """The cells' category probabilities tilted by lam (one per cell and R) toward the categories where z (one row per
+    R) is larger: pi_c = pihat_c / (1 - lam z_c + s), s fixed by the probabilities summing to one with every
+    1 - lam z_c + s >= 0 (Owen's empirical-likelihood weights, Biometrika 1988, whose mean of z is monotone in lam); and
+    d(mean of z)/d(lam). sum_c pihat_c / (1 - lam z_c + s) is decreasing and convex in s above the largest pole of a
+    category with mass, so it has one root there, reached by Newton's method from the left. A category the estimate
+    gives no mass takes the mass left over once the root would pass its pole: Wilson's larger root, the score
+    interval's way out of an empty cell."""
+    la = lam[..., None] * z[:, None, :]
+    pos = np.broadcast_to(pihat > 0, la.shape)
+    p = np.broadcast_to(pihat, la.shape)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        la_pos = np.where(pos, la, -np.inf)  # a category without mass: an infinite denominator, so no term
+        pole_pos = np.max(la_pos, axis=-1) - 1.0
+        pole_all = np.max(la - 1.0, axis=-1)
+        top = np.argmax(la_pos, axis=-1)[..., None]
+        # Two points left of the root: past the top pole by its category's mass (that term alone is 1 there), and the
+        # first-order point sum_c pihat_c la_c (by Jensen, sum_c pihat_c / (1 - (la_c - s)) >= 1 there). The nearer is
+        # the larger; Newton converges from it monotonically.
+        first = np.sum(p * la, axis=-1)
+        s = np.maximum(pole_pos + np.take_along_axis(p, top, axis=-1)[..., 0], np.where(first > pole_pos, first, -np.inf))
+        base = 1.0 - la_pos
+        for _ in range(100):
+            u = base + s[..., None]
+            ratio = p / u
+            step = (ratio.sum(axis=-1) - 1.0) / (ratio / u).sum(axis=-1)
+            s = s + step
+            if np.all(np.abs(step) <= 1e-14 * np.maximum(1.0, np.abs(s))):
+                break
+        at_pole = s < pole_all
+        s = np.maximum(s, pole_all)
+        u = np.where(pos, 1.0 - la + s[..., None], 1.0)
+        pi = np.where(pos, p / u, 0.0)
+        # ds/dlam: off the pole from differentiating sum_c pihat_c / u_c = 1, on it the pole category's z.
+        pole = np.argmax(la, axis=-1)[..., None]
+        w2 = np.where(pos, p / (u * u), 0.0)
+        ds = np.where(at_pole, np.take_along_axis(np.broadcast_to(z[:, None, :], la.shape), pole, axis=-1)[..., 0],
+                      np.sum(w2 * z[:, None, :], axis=-1) / np.sum(w2, axis=-1))  # fmt: skip
+        dpi = np.where(pos, pi * (z[:, None, :] - ds[..., None]) / u, 0.0)
+    rest = np.where(at_pole, np.maximum(1.0 - pi.sum(axis=-1), 0.0), 0.0)  # the empty category at the largest pole
+    np.put_along_axis(pi, pole, np.take_along_axis(pi, pole, axis=-1) + rest[..., None], axis=-1)
+    absorbed = np.where(at_pole, -dpi.sum(axis=-1), 0.0)
+    np.put_along_axis(dpi, pole, np.take_along_axis(dpi, pole, axis=-1) + absorbed[..., None], axis=-1)
+    dmean: FloatArray = np.sum(dpi * z[:, None, :], axis=-1)
+    out: FloatArray = pi / pi.sum(axis=-1, keepdims=True)
+    return out, dmean
+
+
+@dataclass(frozen=True)
+class _RatioScore:
+    """The variance of theta_num_hat - R theta_den_hat at the phase-2 strata's category probabilities pi (neither,
+    denominator only, numerator) restricted to a tested R: the score test of R.
+
+    The variance. In each cell the gold's residuals of y_num - R y_den are a mixture over the categories: category c
+    has mean residual alpha_c = z_c - (mf_num,c - R mf_den,c), z = (0, -R, 1 - R), mf its mean predictions, and the
+    predictions' within-category covariance is the cell's pooled one. So the cell's residual variance at pi is kappa
+    Var_pi(alpha) + g' Wc g, g = (1, -R), kappa = r / (r - 1), Wc the within-category sum of products over r - 1: at the
+    gold's own category frequencies it is exactly the plain sample variance, Fieller's. A category the cell's gold has
+    not shown takes, for each indicator's prediction, the mean over the cell's gold items sharing its label for that
+    indicator, or the gold's mean where none does: f is credited with separating a category only as far as the cell's
+    own gold shows (the mean interval's rule, _score_model). The phase-1 term is y_num - R y_den's phase-1 variance in
+    each stratum at the same pi.
+
+    The restricted point. Each cell's category probabilities are its estimate tilted toward the categories where
+    y_num - R y_den is larger (or smaller), _tilt with lam_k = t w_k q_k kappa_k: the path along which the mean
+    interval moves a cell's prevalence, p - mu = t w V(p) with V(p) = q kappa p (1 - p), carried to three categories
+    (it is that path where every item is in the denominator, and the label part of _score_model's). One t for every
+    cell, the one at which the frame mean of y_num - R y_den is zero; it is unique, since each cell's mean is monotone in
+    t. The path moves the labels only: f enters the variance, where the gold shows what it separates, not where the
+    path goes (our reasoning, from Wilson 1927 and Miettinen and Nurminen 1985, as there; the alternatives measured are
+    in the coverage test's notes)."""
+
+    w: FloatArray  # W_h m_k / n_h, 0 where the cell is empty
+    q: FloatArray  # (1 - r_k / m_k) / r_k, 0 where taken whole
+    kappa: FloatArray  # r_k / (r_k - 1)
+    pihat: FloatArray  # (K, 3) the cells' estimated category probabilities
+    mf: FloatArray  # (K, 2, 3) category mean predictions (numerator's f, denominator's f)
+    within: FloatArray  # (K, 2, 2)
+    stratum: NDArray[np.intp]
+    share: FloatArray  # m_k / n_h
+    k1: FloatArray  # per phase-1 stratum, W_h^2 (1 - n_h / N_h) / (n_h - 1)
+    theta: tuple[float, float]  # theta_num_hat, theta_den_hat
+
+    def sampled(self) -> bool:
+        """Whether anything is sampled short of the frame (else the estimate is the frame's ratio)."""
+        return bool(np.any(self.w * self.q > 0) or np.any(self.k1 > 0))
+
+    def reach(self) -> tuple[float, float]:
+        """The ratios some arrangement of the cells' categories can make the frame's: at the upper end every item of a
+        cell sampled short of its items is in the numerator, at the lower end in the denominator only, the cells read
+        whole as they are. Linear in R: sum_k w_k zeta_k(R) = 0 with zeta_k the cell's mean of y_num - R y_den."""
+        sampled = self.w * self.q * self.kappa > 0
+        open_w = float(np.sum(self.w[sampled]))
+        num = float(np.sum((self.w * self.pihat[:, 2])[~sampled]))
+        den = float(np.sum((self.w * (self.pihat[:, 1] + self.pihat[:, 2]))[~sampled]))
+        if open_w + den <= 0:
+            return (0.0, 1.0)
+        return (num / (open_w + den), (open_w + num) / (open_w + den))
+
+    def restricted(
+        self, R: FloatArray, guess: FloatArray | None = None
+    ) -> tuple[FloatArray, NDArray[np.bool_], FloatArray]:
+        """The cells' category probabilities at the t where the frame mean of y_num - R y_den is zero, one row per R,
+        and whether the path reaches it (it does not where no arrangement of the cells' categories makes R the frame's
+        ratio, as when the cells read whole already hold more of one side than the rest can offset). The null is
+        monotone in t; its root is found by Newton's method kept inside the bracket the iterates establish, from
+        ``guess`` where one is given (a root at a nearby R), and returned with the probabilities."""
+        z = _combination(R)
+        rate = self.w * self.q * self.kappa  # lam_k = t rate_k
+
+        def at(t: FloatArray) -> tuple[FloatArray, FloatArray, FloatArray]:
+            pi, dmean = _tilt(self.pihat, t[:, None] * rate[None], z)
+            return pi, np.einsum("k,nkc,nc->n", self.w, pi, z), dmean @ (self.w * rate)
+
+        # At t = 0 the cells are at their estimate: the null's value and slope there in closed form.
+        pi0 = np.broadcast_to(self.pihat, (len(R), *self.pihat.shape))
+        zbar = self.pihat @ z.T  # (K, n)
+        f0 = self.w @ zbar
+        slope = (self.w * rate) @ (self.pihat @ (z * z).T - zbar * zbar)
+        # As |t| grows, every cell sampled short of its items ends at its category where y_num - R y_den is largest
+        # (t > 0: the numerator) or smallest (t < 0: denominator only), unique for R in (0, 1); the null at that limit
+        # decides whether a finite t reaches zero.
+        end = np.where(f0 < 0, 2, 1)
+        limit = np.where((rate > 0)[None, :, None], np.eye(3)[end][:, None, :], self.pihat[None])
+        f_limit = np.einsum("k,nkc,nc->n", self.w, limit, z)
+        at_limit = (f0 != 0) & (np.abs(f_limit) <= 1e-13 * np.sum(self.w))  # reached only as t grows without bound
+        reached = (f0 == 0) | (np.sign(f_limit) == -np.sign(f0)) | at_limit
+        active = reached & ~at_limit & (f0 != 0)
+        direction = -np.sign(f0)
+        lo = np.zeros_like(R)  # the null keeps f0's sign at lo and has crossed it at hi, once bracketed
+        hi = np.full_like(R, np.inf)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = np.where(slope > 0, -f0 / np.where(slope > 0, slope, 1.0), direction)
+        if guess is not None:
+            t = np.where(np.isfinite(guess) & (guess * direction > 0), guess, t)
+        pi, f = pi0, f0
+        tol = 1e-12 * np.sum(self.w)
+        for _ in range(400):
+            if not np.any(active):
+                break
+            pi_t, f_t, d_t = at(np.where(active, t, 0.0))  # a converged entry's t stays; it is evaluated at 0, unused
+            pi = np.where(active[:, None, None], pi_t, pi)
+            f = np.where(active, f_t, f)
+            same = np.sign(f_t) == np.sign(f0)
+            lo = np.where(active & same, t, lo)
+            hi = np.where(active & ~same, t, hi)
+            bracketed = np.isfinite(hi)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                newton = t - f_t / d_t
+                between = (newton - lo) * (newton - hi) < 0
+                beyond = (newton - t) * direction > 0
+            nxt = np.where(bracketed, np.where(between, newton, 0.5 * (lo + hi)),
+                           np.where(beyond & np.isfinite(newton), np.minimum(np.abs(newton), 4 * np.abs(t)) * direction,
+                                    2.0 * t))  # fmt: skip
+            done = (np.abs(f_t) <= tol) | (bracketed & (np.abs(hi - lo) <= 1e-12 * np.maximum(1.0, np.abs(hi))))
+            active &= ~done
+            t = np.where(active, nxt, t)
+        pi = np.where(at_limit[:, None, None], limit, np.where((f0 == 0)[:, None, None], pi0, pi))
+        return pi, reached, np.where(reached & ~at_limit & (f0 != 0), t, np.nan)
+
+    def variance(self, R: FloatArray, pi: FloatArray) -> FloatArray:
+        """The variance of theta_num_hat - R theta_den_hat at the cells' category probabilities (one row per R)."""
+        z = _combination(R)
+        g = np.stack([np.ones_like(R), -R], axis=1)
+        alpha = z[:, None, :] - (self.mf[None, :, 0, :] - R[:, None, None] * self.mf[None, :, 1, :])  # (n, K, 3)
+        mean = np.sum(pi * alpha, axis=2)
+        between = np.maximum(np.sum(pi * alpha * alpha, axis=2) - mean * mean, 0.0)
+        within = np.einsum("nj,kjl,nl->nk", g, self.within, g)
+        v2 = (self.kappa[None] * between + within) @ (self.w * self.w * self.q)
+        H = len(self.k1)
+        to_stratum = np.zeros((len(self.w), H))
+        to_stratum[np.arange(len(self.w)), self.stratum] = self.share
+        m1 = np.einsum("nkc,nc->nk", pi, z) @ to_stratum
+        m2 = np.einsum("nkc,nc->nk", pi, z * z) @ to_stratum
+        out: FloatArray = v2 + (m2 - m1 * m1) @ self.k1
+        return out
+
+    def statistic(self, R: ArrayLike, guess: FloatArray | None = None) -> tuple[FloatArray, FloatArray]:
+        """(theta_num_hat - R theta_den_hat)^2 / V_R for each R in [0, 1], V_R the variance at the restricted point,
+        infinite where the path does not reach it; and the path's t there (restricted). At R = 0 and 1, where two
+        categories tie for the extreme of y_num - R y_den and the path's limit depends on how R approaches, it is the
+        limit from inside [0, 1], evaluated 1e-9 inside."""
+        Rv = np.clip(np.atleast_1d(np.asarray(R, dtype=float)), 1e-9, 1.0 - 1e-9)
+        pi, reached, t = self.restricted(Rv, guess)
+        v = self.variance(Rv, pi)
+        tz = self.theta[0] - Rv * self.theta[1]
+        scale = max(abs(self.theta[0]), abs(self.theta[1]), 1e-300)
+        exact = np.where(np.abs(tz) <= 1e-12 * scale, 0.0, np.inf)  # no variance: only the estimate itself fits
+        with np.errstate(divide="ignore", invalid="ignore"):
+            stat = np.where(v > 0, tz * tz / np.where(v > 0, v, 1.0), exact)
+        out: FloatArray = np.where(reached, stat, np.inf)
+        return out, t
+
+
+def _ratio_score(cn: _Cells, cd: _Cells, theta: tuple[float, float]) -> _RatioScore:
+    """The score model of one numerator over the shared denominator (the two resolved on the same cells)."""
+    K = cn.n_cells
+    gold = cn.gold
+    cat = np.where(gold, cd.y + cn.y, -1).astype(np.intp)
+    preds = np.stack([cn.f, cd.f])  # (2, n)
+    mf = np.zeros((K, 2, 3))
+    within = np.zeros((K, 2, 2))
+    for k in range(K):
+        idx = np.flatnonzero(gold & (cn.unit_cell == k))
+        if len(idx) == 0:
+            continue
+        ck, fk = cat[idx], preds[:, idx]
+        for j in range(2):
+            for c in range(3):
+                own = ck == c
+                same_label = _LABELS[j, ck] == _LABELS[j, c]
+                pick = own if own.any() else same_label if same_label.any() else np.ones_like(own)
+                mf[k, j, c] = fk[j, pick].mean()
+        dev = fk - mf[k][:, ck]
+        within[k] = dev @ dev.T / max(len(idx) - 1, 1)
+    xn, xd = _difference_means(cn, 1.0), _difference_means(cd, 1.0)
+    raw = np.stack([1.0 - xd, xd - xn, xn], axis=1)
+    occupied = cn.m > 0
+    pihat = np.where(occupied[:, None], _simplex(raw), np.array([1.0, 0.0, 0.0]))
+    h = cn.cell_stratum
+    n_h, N_h = cn.sample_sizes, cn.frame_sizes
+    W = N_h / cn.frame_size
+    with np.errstate(invalid="ignore", divide="ignore"):
+        k1 = np.where(n_h >= 2, W * W * (1 - n_h / N_h) / (n_h - 1), 0.0)
+    return _RatioScore(
+        w=np.where(occupied, cn.cell_weight(), 0.0),
+        q=cn.phase2_factor(),
+        kappa=np.where(cn.r >= 2, cn.r / np.maximum(cn.r - 1, 1), 1.0),
+        pihat=pihat,
+        mf=mf,
+        within=within,
+        stratum=h,
+        share=cn.m / n_h[h],
+        k1=k1,
+        theta=theta,
+    )
+
+
+def _simplex(v: FloatArray) -> FloatArray:
+    """Each row's Euclidean projection onto the probability simplex (a difference estimate may leave it)."""
+    u = -np.sort(-v, axis=1)
+    css = np.cumsum(u, axis=1) - 1.0
+    ind = np.arange(1, v.shape[1] + 1)
+    rho = v.shape[1] - 1 - np.argmax(((u - css / ind) > 0)[:, ::-1], axis=1)
+    shift = css[np.arange(len(v)), rho] / (rho + 1)
+    out: FloatArray = np.maximum(v - shift[:, None], 0.0)
+    return out
+
+
+def _score_set(sc: _RatioScore, z: float, estimate: float | None, se: float | None) -> RatioSet:
+    """{R in [0, 1]: statistic(R) <= z^2}: the statistic on a grid over [0, 1], with points about the estimate at
+    multiples of its linearized standard error so that a short interval is not stepped over, and each crossing between
+    grid points refined by Newton's method to 1e-8. The grid spans only the ratios the cells can reach (reach)."""
+    low, high = max(sc.reach()[0], 0.0), min(sc.reach()[1], 1.0)  # outside, no arrangement of the cells fits
+    if low > high:
+        return _ratio_set([], "no arrangement of the strata's categories makes a ratio in [0, 1] the frame's")
+    grid = [float(x) for x in np.linspace(low, high, 21)]
+    if estimate is not None and np.isfinite(estimate):
+        grid.append(estimate)
+        if se is not None and np.isfinite(se) and se > 0:  # densest where a bound is likeliest, about z se away
+            steps = (0.5, 1.0, 1.5, 0.8 * z, 0.9 * z, z, 1.1 * z, 1.2 * z, 1.35 * z, 1.5 * z, 1.75 * z, 2 * z, 3 * z)
+            grid += [estimate + sign * k * se for k in steps for sign in (-1, 1)]
+    R = np.unique(np.clip(np.array(grid), low, high))
+    z2 = z * z
+    stat, t = sc.statistic(R)
+    gap = stat - z2
+    inside = gap <= 0
+    flips = np.flatnonzero(inside[:-1] != inside[1:])
+    ends: dict[int, float] = {}
+    if len(flips):
+        # Each crossing: Newton's method in R on statistic - z^2, its slope by a forward difference evaluated in the
+        # same call, kept inside the bracket (a secant or the midpoint where Newton would leave it, or the statistic is
+        # not finite at an end); the path's t from the nearer end starts each solve.
+        a, fa, ta, b, fb, tb = R[flips], gap[flips], t[flips], R[flips + 1], gap[flips + 1], t[flips + 1]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            c = np.where(np.isfinite(fa) & np.isfinite(fb), (a * fb - b * fa) / (fb - fa), 0.5 * (a + b))
+        active = np.ones(len(flips), dtype=bool)
+        last_step = np.full(len(flips), np.inf)
+        end = np.full(len(flips), np.nan)
+        for _ in range(100):
+            c = np.where((c > a) & (c < b), c, 0.5 * (a + b))
+            h = np.minimum(1e-6, 0.5 * (b - a))  # the statistic is good to about 1e-12, so its slope to about 1e-5
+            guess = np.where(np.abs(c - a) < np.abs(c - b), ta, tb)
+            both, tboth = sc.statistic(np.concatenate([c, c + h]), np.concatenate([guess, guess]))
+            fc, fh, tc = both[: len(c)] - z2, both[len(c) :] - z2, tboth[: len(c)]
+            left = (fc <= 0) == (fa <= 0)  # the crossing lies right of c
+            a, fa, ta = np.where(active & left, c, a), np.where(active & left, fc, fa), np.where(active & left, tc, ta)
+            b, fb, tb = np.where(active & ~left, c, b), np.where(active & ~left, fc, fb), np.where(active & ~left, tc, tb)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                newton = c - fc * h / (fh - fc)
+                secant = (a * fb - b * fa) / (fb - fa)
+            nxt = np.where(np.isfinite(newton) & (newton > a) & (newton < b), newton,
+                           np.where(np.isfinite(secant) & (secant > a) & (secant < b), secant, 0.5 * (a + b)))  # fmt: skip
+            slow = np.abs(nxt - c) > 0.5 * last_step  # steps not halving (a jump, not a root, near): bisect, as Brent's
+            nxt = np.where(slow, 0.5 * (a + b), nxt)
+            last_step = np.abs(nxt - c)
+            settled = active & (np.abs(nxt - c) <= 1e-9) & ~slow  # Newton has converged: the crossing is at c
+            end = np.where(settled, c, end)
+            active &= (b - a > 1e-8) & ~settled
+            c = np.where(active, nxt, c)
+            if not np.any(active):
+                break
+        inside_end = np.where(fb <= 0, b, a)  # where the bracket closed instead, its end inside the set
+        last_in = np.where(np.isfinite(end), end, inside_end)
+        for i, flip_at in enumerate(flips):
+            ends[int(flip_at)] = float(last_in[i])
+    pieces: list[tuple[float, float]] = []
+    start: float | None = float(R[0]) if inside[0] else None
+    for i in range(len(R) - 1):
+        if inside[i] and not inside[i + 1]:
+            pieces.append((start if start is not None else ends[i], ends[i]))
+            start = None
+        elif not inside[i] and inside[i + 1]:
+            start = ends[i]
+    if start is not None:
+        pieces.append((start, float(R[-1])))
+    if not pieces:
+        reason = "no ratio in [0, 1] fits the estimates at this level"
+    elif pieces == [(0.0, 1.0)]:
+        reason = "every ratio in [0, 1] fits the estimates at this level: the gold does not bound the ratio"
+    elif pieces == [(low, high)]:
+        reason = "every ratio the strata can reach fits the estimates at this level: only the strata read whole bound it"
+    else:
+        reason = "the ratios in [0, 1] whose score statistic is at most z^2"
+    return _ratio_set(pieces, reason)
+
+
+FIELLER_METHOD = (
+    "Fieller: the R for which (theta_num_hat - R theta_den_hat)^2 <= z^2 V(R), V(R) the design's unbiased variance "
+    "estimate of the plain difference estimate of y_num - R y_den (prediction f_num - R f_den), a quadratic in R"
+)
+RATIO_INTERVAL_METHOD = (
+    "score: the R in [0, 1] for which (theta_num_hat - R theta_den_hat)^2 <= z^2 V_R, V_R the variance at category "
+    "probabilities of the phase-2 strata (neither, denominator only, numerator) restricted so that the frame's "
+    "y_num - R y_den is zero: each stratum's estimate tilted toward the categories where y_num - R y_den is larger or "
+    "smaller (empirical-likelihood weights) by t w q kappa, one t for every stratum; the variance there is the mixture "
+    "of the categories with the gold's mean predictions in each, a category a stratum's gold has not shown credited "
+    "no separation by f"
+)
+MARGINAL = (
+    "marginal: each numerator's interval holds its own ratio at the stated level; the intervals of several numerators "
+    "from one call are not simultaneous"
+)
+
+
+@dataclass(frozen=True)
+class FrameRatio:
+    """The share of the denominator's items that are in one numerator, R = theta_num / theta_den, from the plain
+    (lam = 1) difference estimates of the two frame means on the same sample.
+
+    ``interval`` is the score set (RATIO_INTERVAL_METHOD), within [0, 1] by construction, the interval to read; its
+    coverage is measured by simulation (tests/discovery/test_wide_ratio_coverage.py). ``fieller`` is Fieller's set over
+    the real line from the design's unbiased variance (FIELLER_METHOD), as it is, unbounded where theta_den is not
+    distinguishable from zero, and ``fieller_unit`` its intersection with [0, 1]: reported beside the interval because
+    it under-covers where a heavy phase-2 stratum's gold holds no numerator item. ``variance_at(R)`` is the unbiased
+    variance estimate of theta_num_hat - R theta_den_hat. ``coverage`` says each interval is marginal."""
+
+    numerator: str
+    unit: str
+    frame_size: int
+    estimate: float | None  # theta_num_hat / theta_den_hat; None where theta_den_hat is 0
+    theta_num: float
+    theta_den: float
+    variance_num: float
+    variance_den: float
+    covariance: float
+    interval: RatioSet
+    interval_method: str
+    fieller: RatioSet
+    fieller_unit: RatioSet
+    fieller_method: str
+    level: float
+    coverage: str
+    phase1_items: int
+    gold_items: int
+    census: bool
+
+    def variance_at(self, ratio: float) -> float:
+        return self.variance_num - 2 * ratio * self.covariance + ratio * ratio * self.variance_den
+
+
+def two_phase_ratio(
+    *,
+    frame_size: int,
+    unit: str,
+    phase1_frame_sizes: Mapping[str, int],
+    phase1_sample_sizes: Mapping[str, int],
+    phase2_cuts: Sequence[float],
+    phase2_allocation: Mapping[tuple[str, int], int],
+    phase1_stratum: Sequence[str] | ArrayLike,
+    stratifier: ArrayLike,
+    gold: ArrayLike,
+    f_den: ArrayLike,
+    y_den: ArrayLike,
+    numerators: Mapping[str, tuple[ArrayLike, ArrayLike]],
+    level: float = 0.95,
+) -> dict[str, FrameRatio]:
+    """The share of the denominator's items that are in each numerator, under the two-phase design: for each
+    numerator name, R = theta_num / theta_den, the frame means of the numerator's and the denominator's indicators.
+
+    The design and the per-item data are two_phase_difference's (the same phase-2 strata, _phase2_strata), with the
+    denominator's prediction ``f_den`` and gold label ``y_den``, and ``numerators[name] = (f, y)`` for each numerator:
+    its prediction and gold label, one entry per phase-1 item. Which answers make an item count in a numerator or the
+    denominator is the caller's (the estimand's) definition; a numerator's gold items must be among the denominator's.
+    Each numerator's ratio is estimated from the same call against the shared denominator, and each interval is
+    marginal (MARGINAL)."""
+    def resolve(f: ArrayLike, y: ArrayLike) -> _Cells:
+        return _resolve(
+            frame_size=frame_size,
+            phase1_frame_sizes=phase1_frame_sizes,
+            phase1_sample_sizes=phase1_sample_sizes,
+            phase2_cuts=phase2_cuts,
+            phase2_allocation=phase2_allocation,
+            phase1_stratum=phase1_stratum,
+            stratifier=stratifier,
+            f=f,
+            gold=gold,
+            y=y,
+        )
+
+    if not numerators:
+        raise ValueError("a ratio has at least one numerator")
+    z = _z(level)
+    cd = resolve(f_den, y_den)
+    td = float(np.sum(cd.cell_weight() * np.where(cd.m > 0, _difference_means(cd, 1.0), 0.0)))
+    ed = cd.y - cd.f
+    v1, v2 = _design_covariance(cd, cd.y, ed, cd.y, ed)
+    var_den = float(v1.sum() + v2.sum())
+    census = bool(np.all(cd.sample_sizes == cd.frame_sizes))
+    out = {}
+    for name, (f_num, y_num) in numerators.items():
+        cn = resolve(f_num, y_num)
+        if np.any(cn.y[cn.gold] > cd.y[cn.gold]):
+            raise ValueError(
+                f"numerator {name!r}: a gold item is in the numerator but not the denominator; the numerator's items "
+                "are a subset of the denominator's by the estimand's definition"
+            )
+        tn = float(np.sum(cn.cell_weight() * np.where(cn.m > 0, _difference_means(cn, 1.0), 0.0)))
+        en = cn.y - cn.f
+        a1, a2 = _design_covariance(cn, cn.y, en, cn.y, en)
+        b1, b2 = _design_covariance(cn, cn.y, en, cd.y, ed)
+        var_num, cov = float(a1.sum() + a2.sum()), float(b1.sum() + b2.sum())
+        estimate = tn / td if td != 0 else None
+        fieller = _fieller(tn, td, var_num, cov, var_den, z)
+        sc = _ratio_score(cn, cd, (tn, td))
+        if not sc.sampled():  # every phase-2 stratum read whole, phase 1 a census
+            exact = [(estimate, estimate)] if estimate is not None and 0.0 <= estimate <= 1.0 else []
+            interval = _ratio_set(exact, "every item of the frame is gold: the ratio is the frame's, without error")
+        else:
+            se = None
+            if estimate is not None:
+                se = float(np.sqrt(max(var_num - 2 * estimate * cov + estimate**2 * var_den, 0.0))) / abs(td)
+            interval = _score_set(sc, z, estimate, se)
+        out[name] = FrameRatio(
+            numerator=name,
+            unit=unit,
+            frame_size=frame_size,
+            estimate=estimate,
+            theta_num=tn,
+            theta_den=td,
+            variance_num=var_num,
+            variance_den=var_den,
+            covariance=cov,
+            interval=interval,
+            interval_method=RATIO_INTERVAL_METHOD,
+            fieller=fieller,
+            fieller_unit=_within_unit(fieller, f"Fieller's set within [0, 1], where the ratio lies; {fieller.reason}"),
+            fieller_method=FIELLER_METHOD,
+            level=level,
+            coverage=MARGINAL,
+            phase1_items=int(cd.m.sum()),
+            gold_items=int(cd.r.sum()),
+            census=census,
+        )
+    return out
 
 
 # ------------------------------------------------------------------------------------------ two independent samples
@@ -730,10 +1346,13 @@ def two_sample_ppi_mean(
 
 __all__ = [
     "FrameMean",
+    "FrameRatio",
+    "RatioSet",
     "StratumMean",
     "TunedFrameMean",
     "TwoSampleMean",
     "two_phase_difference",
     "two_phase_difference_tuned",
+    "two_phase_ratio",
     "two_sample_ppi_mean",
 ]
