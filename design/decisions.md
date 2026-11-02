@@ -104,6 +104,15 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   because the premium tie-break may leave an otherwise fully funded portfolio that close to the floor. That tolerance is
   far below a cent for any business whose cash is under ten billion dollars; the coordinator's reasoning is that a
   sub-cent deficit is no breach of anything money can measure. Dominance with a dated premium means A_stj ≤ 0.
+- Coverage (000-3, addendum A09 §10.2). World constraints may mention conditions that are not in the trigger: a state
+  of the trigger's conditions is feasible when some assignment of the others satisfies every constraint, and every
+  feasible state the coverage kernel shows carries that assignment as its certificate, checkable by evaluating the
+  constraints (coordinator, settled in 000-3: refusing such constraints would leave real contracts unanalysable). A
+  minimal group of coupled redundant conditions is a coverage obligation of its own, met by two feasible scenarios that
+  agree outside the group and differ in outcome: none of its conditions has an independent effect, and without the
+  group obligation a fully coupled trigger would be "covered" by a single scenario (A09 §10.2: "requiring a different
+  justified coverage criterion"; worker's reasoning on 000-3). Enumeration gives way to python-sat above 10 conditions,
+  where enumeration's self-evident proof still costs milliseconds.
 - Reduced costs are diagnostics only. HiGHS's duals are not unique (in the addendum's own timing fixture a late payout
   and an early one both price at −110), so wherever the product shows a reduced cost it shows beside it the re-solve's
   measured improvement (C01 §7.2: a re-solve always runs).
