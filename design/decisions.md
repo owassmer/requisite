@@ -286,6 +286,13 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     question takes its stratum's mean as the item's prediction), and the item can still be drawn for the gold sample,
     read whole by its labeller, so the estimate stays unbiased; such an item cannot rank as a lead on judges' answers it
     does not have.
+    Amended (coordinator, November 2, 18:30 ET, before any gold draw): the decline was of our transport, not of the
+    question. openai_decisions caps input_json at 262,144 bytes and reads text input up to its model's context (the
+    reference client sends shared context as input_text), so a state it declines as JSON for its size is sent again as
+    its canonical JSON text, the same state; the decline stays recorded. An answer stands over a refusal of the same
+    question, state and configuration (wide._phase1). The 7 states declined in F4's labels (0.33 to 6.5 million
+    characters) are asked again so. A state the model cannot read whole as text either stays a refusal, under the rule
+    above.
   - pypdf leaves out the text of a form XObject it cannot decode and says so only in a logged warning (F4's read: "Impossible
     to decode XFormObject /Group_93: Reached maximum number of tokens per stream", a form past pypdf's parsing budget),
     and the page was recorded as read whole from its text layer (coordinator, November 2, 17:40 ET). The PDF reader

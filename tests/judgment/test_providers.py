@@ -108,3 +108,31 @@ def test_an_input_the_provider_declines_for_its_size_is_read_as_its_refusal_with
     reading = providers.read(spec, {"model": None, "declined": {"status": 400, "body": said}}, asked)
     assert reading.distribution is None and reading.reported is None
     assert reading.refusal is not None and "declined to read the input (HTTP 400)" in reading.refusal and "262144" in reading.refusal
+
+
+def test_a_state_declined_as_json_for_its_size_is_read_as_its_canonical_text(monkeypatch, tmp_path):
+    # openai_decisions caps input_json at 262144 serialized bytes and reads text input: the same state, sent again as its
+    # canonical JSON text, is read, and the decline stays recorded (providers.AS_TEXT).
+    from requisite.core import canonical_json
+    from requisite.judgment import providers
+
+    monkeypatch.delenv("REQUISITE_REPLAY_ONLY", raising=False)
+    sent = []
+
+    def provider(spec, body):
+        (content,) = body["input"][0]["content"]
+        sent.append(content["type"])
+        if content["type"] == "input_json":
+            return {"model": None, "declined": {"status": 400, "body": "input_json data exceeds the maximum serialized "
+                                                                       "size of 262144 bytes"}}, 0.0  # fmt: skip
+        assert content["text"] == canonical_json(dict(a.rendered.state))  # the same state, as text
+        return response("openai_decisions", {"yes": 0.7, "no": 0.2, "not_established": 0.1}), 0.0
+
+    monkeypatch.setattr(providers, "_send", provider)
+    a = next(x for x in asks() if x.config.provider == "openai_decisions")
+    j = providers.judge(a, root=tmp_path)
+    assert sent == ["input_json", "input_text"] and j.refusal is None and j.distribution is not None
+    text_body = providers.request_body(PROVIDERS["openai_decisions"], a.rendered, a.asked, as_text=True)
+    assert j.response == cassettes.request_key("openai_decisions", PROVIDERS["openai_decisions"].endpoint, text_body)
+    monkeypatch.setattr(providers, "_send", lambda *x: (_ for _ in ()).throw(AssertionError("replay reached _send")))
+    assert providers.judge(a, root=tmp_path) == j  # replayed: the decline, then the text

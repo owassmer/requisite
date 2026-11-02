@@ -16,7 +16,7 @@ from requisite.discovery import labels, wide
 from requisite.evidence.frame import frame_gate
 from requisite.judgment import providers
 from requisite.library import templates as library
-from requisite.store import Store
+from requisite.store import Refused, Store
 
 T = datetime(2026, 11, 1, 20, 0, tzinfo=UTC)
 OBJECTIVE = core.WideObjective(
@@ -175,3 +175,30 @@ def test_the_flow_goes_from_gold_labels_to_an_estimate_ranked_leads_and_a_lead_p
     assert all(x.tier == 2 and x.answers["seeks_certainty"] == "asks" for x in leads.leads)
     promoted = results.propose_lead(store, 1)
     assert promoted.kind == "lead" and promoted.status != "active"  # it waits for a human at G1
+
+
+def test_a_phase1_answer_stands_over_a_refusal_of_the_same_question_and_state_and_two_answers_are_refused(tmp_path):
+    # Two responses to one question over one state under the phase-1 configuration exist only where the request changed
+    # (a state declined as JSON for its size, then read as text: providers.AS_TEXT); the answer stands over the refusal.
+    spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
+    config = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
+                              paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
+    base = dict(question=core.Ref(id="voice_in_population.x", version=1), state_hash="ab" * 32, config=config,
+                precision=0.01, latency_ms=1, cost_usd=0, created_at=datetime(2026, 11, 2, tzinfo=UTC))  # fmt: skip
+    refused = core.Judgment(**base, reported=None, distribution=None, refusal="declined as JSON for its size",
+                            response="1" * 64)  # fmt: skip
+    answered = core.Judgment(**base, reported={"in_population": 0.8, "not_in_population": 0.2},
+                             distribution={"in_population": 0.8, "not_in_population": 0.2}, refusal=None,
+                             response="2" * 64)  # fmt: skip
+    for order in ((refused, answered), (answered, refused)):
+        store = Store(tmp_path / str(len(list(tmp_path.iterdir()))), case="w")
+        for j in order:
+            store.commit_judgment(j)
+        assert wide._phase1(store) == {("voice_in_population.x", "ab" * 32): answered}
+        assert wide.phase1_judgments(store) == [answered.content_hash()]
+    other = answered.model_copy(update={"distribution": {"in_population": 0.1, "not_in_population": 0.9},
+                                        "reported": {"in_population": 0.1, "not_in_population": 0.9},
+                                        "response": "3" * 64})  # fmt: skip
+    store.commit_judgment(other)
+    with pytest.raises(Refused, match="two answers"):
+        wide._phase1(store)

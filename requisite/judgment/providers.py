@@ -29,7 +29,7 @@ from typing import Any, Literal
 import httpx
 
 from requisite import cassettes
-from requisite.core import AtomicQuestion, JudgeConfig, Judgment, Ref
+from requisite.core import AtomicQuestion, JudgeConfig, Judgment, Ref, canonical_json
 from requisite.core.judgment import Provider, correct_roundoff
 from requisite.judgment.render import AskedQuestion, RenderedState
 from requisite.secrets import secret
@@ -120,13 +120,17 @@ PROVIDERS: dict[str, ProviderSpec] = {
 }
 
 
-def request_body(spec: ProviderSpec, rendered: RenderedState, asked: AskedQuestion) -> dict[str, Any]:
-    """The provider's request for one question over one rendered state (each vendor's documented shape; spec §6.2)."""
+def request_body(spec: ProviderSpec, rendered: RenderedState, asked: AskedQuestion, *, as_text: bool = False
+                 ) -> dict[str, Any]:  # fmt: skip
+    """The provider's request for one question over one rendered state (each vendor's documented shape; spec §6.2).
+    as_text: the state sent as its canonical JSON text rather than as JSON data (AS_TEXT)."""
     state = dict(rendered.state)
     if spec.name == "openai_decisions":
+        content = ({"type": "input_text", "text": canonical_json(state)} if as_text else
+                   {"type": "input_json", "data": state})  # fmt: skip
         return {
             "model": spec.model,
-            "input": [{"role": "user", "content": [{"type": "input_json", "data": state}]}],
+            "input": [{"role": "user", "content": [content]}],
             "questions": [
                 {
                     "type": "choice",
@@ -175,7 +179,16 @@ def _send(spec: ProviderSpec, body: Mapping[str, Any]) -> tuple[Any, float]:
 
 # What each provider says when it declines an input over its size limit (November 2: a sampled filing of 6.5 MB of
 # exhibits; openai_decisions answers HTTP 400 "input_json data exceeds the maximum serialized size of 262144 bytes").
-TOO_LARGE: Mapping[str, tuple[str, ...]] = {"openai_decisions": ("exceeds the maximum serialized size",)}
+TOO_LARGE: Mapping[str, tuple[str, ...]] = {
+    # Its text form past the model's context answers HTTP 400 "Decision input exceeds the token limit." (probed November
+    # 2 with 6.5 million characters; 1.32 million, 228,586 tokens, was read).
+    "openai_decisions": ("exceeds the maximum serialized size", "Decision input exceeds the token limit"),
+}
+# The providers whose limit is on the form of the input, not on what the model reads: openai_decisions caps input_json
+# at 262,144 serialized bytes and reads text input (the reference client sends shared context as input_text) up to
+# its model's context. A state it declines as JSON for its size is sent again as its canonical JSON text, the same state
+# (ours, November 2: the decline was of our transport, not of the question; a refusal it caused was our defect).
+AS_TEXT = frozenset({"openai_decisions"})
 
 
 def _cost(spec: ProviderSpec, data: Mapping[str, Any]) -> Decimal:
@@ -267,6 +280,13 @@ def judge(ask_: Ask, *, budget: cassettes.Budget | None = None, root: Any = None
                             f"{spec.model} ({spec.model_cutoff})")  # fmt: skip
     body = request_body(spec, ask_.rendered, ask_.asked)
     recorded = cassettes.call(spec.name, spec.endpoint, body, lambda: _send(spec, body), budget=budget, root=root)
+    if "declined" in recorded.response and spec.name in AS_TEXT:
+        # Declined for its size as JSON: the same state as text (AS_TEXT); the decline stays recorded, and the judgment
+        # is the response to the request that was read.
+        body = request_body(spec, ask_.rendered, ask_.asked, as_text=True)
+        as_text = body
+        recorded = cassettes.call(spec.name, spec.endpoint, as_text, lambda: _send(spec, as_text), budget=budget,
+                                  root=root)  # fmt: skip
     reading = read(spec, recorded.response, ask_.asked)
     return Judgment(
         question=Ref(id=ask_.question.id, version=ask_.question.version),

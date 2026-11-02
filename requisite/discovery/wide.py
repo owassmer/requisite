@@ -495,14 +495,31 @@ def unreadable(store: Store) -> dict[str, str]:
     return _states(store, [d.item for d in drawn(store, 1).items])[1]
 
 
-def phase1_judgments(store: Store) -> list[str]:
-    """The content hashes of the phase-1 judgments the predictions read, in a stable order."""
+def _phase1(store: Store) -> dict[tuple[str, str], core.Judgment]:
+    """The phase-1 judgment of each question over each state. Two responses to one question over one state under one
+    configuration exist only where the request changed (a response is a function of its request: cassettes); an answer
+    stands over a refusal, since a refusal of one form of the request is not one of the question (providers.AS_TEXT),
+    and two different answers are refused, neither standing for the other."""
     spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
     phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
                               paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
+    found: dict[tuple[str, str], core.Judgment] = {}
+    for j in store.all("judgment", core.Judgment):
+        if j.config != phase1:
+            continue
+        key = (j.question.id, j.state_hash)
+        have = found.get(key)
+        if have is None or (have.distribution is None and j.distribution is not None):
+            found[key] = j
+        elif j.distribution is not None and j.distribution != have.distribution:
+            raise Refused(f"{key[0]} over state {key[1][:12]} has two answers under the phase-1 configuration")
+    return found
+
+
+def phase1_judgments(store: Store) -> list[str]:
+    """The content hashes of the phase-1 judgments the predictions read, in a stable order."""
     asked = {q for q in labels.OBJECTIVE_TEMPLATES}
-    return sorted(j.content_hash() for j in store.all("judgment", core.Judgment)
-                  if j.config == phase1 and j.question.id.split(".")[0] in asked)  # fmt: skip
+    return sorted(j.content_hash() for (q, _), j in _phase1(store).items() if q.split(".")[0] in asked)
 
 
 def predictions(store: Store) -> dict[str, tuple[float, float]]:
@@ -515,12 +532,7 @@ def predictions(store: Store) -> dict[str, tuple[float, float]]:
     stratum = {d.item: d.stratum for d in draw.items}
     states, _ = _states(store, [d.item for d in draw.items])
     ms = measures(store, [st.item.id for st in states])
-    spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
-    phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
-                              paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
-    found: dict[tuple[str, str], core.Judgment] = {
-        (j.question.id, j.state_hash): j for j in store.all("judgment", core.Judgment) if j.config == phase1
-    }
+    found = _phase1(store)
     answered: dict[str, list[float | None]] = {}
     unasked = []
     for st in states:
