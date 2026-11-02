@@ -165,6 +165,18 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   and the files the product writes under var/, never the code, tests or cassettes. Its skill tells it what the analyst's
   work is for, to learn each step from the product's own help and messages, and to rule out its own use before it
   calls anything BROKEN.
+- Resolvability fuzzing (worker on 001-3, accepted by the coordinator, November 1). The rendering check asks every
+  provider in the original wording; an interpretive condition is asked by its own library template, or as
+  condition_holds over its template name and bindings where the library has none; a computed comparison is asked
+  through its readings and published values, since arithmetic is code's (I7). The prose's outcome is the top of the
+  resolvers' pooled distribution (equal weight per provider), a tie at the top read as ambiguous; the prose's transfers
+  are the IR's where the outcomes agree, otherwise the evaluator's for the forced outcome at expiration without early
+  expiration; scenarios are evaluated at the determination instant. The resolver template follows the procedure:
+  resolve_contract, with void, extended and disputed variants where the contract can end so, each with its own frozen
+  paraphrase set. Severity is the money at stake; mandatory scenarios are coverage witnesses and boundary scenarios;
+  the held-out share is 30%, seeded by the contract version alone so a scenario keeps its set when the prose is
+  revised. A failing scenario opens every live hypothesis, each open until checked (A09 §10.1); suspected clauses are
+  ranked by the Ochiai coefficient over the scored scenarios.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0

@@ -50,4 +50,4 @@ if __name__ == "__main__":
     if "--record" not in sys.argv:
         raise SystemExit("usage: provider_fixture.py --record (calls the live providers once and records them)")
     for j in judge_all(asks(), workers=6):
-        print(j.config.provider, j.config.render_id, dict(j.distribution or {}), j.refusal, j.roundoff, j.precision)
+        print(j.config.provider, j.config.render_id, dict(j.distribution or {}), j.refusal, dict(j.reported or {}), j.precision)
