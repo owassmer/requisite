@@ -117,6 +117,15 @@ def _wide_gold_draw(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
     store = _store(args)
+    report = wide.gold_coverage(store)
+    print(f"the gold design under labels simulated from the judge's probabilities ({report.draws} draws, seed "
+          f"{report.seed}; a statement about the design, not the frame):")  # fmt: skip
+    for c in report.intervals:
+        print(f"  {c.estimator}: coverage {c.coverage:.3f} (MC se {c.monte_carlo_se:.3f}), missed below "
+              f"{c.missed_below:.3f}, above {c.missed_above:.3f}, mean width {c.mean_width:.3f}")  # fmt: skip
+    for g in report.gold:
+        print(f"  gold in ({g.stratum}, bin {g.bin}): expects {g.expected_gold:.1f} items, {g.expected_positives:.2f} "
+              f"positive, {g.expected_negatives:.2f} negative")  # fmt: skip
     gold = wide.draw_gold(store)
     print(f"design {gold.design.id}  phase 2 (gold)  seed {gold.seed}")
     for stratum in dict.fromkeys(d.stratum for d in gold.items):

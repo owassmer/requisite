@@ -21,6 +21,7 @@ from datetime import UTC, date, datetime
 from fractions import Fraction
 from typing import Any
 
+from numpy import random as np_random
 from pydantic import BaseModel
 
 from requisite import core
@@ -464,6 +465,36 @@ def gold_allocation(strata: Sequence[str]) -> dict[tuple[str, int], int]:
         above = max(2, int(Fraction(g, 5) + Fraction(1, 2)))
         out[(h, 0)], out[(h, 1)] = max(2, g - above), above
     return out
+
+
+COVERAGE_DRAWS = 1000
+
+
+def gold_coverage(store: Store) -> sampling.CoverageReport:
+    """The gold design's measured coverage before the gold is drawn (decisions, "Phase-2 allocation": measure_coverage
+    on the actual phase-1 predictions). No label is known before the gold, so the labels are simulated from the judge's
+    own probability of the estimand's numerator, P(in_population) x P(exposed), seeded from the phase-1 draw; the phase-1
+    sample is the simulated frame, taken whole, so what is measured is the gold design's own: each phase-2 stratum's
+    expected gold and positives, and the interval's coverage if the judge were calibrated. It is a statement about the
+    design under that label model, not about the frame's truth."""
+    draw = drawn(store, 1)
+    f = predictions(store)
+    missing = [d.item for d in draw.items if d.item not in f]
+    if missing:
+        raise Refused(f"{len(missing)} phase-1 item(s) have no phase-1 prediction: {', '.join(missing[:10])}")
+    rng = np_random.default_rng(seed(draw.content_hash(), "coverage"))
+    frame: dict[str, tuple[list[int], list[float], list[float]]] = {}
+    for d in draw.items:
+        p = f[d.item][0] * f[d.item][1]
+        y, fs, ss = frame.setdefault(d.stratum, ([], [], []))
+        y.append(int(rng.random() < p))
+        fs.append(p)
+        ss.append(p)
+    strata = list(frame)
+    return sampling.measure_coverage(
+        frame=frame, phase1_sample_sizes={h: len(frame[h][0]) for h in strata}, phase2_cuts=[PHASE2_CUT],
+        phase2_allocation=gold_allocation(strata), draws=COVERAGE_DRAWS, seed=seed(draw.content_hash(), "coverage"),
+    )  # fmt: skip
 
 
 def draw_gold(store: Store) -> core.SampleDraw:
