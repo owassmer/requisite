@@ -5,14 +5,15 @@ answer, and a human decides at G1. Which corpus and which leads the run reaches 
 The steps, each a function a CLI command calls:
 1. draft_objective: an agent drafts the run's objective from a human's brief; it awaits G1.
 2. approve: the human approves the objective (or edits, or rejects) at G1.
-3. draft_frame: an agent derives the frame criteria from the approved objective.
-The frame's freezing, the phase-1 sample, labelling, stability, the gold draw, inference and leads follow (this module
-grows with the evidence adapter, task 002-1, and the inference kernel, task 000-2).
+3. draft_frame: an agent derives the frame criteria from the approved objective; the proposal's tests gate runs them
+   and freezes the frame (requisite/evidence/frame.py).
+The phase-1 sample, labelling, stability, the gold draw, inference and leads follow (this module grows with the
+inference kernel, task 000-2); a sample's items are read by requisite/evidence/items.py.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -21,6 +22,8 @@ from pydantic import BaseModel
 from requisite import core
 from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
+from requisite.evidence.frame import frame_gate
+from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.library import templates as library
 from requisite.store import Refused, Store
 
@@ -123,9 +126,12 @@ def approved_objective(store: Store) -> core.WideObjective:
     return core.WideObjective.model_validate_json(core.canonical_json(dict(active[0].payload)))
 
 
-def draft_frame(store: Store, as_of: datetime) -> core.Proposal:
+def draft_frame(
+    store: Store, as_of: datetime, client: Callable[[], RegulationsGov] = RegulationsGov
+) -> core.Proposal:
     """Step 3: the frame_drafter's criteria for the approved objective, submitted as a proposal; its tests gate is the
-    criteria's run and freeze (registered by the evidence adapter)."""
+    criteria's run and freeze (the evidence adapter's frame_gate)."""
+    store.register_gate("frame", "tests", frame_gate(client))
     objective = approved_objective(store)
     input = {"objective": objective.model_dump(mode="json"), "as_of": as_of.isoformat()}
     result = runner.run("frame_drafter", input, FrameDraft, effort="high")

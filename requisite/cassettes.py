@@ -147,6 +147,12 @@ def call(
         "cost_usd": cost,
         "recorded_at": datetime.now(UTC).isoformat(),
     }
+    text = redact(json.dumps(kept, indent=1, sort_keys=True))
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(redact(json.dumps(kept, indent=1, sort_keys=True)) + "\n")
-    return Recorded(response, latency, cost, kept["recorded_at"], replayed=False)
+    # Written whole, then moved into place: a thread replaying the same request meanwhile reads all of it or none.
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    tmp.write_text(text + "\n")
+    tmp.replace(path)
+    # The response as kept, so the live call and every replay of it read the same value (ours: a value redaction changed
+    # would otherwise differ between the run that recorded it and the runs that replay it).
+    return Recorded(json.loads(text)["response"], latency, cost, kept["recorded_at"], replayed=False)

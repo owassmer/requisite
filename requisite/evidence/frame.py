@@ -1,0 +1,278 @@
+"""A wide run's frame, from its criteria and nothing else, frozen (spec §7.2 step 1, §7.3; decisions, "Discovery finds
+what it analyzes": the criteria come from the approved objective, and which dockets the frame reaches is its finding).
+
+The criteria run as regulations.gov's own searches: for each search term, each document type, and each agency where
+they name any, the documents posted in the window that match it; the results are united and grouped by docket. Each
+docket reached is kept when its comment status is as asked and it has at least min_comments public comments:
+- open: a document's comment period is running at as_of (it has started, where a start is given, and ends after as_of);
+- closed_pending_final: its proposal is its latest Proposed Rule posted by as_of (a docket with none is dropped with that
+  reason), every comment period has ended by as_of, and no Rule was posted after the proposal;
+- either: one or the other.
+Every test reads only what was posted by as_of, decided for each document and comment by core.observable_at over the
+listing that served it (spec I3): the API serves today's record, so a document, a comment or a final rule posted after
+as_of is excluded from each test, never read as known then. A document the API lists as withdrawn is not counted as
+posted (the API's documentation: "If set to true, the document is withdrawn otherwise it's a posted document"). The
+frame's items are every comment of the kept dockets posted by as_of, from the comment listing (no per-comment request),
+each with its id, docket and posted time; a comment the API lists as withdrawn stays, marked, since it was public then.
+
+Time. The frame's retrieval starts and ends at the first and last responses it rests on, as their cassettes recorded
+them, so a replay reproduces the same frame. A frame asked for an as_of before its retrieval ended is a retrospective
+reconstruction at that as_of; asked for any later instant, it is prospective, and its as_of is the instant its
+retrieval ended, since nothing after it was observed (spec I3). The mode follows from the times by core.Frame's rule.
+
+The API filters posting dates by day (its OpenAPI specification), so a request is bounded by the day after as_of, the
+widest any time zone reads it, and as_of itself is settled entry by entry by observable_at. Every response the frame
+rests on (searches, listings) is committed as an artifact, and the frame names them, so its counts recompute from them.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any, Literal
+
+from requisite import core
+from requisite.core import (
+    Artifact,
+    Frame,
+    FrameCriteria,
+    FrameDocket,
+    FrameItem,
+    FrameSearch,
+    GateResult,
+    observable_at,
+)
+from requisite.evidence.artifacts import LISTING_BASIS, commit, listed
+from requisite.evidence.regulations_gov import Entry, Listing, RegulationsGov, instant
+from requisite.store import Store
+
+WORKERS = 8
+
+
+@dataclass(frozen=True)
+class _Search:
+    term: str
+    listing: Listing
+
+
+@dataclass(frozen=True)
+class _Docket:
+    id: str
+    documents: Listing
+    comments: Listing
+
+
+def _day_bound(criteria: FrameCriteria) -> str:
+    """The last posting day a request asks for: the window's end, and never past the day after as_of."""
+    bound = criteria.as_of.astimezone(UTC).date() + timedelta(days=1)
+    if criteria.posted_to is not None:
+        bound = min(bound, criteria.posted_to)
+    return bound.isoformat()
+
+
+def _searches(client: RegulationsGov, criteria: FrameCriteria) -> list[_Search]:
+    out = []
+    for term in criteria.search_terms:
+        for kind in criteria.document_types:
+            agencies: list[str | None] = [*criteria.agencies] or [None]
+            for agency in agencies:
+                filters = {
+                    "filter[searchTerm]": term,
+                    "filter[documentType]": kind,
+                    "filter[postedDate][ge]": criteria.posted_from.isoformat(),
+                    "filter[postedDate][le]": _day_bound(criteria),
+                }
+                if agency is not None:
+                    filters["filter[agencyId]"] = agency
+                out.append(_Search(term, client.documents(filters)))
+    return out
+
+
+def _docket(client: RegulationsGov, docket: str, bound: str) -> _Docket:
+    """A docket's documents and its comments, each listed whole up to the posting bound."""
+    filters = {"filter[docketId]": docket, "filter[postedDate][le]": bound}
+    return _Docket(docket, client.documents(filters), client.comments(filters))
+
+
+class _Evidence:
+    """The committed artifacts of a run's listings, and each entry as evidence for observable_at."""
+
+    def __init__(self, store: Store):
+        self.store = store
+        self._pages: dict[int, list[Artifact]] = {}
+
+    def pages(self, listing: Listing) -> list[Artifact]:
+        if id(listing) not in self._pages:
+            self._pages[id(listing)] = [commit(self.store, p, published_at=None, basis=LISTING_BASIS) for p in listing.pages]
+        return self._pages[id(listing)]
+
+    def posted(self, listing: Listing, as_of: datetime, evaluated: datetime, mode: str) -> list[Entry]:
+        """The entries of a listing posted by as_of, decided by core.observable_at (spec I3)."""
+        pages = self.pages(listing)
+        return [e for e in listing.entries
+                if observable_at(listed(pages[e.page], instant(str(e.attributes["postedDate"]))), as_of, evaluated, mode)]  # fmt: skip
+
+
+def _when(value: Any) -> datetime | None:
+    return instant(str(value)) if value else None
+
+
+def _open(documents: Sequence[Entry], as_of: datetime) -> tuple[bool, str]:
+    for d in documents:
+        end, start = _when(d.attributes.get("commentEndDate")), _when(d.attributes.get("commentStartDate"))
+        if end is not None and end > as_of and (start is None or start <= as_of):
+            return True, f"open: {d.id}'s comment period ends {end.isoformat()}, after as_of"
+    return False, "not open: no document posted by as_of has a comment period running at as_of"
+
+
+def _pending(documents: Sequence[Entry], as_of: datetime) -> tuple[bool, str]:
+    proposals = [d for d in documents if d.attributes.get("documentType") == "Proposed Rule"]
+    if not proposals:
+        return False, "not closed pending a final rule: no proposed rule posted by as_of"
+    proposal = max(proposals, key=lambda d: (instant(str(d.attributes["postedDate"])), d.id))
+    proposed = instant(str(proposal.attributes["postedDate"]))
+    for d in documents:
+        end = _when(d.attributes.get("commentEndDate"))
+        if end is not None and end > as_of:
+            return False, f"not closed: {d.id}'s comment period ends {end.isoformat()}, after as_of"
+    for d in documents:
+        if d.attributes.get("documentType") == "Rule" and instant(str(d.attributes["postedDate"])) > proposed:
+            return False, (f"not pending a final rule: {d.id} (Rule) was posted {d.attributes['postedDate']}, after "
+                           f"the proposal {proposal.id}")  # fmt: skip
+    return True, (f"closed pending a final rule: every comment period ended by as_of and no Rule follows the proposal "
+                  f"{proposal.id}, posted {proposal.attributes['postedDate']}")  # fmt: skip
+
+
+def _status(asked: str, documents: Sequence[Entry], as_of: datetime) -> tuple[bool, str]:
+    if asked == "open":
+        return _open(documents, as_of)
+    if asked == "closed_pending_final":
+        return _pending(documents, as_of)
+    is_open, why_open = _open(documents, as_of)
+    if is_open:
+        return True, why_open
+    pending, why_pending = _pending(documents, as_of)
+    return pending, why_pending if pending else f"{why_open}; {why_pending}"
+
+
+def take_frame(criteria: FrameCriteria, client: RegulationsGov, store: Store, *, workers: int = WORKERS) -> Frame:
+    """Run the criteria, freeze what they return as a core.Frame, and commit it with every response it rests on."""
+    if criteria.source != "regulations.gov":
+        raise ValueError(f"no adapter reads {criteria.source}")
+    searches = _searches(client, criteria)
+    candidates = sorted({str(e.attributes["docketId"]) for s in searches for e in s.listing.entries
+                         if e.attributes.get("docketId")})  # fmt: skip
+    bound = _day_bound(criteria)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        dockets = list(pool.map(lambda d: _docket(client, d, bound), candidates))
+    responses = [p for s in searches for p in s.listing.pages]
+    responses += [p for d in dockets for p in (*d.documents.pages, *d.comments.pages)]
+    if not responses:
+        raise ValueError("the criteria made no request")
+    started = min(p.retrieved_at for p in responses)
+    ended = max(p.retrieved_at for p in responses)
+    as_of = min(criteria.as_of, ended)
+    mode: Literal["prospective", "retrospective_reconstruction"] = (
+        "prospective" if ended <= as_of else "retrospective_reconstruction"
+    )
+    evidence = _Evidence(store)
+    for listing in (*(s.listing for s in searches), *(x for d in dockets for x in (d.documents, d.comments))):
+        evidence.pages(listing)  # every response the retrieval made is kept, so its times recompute from artifacts
+
+    frame_searches = []
+    reached: set[str] = set()
+    for s in searches:
+        pages = evidence.pages(s.listing)
+        frame_searches.append(FrameSearch(term=s.term, request=s.listing.request, documents=len(s.listing.entries),
+                                          artifacts=[a.id for a in pages]))  # fmt: skip
+        reached |= {str(e.attributes["docketId"]) for e in evidence.posted(s.listing, as_of, ended, mode)
+                    if e.attributes.get("docketId")}  # fmt: skip
+
+    frame_dockets: list[FrameDocket] = []
+    items: list[FrameItem] = []
+    for d in dockets:
+        if d.id not in reached:
+            continue  # reached only by documents posted after as_of: not reached as of as_of
+        documents = evidence.posted(d.documents, as_of, ended, mode)
+        withdrawn = [e for e in documents if e.attributes.get("withdrawn")]
+        documents = [e for e in documents if not e.attributes.get("withdrawn")]
+        comments = evidence.posted(d.comments, as_of, ended, mode)
+        status, why = _status(criteria.comment_status, documents, as_of)
+        enough = len(comments) >= criteria.min_comments
+        count = (f"{len(comments)} public comments posted by as_of"
+                 f"{'' if enough else f', fewer than the {criteria.min_comments} asked'}")  # fmt: skip
+        set_aside = f"; {len(withdrawn)} withdrawn document(s) not counted as posted" if withdrawn else ""
+        artifacts = [a.id for a in (*evidence.pages(d.documents), *evidence.pages(d.comments))]
+        frame_dockets.append(FrameDocket(docket=d.id, kept=status and enough, reason=f"{why}; {count}{set_aside}",
+                                         comments=len(comments), artifacts=artifacts))  # fmt: skip
+        if status and enough:
+            items += [FrameItem(id=c.id, docket=d.id, posted_at=instant(str(c.attributes["postedDate"])),
+                                withdrawn=bool(c.attributes.get("withdrawn"))) for c in comments]  # fmt: skip
+    items.sort(key=lambda i: (i.docket, i.posted_at, i.id))
+    stamp = ended.astimezone(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+    frame = Frame(
+        id=f"frame-{criteria.id}-v{criteria.version}-{stamp}",
+        criteria=core.Ref(id=criteria.id, version=criteria.version),
+        as_of=as_of,
+        retrieval_started=started,
+        retrieval_ended=ended,
+        mode=mode,
+        searches=frame_searches,
+        dockets=frame_dockets,
+        items=items,
+    )
+    store.commit("frame", frame.id, frame)
+    return frame
+
+
+def frames(store: Store) -> list[Frame]:
+    """The case's frozen frames, oldest first."""
+    return store.all("frame", Frame)
+
+
+def entries(store: Store, ids: Sequence[str]) -> list[FrameItem]:
+    """The frame entries of these comment ids, from the case's frames (the latest frame that lists each), in the order
+    given: a sample is drawn from a frozen frame."""
+    known: dict[str, FrameItem] = {}
+    for f in frames(store):
+        known.update({i.id: i for i in f.items})
+    missing = [i for i in ids if i not in known]
+    if missing:
+        raise ValueError(f"{len(missing)} id(s) are in no frame of this case (a sample is drawn from a frozen frame): "
+                         f"{', '.join(missing[:10])}{' ...' if len(missing) > 10 else ''}")  # fmt: skip
+    return [known[i] for i in ids]
+
+
+def frame_gate(client: Callable[[], RegulationsGov]) -> Callable[[Store, core.Proposal], GateResult]:
+    """The tests gate of a frame proposal (core.REQUIRED_GATES: "frame (its criteria run and freeze a frame)"): the
+    criteria run and freeze a frame; it passes when the frame holds an item to sample."""
+
+    def check(store: Store, proposal: core.Proposal) -> GateResult:
+        criteria = FrameCriteria.model_validate_json(core.canonical_json(dict(proposal.payload)))
+        regulations_gov = client()
+        try:
+            frame = take_frame(criteria, regulations_gov, store)
+        finally:
+            regulations_gov.close()
+        kept = sum(d.kept for d in frame.dockets)
+        detail = (f"frame {frame.id} ({frame.mode}, as of {frame.as_of.isoformat()}): {len(frame.dockets)} dockets "
+                  f"reached, {kept} kept, {len(frame.items)} items")  # fmt: skip
+        return GateResult(gate="tests", passed=bool(frame.items), detail=detail if frame.items else f"{detail}: none to sample")
+
+    return check
+
+
+def summary(frame: Frame) -> Mapping[str, Any]:
+    """The frame as the CLI shows it."""
+    return {
+        "frame": frame.id,
+        "as_of": frame.as_of.isoformat(),
+        "mode": frame.mode,
+        "retrieval": [frame.retrieval_started.isoformat(), frame.retrieval_ended.isoformat()],
+        "searches": [{"term": s.term, "request": s.request, "documents": s.documents} for s in frame.searches],
+        "dockets": [{"docket": d.docket, "kept": d.kept, "comments": d.comments, "reason": d.reason} for d in frame.dockets],
+        "items": len(frame.items),
+        "withdrawn": sum(i.withdrawn for i in frame.items),
+    }

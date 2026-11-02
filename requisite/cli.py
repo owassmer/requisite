@@ -50,6 +50,59 @@ def _wide_frame(args: argparse.Namespace) -> int:
     return 0
 
 
+def _evidence_frame(args: argparse.Namespace) -> int:
+    import json
+
+    from requisite.core import FrameCriteria
+    from requisite.evidence.frame import summary, take_frame
+    from requisite.evidence.regulations_gov import RegulationsGov
+
+    criteria = FrameCriteria.model_validate_json(Path(args.criteria).read_text())
+    client = RegulationsGov()
+    try:
+        frame = take_frame(criteria, client, _store(args))
+    finally:
+        client.close()
+    print(json.dumps(summary(frame), indent=2))
+    return 0
+
+
+def _sample_ids(path: Path) -> list[str]:
+    """A sample file: a JSON array of comment ids, or one id per line."""
+    import json
+
+    text = path.read_text()
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        return [line.strip() for line in text.splitlines() if line.strip()]
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise SystemExit(f"{path}: a sample is a JSON array of comment ids, or one id per line")
+    return value
+
+
+def _evidence_read(args: argparse.Namespace) -> int:
+    from requisite.evidence.frame import entries
+    from requisite.evidence.items import read_items
+    from requisite.evidence.regulations_gov import RegulationsGov
+
+    store = _store(args)
+    wanted = entries(store, _sample_ids(Path(args.sample)))
+    client = RegulationsGov()
+    try:
+        items = read_items(client, store, wanted, workers=args.workers)
+    finally:
+        client.close()
+    for item in items:
+        files = len(item.artifacts) - 1
+        print(f"{item.id}  {item.container}  {item.posted_at.isoformat()}  {item.submitter or '(no name published)'}  "
+              f"{files} file(s)  {len(item.text)} chars")  # fmt: skip
+        for u in item.unreadable:
+            print(f"  unreadable: {u}")
+    print(f"{len(items)} items read")
+    return 0
+
+
 def _approve(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
@@ -92,6 +145,17 @@ def main(argv: list[str] | None = None) -> int:
     case_args(w)
     w.add_argument("--as-of", required=True, help="the instant the frame is taken at, with its zone")
     w.set_defaults(run=_wide_frame)
+    ev = sub.add_parser("evidence", help="the public record retrieved and frozen (spec §7.2 step 1): a frame, its items")
+    esub = ev.add_subparsers(dest="step", required=True)
+    e = esub.add_parser("frame", help="run frame criteria against regulations.gov and freeze the frame they return")
+    case_args(e)
+    e.add_argument("--criteria", required=True, help="a FrameCriteria as JSON")
+    e.set_defaults(run=_evidence_frame)
+    e = esub.add_parser("read", help="read a sample of a frame's comments whole into items")
+    case_args(e)
+    e.add_argument("--sample", required=True, help="comment ids of this case's frame: a JSON array, or one per line")
+    e.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
+    e.set_defaults(run=_evidence_read)
     a = sub.add_parser("approve", help="a human decides at a gate (G1-G4) on one proposal, as it stands")
     case_args(a)
     a.add_argument("proposal")

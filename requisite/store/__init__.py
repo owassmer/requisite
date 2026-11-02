@@ -201,6 +201,16 @@ class Store:
         self._write_blob(artifact.id.removeprefix("art_"), content)
         return self._put("artifact", artifact.id, artifact.model_dump(mode="json"))
 
+    def artifacts_at(self, locator: str) -> list[Artifact]:
+        """The observed artifacts retrieved from this locator, oldest first: a source's versions, each linked to the one
+        before (spec I2: "A changed source is a new version linked to its predecessor")."""
+        rows = self._db.execute(
+            "select body from records where kind = 'artifact' and json_extract(body, '$.locator') = ? "
+            "order by committed_at, rowid",
+            (locator,),
+        )
+        return [Artifact.model_validate_json(core.canonical_json(json.loads(r[0]))) for r in rows]
+
     def content(self, artifact: str) -> bytes:
         digest = artifact.removeprefix("syn_art_").removeprefix("art_")
         return self._blob(digest).read_bytes()
