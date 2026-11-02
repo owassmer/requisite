@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/markets/KXETHD-26NOV0118-T2049.99",
+ "latency_ms": 50,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:31:50.300708+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {}
+ },
+ "response": {
+  "headers": {
+   "content-length": "2019",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"market\":{\"can_close_early\":true,\"close_time\":\"2026-11-01T23:00:00Z\",\"created_time\":\"2026-10-31T09:01:30.684022Z\",\"custom_strike\":{\"round_digits\":\"2\"},\"event_ticker\":\"KXETHD-26NOV0118\",\"exchange_index\":2,\"expected_expiration_time\":\"2026-11-01T23:05:00Z\",\"expiration_time\":\"2026-11-08T23:00:00Z\",\"expiration_value\":\"2258.13\",\"floor_strike\":2049.99,\"last_price_dollars\":\"0.0000\",\"latest_expiration_time\":\"2026-11-08T23:00:00Z\",\"market_type\":\"binary\",\"no_ask_dollars\":\"1.0000\",\"no_bid_dollars\":\"0.0000\",\"no_sub_title\":\"$2,050 or above\",\"notional_value_dollars\":\"1.0000\",\"occurrence_datetime\":\"2026-11-01T23:05:00Z\",\"open_interest_fp\":\"0.00\",\"open_time\":\"2026-11-01T22:00:00Z\",\"previous_price_dollars\":\"0.0000\",\"previous_yes_ask_dollars\":\"0.0000\",\"previous_yes_bid_dollars\":\"0.0000\",\"price_level_structure\":\"linear_cent\",\"price_ranges\":[{\"end\":\"1.0000\",\"start\":\"0.0000\",\"step\":\"0.0100\"}],\"result\":\"yes\",\"rules_primary\":\"If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 2049.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.\",\"rules_secondary\":\"Not all cryptocurrency price data is the same. While checking a source like Google or Coinbase may help guide your decision, the price used to determine this market is based on CF Benchmarks' corresponding Real Time Index (RTI). At the last minute before expiration, 60 RTI prices are collected. The official and final value is the average of these prices.\",\"settlement_bounds_type\":\"default\",\"settlement_timer_seconds\":60,\"settlement_ts\":\"2026-11-01T23:02:13.560938Z\",\"settlement_value_dollars\":\"1.0000\",\"status\":\"finalized\",\"strike_type\":\"greater\",\"subtitle\":\"$2,050 or above\",\"ticker\":\"KXETHD-26NOV0118-T2049.99\",\"title\":\"Ethereum price at Nov 1, 2026 at 6pm EST?\",\"updated_time\":\"2026-11-01T23:02:13.917857Z\",\"volume_24h_fp\":\"0.00\",\"volume_fp\":\"0.00\",\"yes_ask_dollars\":\"1.0000\",\"yes_ask_size_fp\":\"0.00\",\"yes_bid_dollars\":\"0.0000\",\"yes_bid_size_fp\":\"0.00\",\"yes_sub_title\":\"$2,050 or above\"}}\n"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/historical/cutoff",
+ "latency_ms": 78,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:29:56.391801+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {}
+ },
+ "response": {
+  "headers": {
+   "content-length": "188",
+   "content-type": "application/json; charset=utf-8"
+  },
+  "status": 200,
+  "text": "{\"market_positions_last_updated_ts\":\"2026-09-02T00:00:00Z\",\"market_settled_ts\":\"2026-09-02T00:00:00Z\",\"orders_updated_ts\":\"2026-10-18T00:00:00Z\",\"trades_created_ts\":\"2026-09-02T00:00:00Z\"}"
+ }
+}

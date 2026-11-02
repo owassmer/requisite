@@ -1,0 +1,22 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/historical/markets",
+ "latency_ms": 61,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:30:14.065546+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {
+   "event_ticker": "KXUAEPLGAME-26OCT18AJMSHJ",
+   "limit": "1000"
+  }
+ },
+ "response": {
+  "headers": {
+   "content-length": "27",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"cursor\":\"\",\"markets\":[]}\n"
+ }
+}
