@@ -68,6 +68,7 @@ PAYLOAD: dict[str, type[Record]] = {
     "decision_spec": core.DecisionSpec,
     "contract": core.ContractIR,
     "objective": core.WideObjective,
+    "entity_model": core.EntityModel,
     "template": core.QuestionTemplate,
     "paraphrase_set": core.ParaphraseSet,
     "frame": core.FrameCriteria,
