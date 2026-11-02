@@ -13,7 +13,8 @@ import json
 import os
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -123,11 +124,34 @@ def call(
     ``live`` (which returns the response and its cost in dollars), redacted, and recorded."""
     key = request_key(provider, endpoint, body)
     path = path_for(provider, key, root)
-    if path.exists():
-        kept = json.loads(path.read_text())
-        return Recorded(kept["response"], kept["latency_ms"], kept["cost_usd"], kept["recorded_at"], replayed=True)
-    if replay_only():
-        raise CassetteMissing(f"no cassette for {provider} {endpoint} request {key[:12]}; record it outside the sandbox")
+    # One request, one response: an identical request already being recorded by another thread is waited for and then
+    # replayed, never asked again. Two concurrent asks of one request each got their own answer and the second recording
+    # overwrote the first, so a replay could not reproduce the run that recorded them (November 2: two fuzz scenarios
+    # with identical renderer requests).
+    with _in_flight(path):
+        if path.exists():
+            kept = json.loads(path.read_text())
+            return Recorded(kept["response"], kept["latency_ms"], kept["cost_usd"], kept["recorded_at"], replayed=True)
+        if replay_only():
+            raise CassetteMissing(f"no cassette for {provider} {endpoint} request {key[:12]}; record it outside the sandbox")
+        return _record(provider, endpoint, body, live, path, budget, estimate_usd)
+
+
+_LOCKS: dict[Path, threading.Lock] = {}
+_LOCKS_GUARD = threading.Lock()
+
+
+@contextmanager
+def _in_flight(path: Path) -> Iterator[None]:
+    """Hold this request's lock: one thread at a time records or replays one cassette."""
+    with _LOCKS_GUARD:
+        lock = _LOCKS.setdefault(path, threading.Lock())
+    with lock:
+        yield
+
+
+def _record(provider: str, endpoint: str, body: Any, live: Callable[[], tuple[Any, float]], path: Path,
+            budget: Budget | None, estimate_usd: float) -> Recorded:  # fmt: skip
     budget = budget or Budget()
     budget.reserve(estimate_usd)
     started = time.monotonic()
