@@ -1,0 +1,1892 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "contract_reader",
+ "latency_ms": 26022,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T03:29:16.388864+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "filings": [
+    {
+     "document": "contract terms",
+     "text": "[page 1 of 5: text layer]\nAPPENDIX A \u2013 CONTRACT TERMS AND CONDITIONS\nOfficial Product Name:\n\u201cWill an alternative wage for Californian goat herders be authorized <time period>?\u201d\nRulebook:\nCAGOATWAGE\nCAGOATWAGE\nScope:\nThese rules shall apply to this contract.\nUnderlying:\nThe Underlying for this Contract is official records of the State of California and reporting from the Source\n\nAgencies regarding legislative, regulatory, executive, and judicial actions affecting the minimum wage and overtime\n\nobligations applicable to California employers of goat herders <time period>. Revisions to the Underlying made after\n\nExpiration will not be accounted for in determining the Expiration Value.\nSource Agency:\nThe Source Agencies are, in hierarchical order, California Legislative Information, the official journals of\n\nthe Assembly and Senate of California, the Office of the Governor of California, the California Secretary of State, the\n\nCalifornia Department of Industrial Relations (including the Labor Commissioner/DLSE and the Industrial Welfare\n\nCommission), the California Office of Administrative Law, the Official Californian Code of Regulations. the issuing court,\n\nthe Associated Press, Reuters, The Guardian, Bloomberg News, The New York Times, The Wall Street Journal, The\n\nWashington Post, the Los Angeles Times, the San Francisco Chronicle, the Sacramento Bee, CalMatters, Politico, Axios,\n\nCNN, ABC, CBS, NBC, Agri-Pulse, and Fox News.\nType:\nThe type of Contract is an Event Contract.\nIssuance:\nAfter the initial Contract, Contract iterations will be listed on an as-needed basis at the discretion of the Exchange\n\nand corresponding to the risk management needs of Members.\n<time period>:\n<time period> refers to a specific duration or range of time as specified by the Exchange. May be\n\nexpressed as a calendar year (e.g., \"2026\"), a calendar month and year (e.g., \"September 2026\"), a calendar quarter (e.g., \"Q3\n\n2026\"), a specific week, or other bounded time periods as appropriate to the contract subject matter. All time periods are\n\ninterpreted in Eastern Time (ET) unless otherwise specified. The end of <time period> is defined as 11:59:59 PM ET on the\n\nfinal day of the specified period, unless otherwise specified. The Exchange may list iterations of the Contract corresponding\n\nto variations of <time period>.\nPayout Criterion:\nThe Payout Criterion for the Contract encompasses the Expiration Values that a Qualifying Action has\n\nbeen taken <time period>.\nA \"Qualifying Action\" means:\n1.\na California statute has become law, whether by the Governor's signature, by passage over a gubernatorial veto under\n\nArticle IV, Section 10(a) of the California Constitution, or by operation of Article IV, Section 10(b), and regardless of\n\nvehicle, including a policy bill, urgency statute, budget bill, budget trailer bill, or special session bill;\n2.\na regulation finally approved by the California Office of Administrative Law and filed with the California Secretary of\n\nState, or an Industrial Welfare Commission wage order that has been amended or republished and has taken effect;\n3.\na written regulation, binding directive, final order, or formal statewide enforcement policy issued by a California state\n\nagency, department, board, commission, or officer with authority over the subject matter, including but not limited to\n\nthe Department of Industrial Relations, the Labor Commissioner and the Division of Labor Standards Enforcement,\n\nthe Industrial Welfare Commission, the Employment Development Department, the Department of Food and\n\nAgriculture, the Department of Forestry and Fire Protection, and the Department of Finance. An opinion letter or\n\nofficial interpretation is included only if it binds the issuing body or expressly states that body's statewide enforcement\n\nposition;\n4.\nan executive order or proclamation issued by the Governor of California; or\n5.\na written order entered by a California state court or a United States federal court.\n\n[page 2 of 5: text layer]\nWhich has at least one of the following effects:\n1.\nit reenacts, revives, restores, or extends the alternative monthly wage authority formerly contained in California\n\nLabor Code Section 2695.4(a), or establishes an alternative to it;\na.\n\"Goat herder\" means an individual employed to perform any of the duties described in former California\n\nLabor Code Section 2695.3(d), as that section read immediately before its repeal on July 1, 2026. Where\n\nan instrument described above defines goat herders or a comparable class differently, that instrument's\n\ndefinition governs for purposes of applying the Payout Criterion to that instrument.\n2.\nit provides that goat herders are eligible for the alternative monthly wage framework applicable to sheepherders\n\nunder California Labor Code Sections 2695.1 and 2695.2, including by determining that \"sheepherder\" as used\n\nin California Labor Code Section 2695.2 encompasses goat herders;\n3.\nit establishes an alternative monthly wage, a special minimum wage, a modified overtime threshold, a modified\n\ncompensable-hours rule, an exemption in whole or in part from minimum wage or overtime requirements, a safe\n\nharbor, or a limitation on damages or penalties (subject to the conditions set out in what would NOT satisfy the\n\nPayout Criterion), in each case applicable to goat herders or their employers;\n4.\nit directs that any portion of the minimum wage or overtime obligations otherwise applicable to California\n\nemployers of goat herders not be enforced or collected, including by a formal written policy of enforcement\n\nforbearance;\n5.\nit provides employers of goat herders a tax credit, reimbursement, grant, subsidy, payment, or contract price\n\nadjustment expressly tied to goat herder minimum wage or overtime obligations; or\n6.\nit enjoins or prohibits the enforcement or collection of any portion of the minimum wage or overtime\n\nobligations otherwise applicable to California employers of goat herders, or declares those obligations wholly or\n\npartially inapplicable to goat herders. A stay entered solely on procedural grounds, including arbitration, venue,\n\ndiscovery, bankruptcy, or case management, is not a Qualifying Action unless the order itself bars enforcement\n\nor collection of the underlying wage or overtime obligation.\nAnd which:\n1.\napplies statewide, or is generally available to employers of goat herders as a class, and is not limited to a named\n\nemployer, a named individual, or the parties to an individual, non-class case;\n2.\nwas enacted, approved and filed, issued, or entered, as applicable, on or before the end of <time period>;\n3.\nhas qualifying provisions that have taken legal effect, or by their express terms apply to compensation for work\n\nperformed, on or before the end of <time period>;\n4.\nhas qualifying provisions that have not been stayed, enjoined, suspended, invalidated, rescinded, or superseded\n\nas of the Expiration Date at the Expiration time; and\n5.\nsatisfies the Net Monthly Cost test described below.\nSubject to the foregoing requirements, an instrument is a Qualifying Action whether its relief is partial or complete,\n\ntemporary or permanent, retroactive or prospective, and regardless of its label, vehicle, or stated duration.\nNet Monthly Cost test.\nAn instrument satisfies the Net Monthly Cost test if the Net Monthly Cost under the\n\ninstrument does not exceed the monthly minimum wage applicable to sheepherders under California Labor Code\n\nSection 2695.2 and Section 4(E) of Industrial Welfare Commission Wage Order No. 14-2001, plus 15%, as in effect\n\non the last day of <time period>. An instrument that enjoins or prohibits the enforcement or collection of the\n\napplicable minimum wage and overtime obligations in their entirety is deemed to satisfy this test.\nNet Monthly Cost means the employer's minimum required wage and overtime cost of compensating a goat herder\n\nemployed on a regularly scheduled 24-hour shift, seven days per week, for one calendar month, computed under the\n\nwage and overtime rules as modified, limited, or rendered unenforceable by the instrument, minus the monthly value\n\nof any credit, reimbursement, grant, subsidy, payment, or contract price adjustment legally available to the employer\n\nunder the instrument.\nWhere and to the extent the goat herder's compensation is determined under hourly wage and overtime rules, the\n\n[page 3 of 5: text layer]\nfollowing defaults apply, except to the extent the instrument itself legally modifies the number of compensable hours,\n\nthe applicable hourly wage rate, or the applicable premium pay requirements, in which case the instrument's modified\n\nterms govern: all 24 hours of each shift are treated as compensable; the applicable rate is the California minimum\n\nwage in effect on the last day of <time period>; each workweek consists of 40 hours at the regular rate, 40 hours at\n\none and one half times the regular rate, and 88 hours at two times the regular rate; and one calendar month equals\n\n52/12 workweeks.\nOnly benefits available as of right to all qualifying employers, without further appropriation, competitive award,\n\napplication ranking, or agency discretion, are included in the computation. A lump sum benefit is prorated over the\n\nperiod to which it is expressly attributable, and a benefit that cannot be allocated on a per goat herder, per month basis\n\nis not included. An instrument consisting of a written order entered by a California state court or a United States\n\nfederal court is tested by computing Net Monthly Cost under the obligations as limited by that instrument.\nThe legal date of an instrument controls, and not the date on which it is published, posted, or reported. A statute is dated as of\n\nthe date it becomes law; a regulation as of final approval by the Office of Administrative Law and filing with the Secretary\n\nof State, or as of another legally controlling adoption date; a wage order as of its stated effective date; an administrative\n\ndirective, final order, or formal statewide enforcement position as of its official issuance; an executive order or proclamation\n\nas of its issuance; and a court order as of its entry.\nThe following do not satisfy the Payout Criterion:\na bill that has not become law, including a bill passed by one or both chambers and a bill vetoed and not overridden;\na proposed regulation, rulemaking notice, petition, or draft policy that has not been finally approved and filed;\nthe filing or pendency of litigation without a written order of a California state court or a United States federal court;\na nonbinding advisory, an opinion letter that neither binds the issuing body nor expressly states that body's statewide\n\nenforcement position, a staff communication, a frequently-asked-questions page, or a website statement;\na statement, press release, hearing, study, report, recommendation, or political agreement;\nan authorization of a future program that requires a further appropriation, implementing legislation, or discretionary\n\nagency approval before relief becomes legally available;\na general appropriation or funding for agriculture, grazing, fire prevention, or vegetation management not expressly\n\ntied to goat herder minimum wage or overtime obligations;\na reenactment limited to the definitional, housing, meal period, safety, communication, transportation, or other non-\nwage provisions formerly contained in California Labor Code Sections 2695.3 and 2695.4;\nfederal legislation and federal executive or administrative action, provided that a written order of a United States\n\nfederal court is not excluded by this item;\naction by a city, county, fire district, or other local government, unless it implements a qualifying state program;\na private settlement or agreement not entered as a written order of a California state court or a United States federal\n\ncourt;\nand relief consisting solely of a limitation on damages, penalties, or interest, without any of (a) any reduction of\n\nthe underlying wage, (b) any reduction of overtime obligation, OR (c) any qualifying payment.\nOnly actions documented by a Source Agency on or before the Expiration Date at the Expiration time will be considered.\n\nWhere the records of the Source Agencies conflict, or where a Source Agency retracts, corrects, or removes information, the\n\nofficial records of the body that took the action govern.\nExamples that would resolve the market to Yes:\n<time period> is \"August 2026.\" On August 28, 2026, the Legislature passes and the Governor signs an urgency statute\n\nmaking goat herders eligible for the alternative monthly wage authorized for sheepherders by Labor Code Section\n\n2695.2, effective immediately. The statute is not stayed, enjoined, suspended, or invalidated as of the Expiration Date\n\nat the Expiration time. The Net Monthly Cost under the alternative monthly wage does not exceed the Net Monthly\n\nCost test threshold.\n<time period> is \"September 2026.\" On September 25, 2026, the Governor signs a bill authorizing employers of goat\n\n[page 4 of 5: text layer]\nherders to pay, in lieu of the minimum wage for all hours worked, a monthly wage of no less than $5,200, by its\n\nexpress terms applicable to compensation for work performed on and after July 1, 2026. The monthly minimum wage\n\napplicable to sheepherders in effect on September 30, 2026 is $4,938.21, so the Net Monthly Cost test threshold is\n\n$5,678.94, and the bill's $5,200 Net Monthly Cost does not exceed it.\n<time period> is \"Q3 2026.\" On August 20, 2026, the Industrial Welfare Commission amends and republishes Wage\n\nOrder No. 14-2001 to provide that a goat herder employed on a regularly scheduled 24-hour, seven-day-per-week on-\ncall shift is compensable for eight hours per day, effective on that date. The Net Monthly Cost computed under the\n\namended wage order does not exceed the Net Monthly Cost test threshold.\n<time period> is \"2026.\" On November 10, 2026, a California superior court enters a written order in a certified class\n\naction declaring that goat herders statewide are eligible for the alternative monthly wage framework applicable to\n\nsheepherders under Labor Code Section 2695.2. The order is in effect as of the Expiration Date at the Expiration time.\n\nThe Net Monthly Cost under the alternative monthly wage does not exceed the Net Monthly Cost test threshold.\nExamples that would NOT resolve the market to Yes:\n<time period> is \"August 2026.\" The Senate passes a goat herder wage parity bill on August 25, 2026, but the\n\nAssembly does not act on it, and no such bill becomes law on or before August 31, 2026.\n<time period> is \"2026.\" On September 15, 2026, the Governor signs a bill appropriating $10,000,000 to the\n\nDepartment of Forestry and Fire Protection for targeted grazing contracts, and no instrument produces any of the\n\neffects listed above on or before December 31, 2026.\n<time period> is \"Q3 2026.\" On August 5, 2026, the Labor Commissioner posts a frequently-asked-questions page on\n\nthe Department of Industrial Relations website stating that the office does not currently intend to prioritize\n\nenforcement actions against goat-grazing employers, and no instrument produces any of the effects listed above on or\n\nbefore September 30, 2026.\n<time period> is \"2026.\" On September 20, 2026, the Governor signs a bill authorizing employers of goat herders to\n\npay, in lieu of the minimum wage for all hours worked, a monthly wage of no less than $12,000. The monthly\n\nminimum wage applicable to sheepherders in effect on December 31, 2026 is $4,938.21, so the Net Monthly Cost test\n\nthreshold is $5,678.94, and the bill's $12,000 Net Monthly Cost exceeds it. No other instrument produces a qualifying\n\neffect on or before December 31, 2026.\n<time period> is \"2026.\" On October 2, 2026, a California superior court enters an order in a wage claim brought by\n\none goat herder against one employer holding that the employer may compensate that goat herder on a monthly basis.\n\nThe order is limited to the parties to that individual, non-class case.\nMinimum Tick:\nThe Minimum Tick size for the Contract shall be $0.01.\nPosition Accountability Level:\nThe Position Accountability Level for the Contract shall be $25,000 per strike, per\n\nMember.\nLast Trading Date:\nThe Last Trading Date of the Contract will be the same as the Expiration Date. The Last Trading Time\n\nwill be the same as the Expiration time.\nSettlement Date:\nThe Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the\n\nMarket Outcome is under review pursuant to Rule 7.1.\nExpiration Date:\nThe latest Expiration Date of the Contract shall be one week after the end of <time period>. If an event\n\ndescribed in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance with Rule 7.2.\nExpiration time:\nThe Expiration time of the Contract shall be 10:00 AM ET.\nSettlement Value:\nThe Settlement Value for this Contract is $1.00.\nExpiration Value:\nThe Expiration Value is the value of the Underlying as documented by the Source Agency on the\n\nExpiration Date at the Expiration time.\n\n[page 5 of 5: text layer]\nContingencies:\nBefore Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant\n\nto Rule 7.1 of the Rulebook. If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to\n\ndetermine payouts pursuant to Rule 7.1 in the Rulebook.\nAPPENDIX B \u2013 TRADING PROHIBITIONS\nIn addition to the general prohibition against trading on material nonpublic information, the Exchange will institute additional\n\nprohibitions for trading the contract. Persons under 18 years of age are not permitted to create Kalshi accounts. The\n\nfollowing individuals will be prohibited from trading:\nMembers, officers, and employees of the California State Senate and State Assembly, including committee, leadership,\n\nand Rules Committee staff, the Office of Legislative Counsel, the Legislative Analyst's Office, and the Chief Clerk's\n\nand Senate Secretary's offices.\nThe Governor and the Governor's office legislative-affairs and legal-affairs staff; officers and employees of the\n\nDepartment of Finance, the Office of Administrative Law, and the Secretary of State personnel responsible for\n\nchaptering enrolled bills.\nOfficers and employees of the Department of Industrial Relations, the Division of Labor Standards Enforcement and\n\nthe Labor Commissioner's office, the Industrial Welfare Commission, the Employment Development Department, the\n\nDepartment of Food and Agriculture, and the Department of Forestry and Fire Protection, in each case where the\n\nindividual has authority over or advance knowledge of wage-order or enforcement-policy actions affecting goat\n\nherders.\nLobbyists registered with the California Secretary of State on this subject matter, together with their employers and\n\nclients; officers and staff of the California Farm Bureau Federation, the California Wool Growers Association, the\n\nCalifornia Cattlemen's Association, the California Labor Federation, and the United Farm Workers.\nCounsel of record, party representatives, named plaintiffs, class representatives, expert witnesses, and court personnel\n\nin any pending or threatened action seeking an order that would satisfy the Payout Criterion.\nAny person retained to draft or negotiate proposed statutory or regulatory language on this subject, including officers,\n\ndirectors, and employees of California goat-grazing and targeted-grazing contractors participating in that drafting or\n\nnegotiation.\nImmediate family members and members of the household of any person listed above.",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/contract_terms/CAGOATWAGE.pdf"
+    },
+    {
+     "document": "product certification",
+     "text": "[page 1 of 16: text layer]\nKalshiEX LLC\nJuly 31, 2026\nSUBMITTED VIA CFTC PORTAL\nSecretary of the Commission\nOffice of the Secretariat\nU.S. Commodity Futures Trading Commission\nThree Lafayette Centre\n1155 21st Street, N.W.\nWashington, D.C. 20581\nRe: KalshiEX LLC \u2013 CFTC Regulation 40.2(a) Notification Regarding the Initial Listing\nof the \u201cWill an alternative wage for Californian goat herders be authorized <time\nperiod>?\u201d Contract\nDear Sir or Madam,\nPursuant to Section 5c(c) of the Commodity Exchange Act and Section 40.2(a) of the regulations of the\nCommodity Futures Trading Commission, KalshiEX LLC (Kalshi), a registered DCM, hereby notifies\nthe Commission that it is self-certifying the \u201cWill an alternative wage for Californian goat herders be\nauthorized <time period>?\u201d contract (Contract). The Contract will initially be listed after\nclose-of-business on July 31, 2026; it is listed as the day after because of limitations of the Commission's\nonline submission portal. The Exchange intends to list the contract on a basis. The Contract\u2019s custom\nterms and conditions (Appendix A) includes the following strike conditions:\n\u25cf <time period>\n\nAlong with this letter, Kalshi submits the following documents:\n\u25cf A concise explanation and analysis of the Contract;\n\u25cf Certification;\n\u25cf Appendix A with the Contract\u2019s Terms and Conditions;\n\u25cf Confidential Appendices with further information; and\n\u25cf A request for FOIA confidential treatment.\nIf you have any questions, please do not hesitate to contact me.\nSincerely,\nXavier Sottile\nHead of Markets\nKalshiEX LLC\nxsottile@kalshi.com\n\nKalshiEX LLC\n\n[page 2 of 16: text layer]\nKalshiEX LLC\n\nKalshiEX LLC\n\n[page 3 of 16: text layer]\nKalshiEX LLC\nKalshiEX LLC\nOfficial Product Name: \u201cWill an alternative wage for Californian goat herders be authorized <time\nperiod>?\u201d\nRulebook: CAGOATWAGE\nSummary: California goat-herder wage\nKalshi Contract Category: Political Decision\nKalshi Internal Category: Politics\nJuly 31,2026\n\nCONCISE EXPLANATION AND ANALYSIS OF THE PRODUCT AND ITS\nCOMPLIANCE WITH APPLICABLE PROVISIONS OF THE ACT, INCLUDING CORE\nPRINCIPLES AND THE COMMISSION'S REGULATIONS THEREUNDER\nPursuant to Commission Rule 40.2(a)(3)(v), the following is a concise explanation and analysis\nof the product and its compliance with the Act, including the relevant Core Principles (discussed\nin Appendix D), and the Commission's regulations thereunder.\nI. Introduction\n\nThe \u201cWill an alternative wage for Californian goat herders be authorized <time period>?\u201d\nContract is a contract relating to . Politics\n\nFurther information about the Contract, including an analysis of its risk mitigation and\nprice basing utility, as well as additional considerations related to the Contract, is\nincluded in Confidential Appendices C, D, and E.\n\nPursuant to Section 5c(c) of the Act and CFTC Regulations 40.2(a), the Exchange hereby\ncertifies that the listing of the Contract complies with the Act and Commission\nregulations under the Act.\n\nGeneral Contract Terms and Conditions: The Contract operates similar to other event\ncontracts that the Exchange lists for trading. The minimum price fluctuation is $0.01 (one\ncent). Price bands will apply so that Contracts may only be listed at values of at least\n$0.01 and at most $0.99. Further, the Contract is sized with a one-dollar notional value\nand has a minimum price fluctuation of $0.01 to enable Members to match the size of the\ncontracts purchased to their economic risks. As outlined in Rule 5.16 of the Rulebook,\ntrading shall be available at all times outside of any maintenance windows, which will be\nannounced in advance by the Exchange. Members will be charged fees in accordance\nwith Rule 3.13 of the Rulebook. Fees, if they are charged, are charged in such amounts as\nmay be revised from time to time to be reflected on the Exchange\u2019s Website. A new\nSource Agency can be added via a Part 40 amendment. All instructions on how to access\nKalshiEX LLC\n\n[page 4 of 16: text layer]\nKalshiEX LLC\nthe Underlying are non-binding and are provided for convenience only and are not part of\nthe binding Terms and Conditions of the Contract. They may be clarified at any time.\nFurthermore, the Contract\u2019s payout structure is characterized by the payment of an\nabsolute amount to the holder of one side of the option and no payment to the\ncounterparty. During the time that trading on the Contract is open, Members are able to\nadjust their positions and trade freely. The Expiration Value and Market Outcome are\ndetermined at or after Market Close. The market is then settled by the Exchange, and the\nlong position holders and short position holders are paid according to the Market\nOutcome. In this case, \u201clong position holders\u201d refers to Members who purchased the\n\u201cYes\u201d side of the Contract and \u201cshort position holders\u201d refers to Members who purchased\nthe \u201cNo\u201d side of the Contract. If the Market Outcome is \u201cYes,\u201d meaning that an event\noccurs that is encompassed within the Payout Criterion, then the long position holders are\npaid an absolute amount proportional to the size of their position and the short position\nholders receive no payment. If the Market Outcome is \u201cNo,\u201d then the short position\nholders are paid an absolute amount proportional to the size of their position and the long\nposition holders receive no payment. Specification of the circumstances that would\ntrigger a Market Outcome of \u201cYes\u201d are included below in the section titled \u201cPayout\nCriterion\u201d in Appendix A.\n\nKalshiEX LLC\n\n[page 5 of 16: text layer]\nKalshiEX LLC\nCERTIFICATIONS PURSUANT TO SECTION 5c OF THE COMMODITY EXCHANGE\nACT, 7 U.S.C. \u00a7 7A-2 AND COMMODITY FUTURES TRADING COMMISSION RULE\n40.2, 17 C.F.R. \u00a7 40.2\n\nBased on the above analysis, the Exchange certifies that:\n\u274f The Contract complies with the Act and Commission regulations thereunder.\n\u274f This submission (other than those appendices for which confidential treatment has been\nrequested) has been concurrently posted on the Exchange\u2019s website at\nhttps://kalshi.com/regulatory/filings.\n\nShould you have any questions concerning the above, please contact the exchange at\nProductFilings@kalshi.com.\n\n______________________\n\nBy: Xavier Sottile\nTitle: Head of Markets\nDate: July 31,2026\nKalshiEX LLC\n\n[page 6 of 16: text layer]\nKalshiEX LLC\nAttachments:\nAppendix A - Contract Terms and Conditions\nAppendix B - Trading Prohibitions\nAppendix C (Confidential) - Further Considerations\nAppendix D (Confidential) - Source Agency\nAppendix E (Confidential) - Compliance with Core Principles\n\nKalshiEX LLC\n\n[page 7 of 16: text layer]\nKalshiEX LLC\nAPPENDIX A \u2013 CONTRACT TERMS AND CONDITIONS\n\nOfficial Product Name: \u201cWill an alternative wage for Californian goat herders be\nauthorized <time period>?\u201d\nRulebook: CAGOATWAGE\n\nKalshiEX LLC\n\n[page 8 of 16: text layer]\nKalshiEX LLC\nCAGOATWAGE\nScope: These rules shall apply to this contract.\nUnderlying: The Underlying for this Contract is official records of the State of California and\nreporting from the Source Agencies regarding legislative, regulatory, executive, and judicial\nactions affecting the minimum wage and overtime obligations applicable to California employers\nof goat herders <time period>. Revisions to the Underlying made after Expiration will not be\naccounted for in determining the Expiration Value.\nSource Agency: The Source Agencies are, in hierarchical order, California Legislative\nInformation, the official journals of the Assembly and Senate of California, the Office of the\nGovernor of California, the California Secretary of State, the California Department of Industrial\nRelations (including the Labor Commissioner/DLSE and the Industrial Welfare Commission),\nthe California Office of Administrative Law, the Official Californian Code of Regulations. the\nissuing court, the Associated Press, Reuters, The Guardian, Bloomberg News, The New York\nTimes, The Wall Street Journal, The Washington Post, the Los Angeles Times, the San Francisco\nChronicle, the Sacramento Bee, CalMatters, Politico, Axios, CNN, ABC, CBS, NBC,\nAgri-Pulse, and Fox News.\nType: The type of Contract is an Event Contract.\nIssuance: After the initial Contract, Contract iterations will be listed on an as-needed basis at the\ndiscretion of the Exchange and corresponding to the risk management needs of Members.\n<time period>: <time period> refers to a specific duration or range of time as specified by the\nExchange. May be expressed as a calendar year (e.g., \"2026\"), a calendar month and year (e.g.,\n\"September 2026\"), a calendar quarter (e.g., \"Q3 2026\"), a specific week, or other bounded time\nperiods as appropriate to the contract subject matter. All time periods are interpreted in Eastern\nTime (ET) unless otherwise specified. The end of <time period> is defined as 11:59:59 PM ET\non the final day of the specified period, unless otherwise specified. The Exchange may list\niterations of the Contract corresponding to variations of <time period>.\nPayout Criterion: The Payout Criterion for the Contract encompasses the Expiration Values that\na Qualifying Action has been taken <time period>.\nA \"Qualifying Action\" means:\n1. a California statute has become law, whether by the Governor's signature, by passage\nover a gubernatorial veto under Article IV, Section 10(a) of the California Constitution, or\nby operation of Article IV, Section 10(b), and regardless of vehicle, including a policy\nbill, urgency statute, budget bill, budget trailer bill, or special session bill;\nKalshiEX LLC\n\n[page 9 of 16: text layer]\nKalshiEX LLC\n2. a regulation finally approved by the California Office of Administrative Law and filed\nwith the California Secretary of State, or an Industrial Welfare Commission wage order\nthat has been amended or republished and has taken effect;\n3. a written regulation, binding directive, final order, or formal statewide enforcement\npolicy issued by a California state agency, department, board, commission, or officer with\nauthority over the subject matter, including but not limited to the Department of\nIndustrial Relations, the Labor Commissioner and the Division of Labor Standards\nEnforcement, the Industrial Welfare Commission, the Employment Development\nDepartment, the Department of Food and Agriculture, the Department of Forestry and\nFire Protection, and the Department of Finance. An opinion letter or official\ninterpretation is included only if it binds the issuing body or expressly states that body's\nstatewide enforcement position;\n4. an executive order or proclamation issued by the Governor of California; or\n5. a written order entered by a California state court or a United States federal court.\nWhich has at least one of the following effects:\n1. it reenacts, revives, restores, or extends the alternative monthly wage authority\nformerly contained in California Labor Code Section 2695.4(a), or establishes an\nalternative to it;\na. \"Goat herder\" means an individual employed to perform any of the duties\ndescribed in former California Labor Code Section 2695.3(d), as that\nsection read immediately before its repeal on July 1, 2026. Where an\ninstrument described above defines goat herders or a comparable class\ndifferently, that instrument's definition governs for purposes of applying the\nPayout Criterion to that instrument.\n2. it provides that goat herders are eligible for the alternative monthly wage\nframework applicable to sheepherders under California Labor Code Sections\n2695.1 and 2695.2, including by determining that \"sheepherder\" as used in\nCalifornia Labor Code Section 2695.2 encompasses goat herders;\n3. it establishes an alternative monthly wage, a special minimum wage, a modified\novertime threshold, a modified compensable-hours rule, an exemption in whole or\nin part from minimum wage or overtime requirements, a safe harbor, or a limitation\non damages or penalties (subject to the conditions set out in what would NOT\nsatisfy the Payout Criterion), in each case applicable to goat herders or their\nemployers;\n4. it directs that any portion of the minimum wage or overtime obligations otherwise\napplicable to California employers of goat herders not be enforced or collected,\nincluding by a formal written policy of enforcement forbearance;\nKalshiEX LLC\n\n[page 10 of 16: text layer]\nKalshiEX LLC\n5. it provides employers of goat herders a tax credit, reimbursement, grant, subsidy,\npayment, or contract price adjustment expressly tied to goat herder minimum wage\nor overtime obligations; or\n6. it enjoins or prohibits the enforcement or collection of any portion of the minimum\nwage or overtime obligations otherwise applicable to California employers of goat\nherders, or declares those obligations wholly or partially inapplicable to goat\nherders. A stay entered solely on procedural grounds, including arbitration, venue,\ndiscovery, bankruptcy, or case management, is not a Qualifying Action unless the\norder itself bars enforcement or collection of the underlying wage or overtime\nobligation.\nAnd which:\n1. applies statewide, or is generally available to employers of goat herders as a class, and is\nnot limited to a named employer, a named individual, or the parties to an individual,\nnon-class case;\n2. was enacted, approved and filed, issued, or entered, as applicable, on or before the end of\n<time period>;\n3. has qualifying provisions that have taken legal effect, or by their express terms apply to\ncompensation for work performed, on or before the end of <time period>;\n4. has qualifying provisions that have not been stayed, enjoined, suspended,\ninvalidated, rescinded, or superseded as of the Expiration Date at the Expiration\ntime; and\n5. satisfies the Net Monthly Cost test described below.\nSubject to the foregoing requirements, an instrument is a Qualifying Action whether its\nrelief is partial or complete, temporary or permanent, retroactive or prospective, and\nregardless of its label, vehicle, or stated duration.\nNet Monthly Cost test. An instrument satisfies the Net Monthly Cost test if the Net\nMonthly Cost under the instrument does not exceed the monthly minimum wage\napplicable to sheepherders under California Labor Code Section 2695.2 and Section 4(E)\nof Industrial Welfare Commission Wage Order No. 14-2001, plus 15%, as in effect on the\nlast day of <time period>. An instrument that enjoins or prohibits the enforcement or\ncollection of the applicable minimum wage and overtime obligations in their entirety is\ndeemed to satisfy this test.\nNet Monthly Cost means the employer's minimum required wage and overtime cost of\ncompensating a goat herder employed on a regularly scheduled 24-hour shift, seven days\nper week, for one calendar month, computed under the wage and overtime rules as\nmodified, limited, or rendered unenforceable by the instrument, minus the monthly value\nKalshiEX LLC\n\n[page 11 of 16: text layer]\nKalshiEX LLC\nof any credit, reimbursement, grant, subsidy, payment, or contract price adjustment legally\navailable to the employer under the instrument.\nWhere and to the extent the goat herder's compensation is determined under hourly wage\nand overtime rules, the following defaults apply, except to the extent the instrument itself\nlegally modifies the number of compensable hours, the applicable hourly wage rate, or the\napplicable premium pay requirements, in which case the instrument's modified terms\ngovern: all 24 hours of each shift are treated as compensable; the applicable rate is the\nCalifornia minimum wage in effect on the last day of <time period>; each workweek\nconsists of 40 hours at the regular rate, 40 hours at one and one half times the regular rate,\nand 88 hours at two times the regular rate; and one calendar month equals 52/12\nworkweeks.\nOnly benefits available as of right to all qualifying employers, without further\nappropriation, competitive award, application ranking, or agency discretion, are included\nin the computation. A lump sum benefit is prorated over the period to which it is expressly\nattributable, and a benefit that cannot be allocated on a per goat herder, per month basis is\nnot included. An instrument consisting of a written order entered by a California state\ncourt or a United States federal court is tested by computing Net Monthly Cost under the\nobligations as limited by that instrument.\nThe legal date of an instrument controls, and not the date on which it is published, posted, or\nreported. A statute is dated as of the date it becomes law; a regulation as of final approval by the\nOffice of Administrative Law and filing with the Secretary of State, or as of another legally\ncontrolling adoption date; a wage order as of its stated effective date; an administrative directive,\nfinal order, or formal statewide enforcement position as of its official issuance; an executive\norder or proclamation as of its issuance; and a court order as of its entry.\nThe following do not satisfy the Payout Criterion:\n\u25cf a bill that has not become law, including a bill passed by one or both chambers and a bill\nvetoed and not overridden;\n\u25cf a proposed regulation, rulemaking notice, petition, or draft policy that has not been\nfinally approved and filed;\n\u25cf the filing or pendency of litigation without a written order of a California state court or a\nUnited States federal court;\n\u25cf a nonbinding advisory, an opinion letter that neither binds the issuing body nor expressly\nstates that body's statewide enforcement position, a staff communication, a\nfrequently-asked-questions page, or a website statement;\n\u25cf a statement, press release, hearing, study, report, recommendation, or political agreement;\n\u25cf an authorization of a future program that requires a further appropriation, implementing\nlegislation, or discretionary agency approval before relief becomes legally available;\nKalshiEX LLC\n\n[page 12 of 16: text layer]\nKalshiEX LLC\n\u25cf a general appropriation or funding for agriculture, grazing, fire prevention, or vegetation\nmanagement not expressly tied to goat herder minimum wage or overtime obligations;\n\u25cf a reenactment limited to the definitional, housing, meal period, safety, communication,\ntransportation, or other non-wage provisions formerly contained in California Labor\nCode Sections 2695.3 and 2695.4;\n\u25cf federal legislation and federal executive or administrative action, provided that a written\norder of a United States federal court is not excluded by this item;\n\u25cf action by a city, county, fire district, or other local government, unless it implements a\nqualifying state program;\n\u25cf a private settlement or agreement not entered as a written order of a California state court\nor a United States federal court;\n\u25cf and relief consisting solely of a limitation on damages, penalties, or interest,\nwithout any of (a) any reduction of the underlying wage, (b) any reduction of\novertime obligation, OR (c) any qualifying payment.\nOnly actions documented by a Source Agency on or before the Expiration Date at the Expiration\ntime will be considered. Where the records of the Source Agencies conflict, or where a Source\nAgency retracts, corrects, or removes information, the official records of the body that took the\naction govern.\nExamples that would resolve the market to Yes:\n\u25cf <time period> is \"August 2026.\" On August 28, 2026, the Legislature passes and the\nGovernor signs an urgency statute making goat herders eligible for the alternative\nmonthly wage authorized for sheepherders by Labor Code Section 2695.2, effective\nimmediately. The statute is not stayed, enjoined, suspended, or invalidated as of the\nExpiration Date at the Expiration time. The Net Monthly Cost under the alternative\nmonthly wage does not exceed the Net Monthly Cost test threshold.\n\u25cf <time period> is \"September 2026.\" On September 25, 2026, the Governor signs a bill\nauthorizing employers of goat herders to pay, in lieu of the minimum wage for all hours\nworked, a monthly wage of no less than $5,200, by its express terms applicable to\ncompensation for work performed on and after July 1, 2026. The monthly minimum\nwage applicable to sheepherders in effect on September 30, 2026 is $4,938.21, so the Net\nMonthly Cost test threshold is $5,678.94, and the bill's $5,200 Net Monthly Cost does not\nexceed it.\n\u25cf <time period> is \"Q3 2026.\" On August 20, 2026, the Industrial Welfare Commission\namends and republishes Wage Order No. 14-2001 to provide that a goat herder employed\non a regularly scheduled 24-hour, seven-day-per-week on-call shift is compensable for\neight hours per day, effective on that date. The Net Monthly Cost computed under the\namended wage order does not exceed the Net Monthly Cost test threshold.\nKalshiEX LLC\n\n[page 13 of 16: text layer]\nKalshiEX LLC\n\u25cf <time period> is \"2026.\" On November 10, 2026, a California superior court enters a\nwritten order in a certified class action declaring that goat herders statewide are eligible\nfor the alternative monthly wage framework applicable to sheepherders under Labor\nCode Section 2695.2. The order is in effect as of the Expiration Date at the Expiration\ntime. The Net Monthly Cost under the alternative monthly wage does not exceed the Net\nMonthly Cost test threshold.\nExamples that would NOT resolve the market to Yes:\n\u25cf <time period> is \"August 2026.\" The Senate passes a goat herder wage parity bill on\nAugust 25, 2026, but the Assembly does not act on it, and no such bill becomes law on or\nbefore August 31, 2026.\n\u25cf <time period> is \"2026.\" On September 15, 2026, the Governor signs a bill appropriating\n$10,000,000 to the Department of Forestry and Fire Protection for targeted grazing\ncontracts, and no instrument produces any of the effects listed above on or before\nDecember 31, 2026.\n\u25cf <time period> is \"Q3 2026.\" On August 5, 2026, the Labor Commissioner posts a\nfrequently-asked-questions page on the Department of Industrial Relations website\nstating that the office does not currently intend to prioritize enforcement actions against\ngoat-grazing employers, and no instrument produces any of the effects listed above on or\nbefore September 30, 2026.\n\u25cf <time period> is \"2026.\" On September 20, 2026, the Governor signs a bill authorizing\nemployers of goat herders to pay, in lieu of the minimum wage for all hours worked, a\nmonthly wage of no less than $12,000. The monthly minimum wage applicable to\nsheepherders in effect on December 31, 2026 is $4,938.21, so the Net Monthly Cost test\nthreshold is $5,678.94, and the bill's $12,000 Net Monthly Cost exceeds it. No other\ninstrument produces a qualifying effect on or before December 31, 2026.\n\u25cf <time period> is \"2026.\" On October 2, 2026, a California superior court enters an order\nin a wage claim brought by one goat herder against one employer holding that the\nemployer may compensate that goat herder on a monthly basis. The order is limited to the\nparties to that individual, non-class case.\nMinimum Tick: The Minimum Tick size for the Contract shall be $0.01.\nPosition Accountability Level: The Position Accountability Level for the Contract shall be\n$25,000 per strike, per Member.\nLast Trading Date: The Last Trading Date of the Contract will be the same as the Expiration\nDate. The Last Trading Time will be the same as the Expiration time.\nSettlement Date: The Settlement Date of the Contract shall be no later than the day after the\nExpiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.\nKalshiEX LLC\n\n[page 14 of 16: text layer]\nKalshiEX LLC\nExpiration Date: The latest Expiration Date of the Contract shall be one week after the end of\n<time period>. If an event described in the Payout Criterion occurs, expiration will be moved to\nan earlier date and time in accordance with Rule 7.2.\nExpiration time: The Expiration time of the Contract shall be 10:00 AM ET.\nSettlement Value: The Settlement Value for this Contract is $1.00.\nExpiration Value: The Expiration Value is the value of the Underlying as documented by the\nSource Agency on the Expiration Date at the Expiration time.\nContingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market\nOutcome Review Process pursuant to Rule 7.1 of the Rulebook. If an Expiration Value cannot be\ndetermined on the Expiration Date, Kalshi has the right to determine payouts pursuant to Rule\n7.1 in the Rulebook.\n\nKalshiEX LLC\n\n[page 15 of 16: text layer]\nKalshiEX LLC\nAPPENDIX B \u2013 TRADING PROHIBITIONS\n\nIn addition to the general prohibition against trading on material nonpublic information, the\nExchange will institute additional prohibitions for trading the contract. Persons under 18 years of\nage are not permitted to create Kalshi accounts. The following individuals will be prohibited\nfrom trading:\n\u25cf Members, officers, and employees of the California State Senate and State Assembly,\nincluding committee, leadership, and Rules Committee staff, the Office of Legislative\nCounsel, the Legislative Analyst's Office, and the Chief Clerk's and Senate Secretary's\noffices.\n\u25cf The Governor and the Governor's office legislative-affairs and legal-affairs staff; officers\nand employees of the Department of Finance, the Office of Administrative Law, and the\nSecretary of State personnel responsible for chaptering enrolled bills.\n\u25cf Officers and employees of the Department of Industrial Relations, the Division of Labor\nStandards Enforcement and the Labor Commissioner's office, the Industrial Welfare\nCommission, the Employment Development Department, the Department of Food and\nAgriculture, and the Department of Forestry and Fire Protection, in each case where the\nindividual has authority over or advance knowledge of wage-order or enforcement-policy\nactions affecting goat herders.\n\u25cf Lobbyists registered with the California Secretary of State on this subject matter, together\nwith their employers and clients; officers and staff of the California Farm Bureau\nFederation, the California Wool Growers Association, the California Cattlemen's\nAssociation, the California Labor Federation, and the United Farm Workers.\n\u25cf Counsel of record, party representatives, named plaintiffs, class representatives, expert\nwitnesses, and court personnel in any pending or threatened action seeking an order that\nwould satisfy the Payout Criterion.\n\u25cf Any person retained to draft or negotiate proposed statutory or regulatory language on\nthis subject, including officers, directors, and employees of California goat-grazing and\ntargeted-grazing contractors participating in that drafting or negotiation.\n\u25cf Immediate family members and members of the household of any person listed above.\nKalshiEX LLC\n\n[page 16 of 16: text layer]\nKalshiEX LLC - Confidential\n\nKalshiEX LLC - Confidential Treatment Under Regulations 40.8 and 145.9 Requested",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/regulatory/product-certifications/CAGOATWAGE.pdf"
+    }
+   ],
+   "listing_fields": [
+    "ticker",
+    "event_ticker",
+    "market_type",
+    "title",
+    "subtitle",
+    "yes_sub_title",
+    "no_sub_title",
+    "rules_primary",
+    "rules_secondary",
+    "early_close_condition",
+    "can_close_early",
+    "strike_type",
+    "floor_strike",
+    "cap_strike",
+    "functional_strike",
+    "custom_strike",
+    "notional_value_dollars",
+    "open_time",
+    "close_time",
+    "expiration_time",
+    "expected_expiration_time",
+    "latest_expiration_time",
+    "occurrence_datetime",
+    "settlement_timer_seconds"
+   ],
+   "markets": {
+    "count": 1,
+    "tickers": [
+     "KXCAGOAT-26SEP30"
+    ],
+    "varying_fields": {}
+   },
+   "representative_market": {
+    "can_close_early": true,
+    "close_time": "2026-09-19T15:10:59Z",
+    "event_ticker": "KXCAGOAT-26SEP30",
+    "expected_expiration_time": "2026-10-07T14:00:00Z",
+    "expiration_time": "2026-10-07T14:00:00Z",
+    "latest_expiration_time": "2026-10-07T14:00:00Z",
+    "market_type": "binary",
+    "no_sub_title": "Yes",
+    "notional_value_dollars": "1.0000",
+    "occurrence_datetime": "2026-10-07T14:00:00Z",
+    "open_time": "2026-07-31T20:45:00Z",
+    "rules_primary": "If California authorizes an alternative wage or provides qualifying relief from goat herder wage and overtime obligations before Oct 1, 2026, then the market resolves to Yes.",
+    "rules_secondary": "A \"Qualifying Action\" means:\nA California statute has become law, whether by the Governor's signature, by passage over a gubernatorial veto under Article IV, Section 10(a) of the California Constitution, or by operation of Article IV, Section 10(b), and regardless of vehicle, including a policy bill, urgency statute, budget bill, budget trailer bill, or special session bill;\nA regulation finally approved by the California Office of Administrative Law and filed with the California Secretary of State, or an Industrial Welfare Commission wage order that has been amended or republished and has taken effect;\nA written regulation, binding directive, final order, or formal statewide enforcement policy issued by a California state agency, department, board, commission, or officer with authority over the subject matter, including but not limited to the Department of Industrial Relations, the Labor Commissioner and the Division of Labor Standards Enforcement, the Industrial Welfare Commission, the Employment Development Department, the Department of Food and Agriculture, the Department of Forestry and Fire Protection, and the Department of Finance. An opinion letter or official interpretation is included only if it binds the issuing body or expressly states that body's statewide enforcement position;\nAn executive order or proclamation issued by the Governor of California; or\nA written order entered by a California state court or a United States federal court.\n\nWhich has at least one of the following effects:\nIt reenacts, revives, restores, or extends the alternative monthly wage authority formerly contained in California Labor Code Section 2695.4(a), or establishes an alternative to it;\n    \"Goat herder\" means an individual employed to perform any of the duties described in former California Labor Code Section 2695.3(d), as that section read immediately before its repeal on July 1, 2026. Where an instrument described above defines goat herders or a comparable class differently, that instrument's definition governs for purposes of applying the Payout Criterion to that instrument.\nIt provides that goat herders are eligible for the alternative monthly wage framework applicable to sheepherders under California Labor Code Sections 2695.1 and 2695.2, including by determining that \"sheepherder\" as used in California Labor Code Section 2695.2 encompasses goat herders;\nIt establishes an alternative monthly wage, a special minimum wage, a modified overtime threshold, a modified compensable-hours rule, an exemption in whole or in part from minimum wage or overtime requirements, a safe harbor, or a limitation on damages or penalties (subject to the conditions set out in what would NOT satisfy the Payout Criterion), in each case applicable to goat herders or their employers;\nIt directs that any portion of the minimum wage or overtime obligations otherwise applicable to California employers of goat herders not be enforced or collected, including by a formal written policy of enforcement forbearance;\nIt provides employers of goat herders a tax credit, reimbursement, grant, subsidy, payment, or contract price adjustment expressly tied to goat herder minimum wage or overtime obligations; or\nIt enjoins or prohibits the enforcement or collection of any portion of the minimum wage or overtime obligations otherwise applicable to California employers of goat herders, or declares those obligations wholly or partially inapplicable to goat herders. A stay entered solely on procedural grounds, including arbitration, venue, discovery, bankruptcy, or case management, is not a Qualifying Action unless the order itself bars enforcement or collection of the underlying wage or overtime obligation.\n\nAnd which:\nApplies statewide, or is generally available to employers of goat herders as a class, and is not limited to a named employer, a named individual, or the parties to an individual, non-class case;\nWas enacted, approved and filed, issued, or entered, as applicable, on or before the end of time period;\nHas qualifying provisions that have taken legal effect, or by their express terms apply to compensation for work performed, on or before the end of time period;\nHas qualifying provisions that have not been stayed, enjoined, suspended, invalidated, rescinded, or superseded as of the Expiration Date at the Expiration time; and\nSatisfies the Net Monthly Cost test described below.\n\nSubject to the foregoing requirements, an instrument is a Qualifying Action whether its relief is partial or complete, temporary or permanent, retroactive or prospective, and regardless of its label, vehicle, or stated duration.\n\nNet Monthly Cost test. An instrument satisfies the Net Monthly Cost test if the Net Monthly Cost under the instrument does not exceed the monthly minimum wage applicable to sheepherders under California Labor Code Section 2695.2 and Section 4(E) of Industrial Welfare Commission Wage Order No. 14-2001, plus 15%, as in effect on the last day of time period. An instrument that enjoins or prohibits the enforcement or collection of the applicable minimum wage and overtime obligations in their entirety is deemed to satisfy this test.\n\nNet Monthly Cost means the employer's minimum required wage and overtime cost of compensating a goat herder employed on a regularly scheduled 24-hour shift, seven days per week, for one calendar month, computed under the wage and overtime rules as modified, limited, or rendered unenforceable by the instrument, minus the monthly value of any credit, reimbursement, grant, subsidy, payment, or contract price adjustment legally available to the employer under the instrument.\n\nWhere and to the extent the goat herder's compensation is determined under hourly wage and overtime rules, the following defaults apply, except to the extent the instrument itself legally modifies the number of compensable hours, the applicable hourly wage rate, or the applicable premium pay requirements, in which case the instrument's modified terms govern: all 24 hours of each shift are treated as compensable; the applicable rate is the California minimum wage in effect on the last day of time period; each workweek consists of 40 hours at the regular rate, 40 hours at one and one half times the regular rate, and 88 hours at two times the regular rate; and one calendar month equals 52/12 workweeks.\n\nOnly benefits available as of right to all qualifying employers, without further appropriation, competitive award, application ranking, or agency discretion, are included in the computation. A lump sum benefit is prorated over the period to which it is expressly attributable, and a benefit that cannot be allocated on a per goat herder, per month basis is not included. An instrument consisting of a written order entered by a California state court or a United States federal court is tested by computing Net Monthly Cost under the obligations as limited by that instrument.\n\nThe legal date of an instrument controls, and not the date on which it is published, posted, or reported. A statute is dated as of the date it becomes law; a regulation as of final approval by the Office of Administrative Law and filing with the Secretary of State, or as of another legally controlling adoption date; a wage order as of its stated effective date; an administrative directive, final order, or formal statewide enforcement position as of its official issuance; an executive order or proclamation as of its issuance; and a court order as of its entry.",
+    "settlement_timer_seconds": 1800,
+    "ticker": "KXCAGOAT-26SEP30",
+    "title": "Will California authorize an alternative wage or other qualifying relief from goat-herder wage and overtime obligations before Oct 1, 2026?",
+    "yes_sub_title": "Yes"
+   },
+   "series": {
+    "additional_prohibitions": [
+     "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+     "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+     "Politics"
+    ],
+    "category": "Politics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/CAGOATWAGE.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/CAGOATWAGE.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "one_off",
+    "last_updated_ts": "2026-09-29T17:19:02.307426Z",
+    "settlement_sources": [
+     {
+      "name": "California",
+      "url": "https://leginfo.legislature.ca.gov/faces/home.xhtml"
+     }
+    ],
+    "tags": null,
+    "ticker": "KXCAGOAT",
+    "title": "California goat herder wage obligations"
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "contract_reader",
+  "schema": {
+   "$defs": {
+    "And": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "and",
+       "default": "and",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "And",
+     "type": "object"
+    },
+    "At": {
+     "additionalProperties": false,
+     "description": "The condition holds at the instant `at` (spec \u00a74).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "at",
+       "default": "at",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "at"
+     ],
+     "title": "At",
+     "type": "object"
+    },
+    "By": {
+     "additionalProperties": false,
+     "description": "The condition holds at some observation up to the deadline, which is included or not as `closed` says (spec \u00a74\n\"By(expr, t)\"; A05 \u00a75.4 endpoint inclusion). `since` is the earliest observation that counts, with its own\ninclusion, or None where every earlier observation counts: the sources give By no lower bound, so the contract\nstates it (ours).",
+     "properties": {
+      "closed": {
+       "title": "Closed",
+       "type": "boolean"
+      },
+      "deadline": {
+       "format": "date-time",
+       "title": "Deadline",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "by",
+       "default": "by",
+       "title": "Kind",
+       "type": "string"
+      },
+      "since": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      },
+      "since_closed": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since Closed"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "since",
+      "since_closed",
+      "deadline",
+      "closed"
+     ],
+     "title": "By",
+     "type": "object"
+    },
+    "Category": {
+     "additionalProperties": false,
+     "description": "A category or text value, compared as given.",
+     "properties": {
+      "kind": {
+       "const": "text",
+       "default": "text",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Category",
+     "type": "object"
+    },
+    "Cmp": {
+     "additionalProperties": false,
+     "description": "observable op value, at the instant or day its enclosing temporal operator gives (spec \u00a74). The value's type is\nthe observable's (`VALUE_KIND`); a numeric value is compared at the observable's declared precision (A09 \u00a710.3).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "cmp",
+       "default": "cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Number"
+        },
+        {
+         "$ref": "#/$defs/Category"
+        },
+        {
+         "$ref": "#/$defs/Flag"
+        },
+        {
+         "$ref": "#/$defs/OnDay"
+        }
+       ],
+       "title": "Value"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "op",
+      "value"
+     ],
+     "title": "Cmp",
+     "type": "object"
+    },
+    "Computed": {
+     "additionalProperties": false,
+     "description": "A number computed by a registered consequence node from numeric sub-expressions (spec \u00a75: \"The contract IR\ncompiles into the computation layer, so the settlement function and the hedge payoff are the same code\"; I7: code\nowns consequences). The node is pure and registered (spec \u00a74 @node), so the same arithmetic settles, prices and\nfuzzes; over interval inputs its value is the interval of its outputs.",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "inputs": {
+       "additionalProperties": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/CountTrue"
+         },
+         {
+          "$ref": "#/$defs/DurationIn"
+         },
+         {
+          "$ref": "#/$defs/ReadValue"
+         },
+         {
+          "$ref": "#/$defs/ValueAt"
+         },
+         {
+          "$ref": "#/$defs/Computed"
+         }
+        ]
+       },
+       "title": "Inputs",
+       "type": "object"
+      },
+      "kind": {
+       "const": "computed",
+       "default": "computed",
+       "title": "Kind",
+       "type": "string"
+      },
+      "node": {
+       "$ref": "#/$defs/Ref"
+      }
+     },
+     "required": [
+      "id",
+      "node",
+      "inputs"
+     ],
+     "title": "Computed",
+     "type": "object"
+    },
+    "ConflictPolicy": {
+     "additionalProperties": false,
+     "description": "How disagreeing sources are reconciled: a registered procedure and its parameters (A05 \u00a75.4: \"Use a registered\nprocedure ID plus parameters, or an explicit typed policy\"). The two procedures registered so far are ours, the\ntwo readings of spec \u00a74's precedence list that an evaluator can apply deterministically: precedence_first_available,\nthe highest-ranked source in the procedure's precedence that has published settles; require_agreement, the sources\nnamed in `sources` must agree, or the result is disputed. A contract whose rule is neither is not supported exactly\n(A05 \u00a75.5) until its procedure is registered here.",
+     "properties": {
+      "procedure": {
+       "enum": [
+        "precedence_first_available",
+        "require_agreement"
+       ],
+       "title": "Procedure",
+       "type": "string"
+      },
+      "sources": {
+       "default": [],
+       "items": {
+        "type": "string"
+       },
+       "title": "Sources",
+       "type": "array"
+      }
+     },
+     "required": [
+      "procedure"
+     ],
+     "title": "ConflictPolicy",
+     "type": "object"
+    },
+    "ContractIR": {
+     "additionalProperties": false,
+     "description": "A contract in the IR (spec \u00a74). Every observable the trigger or payout references is declared.",
+     "properties": {
+      "examples": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/ScenarioExample"
+       },
+       "title": "Examples",
+       "type": "array"
+      },
+      "exclusions": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/Exclusion"
+       },
+       "title": "Exclusions",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "observables": {
+       "items": {
+        "$ref": "#/$defs/Observable"
+       },
+       "title": "Observables",
+       "type": "array"
+      },
+      "payout": {
+       "$ref": "#/$defs/Payout"
+      },
+      "resolution": {
+       "$ref": "#/$defs/ResolutionProcedure"
+      },
+      "timing": {
+       "$ref": "#/$defs/Timing"
+      },
+      "trigger": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Trigger"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version",
+      "observables",
+      "trigger",
+      "payout",
+      "timing",
+      "resolution"
+     ],
+     "title": "ContractIR",
+     "type": "object"
+    },
+    "CountTrue": {
+     "additionalProperties": false,
+     "description": "The number of calendar days of `days` on which the condition holds, counted in the window's time zone (spec \u00a74).\nIts value over three-valued days is an interval [k, k + u] (A05 \u00a75.3).",
+     "properties": {
+      "days": {
+       "$ref": "#/$defs/TimeWindow"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "count_true",
+       "default": "count_true",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "days"
+     ],
+     "title": "CountTrue",
+     "type": "object"
+    },
+    "DurationIn": {
+     "additionalProperties": false,
+     "description": "The time within the window during which the condition holds, in `unit` (spec \u00a74); an interval over unknowns, as\nCountTrue's is. calendar_day counts calendar days of the window's time zone; elapsed_day counts 24-hour periods, so\na daylight-saving change does not change it (A05 \u00a75.4: \"Define ... day-count conventions\").",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "duration_in",
+       "default": "duration_in",
+       "title": "Kind",
+       "type": "string"
+      },
+      "unit": {
+       "enum": [
+        "calendar_day",
+        "elapsed_day",
+        "hour"
+       ],
+       "title": "Unit",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window",
+      "unit"
+     ],
+     "title": "DurationIn",
+     "type": "object"
+    },
+    "Exclusion": {
+     "additionalProperties": false,
+     "description": "An exclusion clause. One that changes settlement is operative and names the IR or interpretive node that carries\nit; a disclosure note is marked non-operative (A05 \u00a75.4).",
+     "properties": {
+      "ir_node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Ir Node"
+      },
+      "operative": {
+       "title": "Operative",
+       "type": "boolean"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      }
+     },
+     "required": [
+      "text",
+      "operative"
+     ],
+     "title": "Exclusion",
+     "type": "object"
+    },
+    "Flag": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "bool",
+       "default": "bool",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Flag",
+     "type": "object"
+    },
+    "Interpretive": {
+     "additionalProperties": false,
+     "description": "A condition a resolver must judge from text (spec \u00a74): a question template and its bindings, answered by decision\nmodels and mapped to a truth by its answer's status (spec \u00a76.3).",
+     "properties": {
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "interpretive",
+       "default": "interpretive",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings"
+     ],
+     "title": "Interpretive",
+     "type": "object"
+    },
+    "ListingBinding": {
+     "additionalProperties": false,
+     "description": "One per-market listing field of a series and the IR value it fills (ours; spec \u00a79.3's per-market fields). `field`\nis the market record's field, a dotted path into its objects where the value is nested (custom_strike.Option).\n`node` and `slot` name the value it fills: a node's threshold (Cmp, NumCmp), the instant it reads (At, ValueAt), a\nBy's bounds (since, deadline), or a window's ends (Throughout, CountTrue, DurationIn); or, with no node, one of the\ntiming's dates (open, close, expiration, observation_cutoff). The field's value enters as it is, in the slot's type:\na threshold takes the number, text or date its comparison's value is, an instant slot an instant.",
+     "properties": {
+      "field": {
+       "title": "Field",
+       "type": "string"
+      },
+      "node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Node"
+      },
+      "slot": {
+       "enum": [
+        "threshold",
+        "at",
+        "since",
+        "deadline",
+        "window_start",
+        "window_end",
+        "open",
+        "close",
+        "expiration",
+        "observation_cutoff"
+       ],
+       "title": "Slot",
+       "type": "string"
+      }
+     },
+     "required": [
+      "field",
+      "node",
+      "slot"
+     ],
+     "title": "ListingBinding",
+     "type": "object"
+    },
+    "Not": {
+     "additionalProperties": false,
+     "properties": {
+      "arg": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Arg"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "not",
+       "default": "not",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "arg"
+     ],
+     "title": "Not",
+     "type": "object"
+    },
+    "NumCmp": {
+     "additionalProperties": false,
+     "description": "A count or duration compared with a threshold, e.g. CountTrue(...) >= 20 (ours: spec \u00a74 puts CountTrue and\nDurationIn in the Expr union, and a trigger on them, such as spec \u00a72.5's \"how many days ... will station S record at\nleast X inches\", compares their value).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/CountTrue"
+        },
+        {
+         "$ref": "#/$defs/DurationIn"
+        },
+        {
+         "$ref": "#/$defs/ReadValue"
+        },
+        {
+         "$ref": "#/$defs/ValueAt"
+        },
+        {
+         "$ref": "#/$defs/Computed"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "num_cmp",
+       "default": "num_cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "op",
+      "value"
+     ],
+     "title": "NumCmp",
+     "type": "object"
+    },
+    "Number": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "number",
+       "default": "number",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Number",
+     "type": "object"
+    },
+    "Observable": {
+     "additionalProperties": false,
+     "description": "A quantity a contract settles on (spec \u00a74).\n\nrevision_policy: which vintage settles (spec \u00a74). \"final\" is a finite rule only with a declared resolution deadline\nor a fallback (addendum A05 \u00a75.4: \"An unlimited `final` vintage is not a finite settlement rule unless 'final' has a\ndeclared resolution deadline or fallback\"): `final_deadline` is the instant by which the value must be final, and\n`final_fallback` the vintage that settles if no final value is published by the settlement determination. unit and precision: what a numeric value is measured in and the precision at which it is published\n(A05 \u00a75.4 unit conversions; A09 \u00a710.3 thresholds at declared precision).",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "final_deadline": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Deadline"
+      },
+      "final_fallback": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_print",
+          "as_of_expiry"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Fallback"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "precision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Precision"
+      },
+      "revision_policy": {
+       "enum": [
+        "first_print",
+        "as_of_expiry",
+        "final"
+       ],
+       "title": "Revision Policy",
+       "type": "string"
+      },
+      "schedule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Schedule"
+      },
+      "sources": {
+       "items": {
+        "$ref": "#/$defs/Source"
+       },
+       "title": "Sources",
+       "type": "array"
+      },
+      "unit": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Unit"
+      },
+      "value_type": {
+       "enum": [
+        "bool",
+        "number",
+        "date",
+        "category",
+        "text"
+       ],
+       "title": "Value Type",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "description",
+      "value_type",
+      "sources",
+      "revision_policy"
+     ],
+     "title": "Observable",
+     "type": "object"
+    },
+    "OnDay": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "date",
+       "default": "date",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "format": "date",
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "OnDay",
+     "type": "object"
+    },
+    "Or": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "or",
+       "default": "or",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "Or",
+     "type": "object"
+    },
+    "Payout": {
+     "additionalProperties": false,
+     "description": "Per unit (spec \u00a74). currency, and rounding to `rounding_quantum` by `rounding_mode`, are explicit (A05 \u00a75.1,\n\u00a75.4: \"Define ... rounding\"). payment: paid once at settlement, or per\nperiod of `periods`, each period's amount paid after its end (A05 \u00a75.3: \"A count paid once at expiry and a strip paid\nperiodically can have identical terminal amounts and very different liquidity consequences\").",
+     "properties": {
+      "cap": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Cap"
+      },
+      "currency": {
+       "title": "Currency",
+       "type": "string"
+      },
+      "kind": {
+       "enum": [
+        "binary",
+        "per_unit",
+        "capped_linear"
+       ],
+       "title": "Kind",
+       "type": "string"
+      },
+      "payment": {
+       "enum": [
+        "at_settlement",
+        "per_period"
+       ],
+       "title": "Payment",
+       "type": "string"
+      },
+      "periods": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/TimeWindow"
+       },
+       "title": "Periods",
+       "type": "array"
+      },
+      "quantity": {
+       "anyOf": [
+        {
+         "oneOf": [
+          {
+           "$ref": "#/$defs/CountTrue"
+          },
+          {
+           "$ref": "#/$defs/DurationIn"
+          },
+          {
+           "$ref": "#/$defs/ReadValue"
+          },
+          {
+           "$ref": "#/$defs/ValueAt"
+          },
+          {
+           "$ref": "#/$defs/Computed"
+          }
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Quantity"
+      },
+      "rounding_mode": {
+       "enum": [
+        "half_even",
+        "half_up",
+        "down",
+        "up"
+       ],
+       "title": "Rounding Mode",
+       "type": "string"
+      },
+      "rounding_quantum": {
+       "title": "Rounding Quantum",
+       "type": "string"
+      },
+      "unit_value": {
+       "title": "Unit Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind",
+      "unit_value",
+      "currency",
+      "rounding_quantum",
+      "rounding_mode",
+      "payment"
+     ],
+     "title": "Payout",
+     "type": "object"
+    },
+    "ReadValue": {
+     "additionalProperties": false,
+     "description": "A number a resolver reads from text, with its unit: a term an instrument sets (an alternative monthly wage, a\nmodified overtime threshold). Decision models answer it as a closed set of bands (spec \u00a74: a question answered by a\ndistribution over a closed set), so its value is the interval of the band the resolved answer names, and unknown is\nthe whole range (A05 \u00a75.3: a number left open by unknowns is an interval, never a guess). Each band is [low, high),\nthe last [low, high], so a value on a shared endpoint belongs to the band above it (A05 \u00a75.4: \"Define open/closed\ninterval endpoints\"). Ours: spec \u00a79.3's specimen tests a cost computed from such terms, and spec \u00a74's Interpretive\nyields only a truth.",
+     "properties": {
+      "bands": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "type": "array"
+       },
+       "title": "Bands",
+       "type": "array"
+      },
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "read_value",
+       "default": "read_value",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      },
+      "unit": {
+       "title": "Unit",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings",
+      "unit",
+      "bands"
+     ],
+     "title": "ReadValue",
+     "type": "object"
+    },
+    "Ref": {
+     "additionalProperties": false,
+     "description": "A versioned reference to another record or policy (addendum \u00a75.1 VersionedRef).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version"
+     ],
+     "title": "Ref",
+     "type": "object"
+    },
+    "ResolutionProcedure": {
+     "additionalProperties": false,
+     "description": "How the contract resolves (spec \u00a74, amended by A05 \u00a75.2 and \u00a75.4). on_unknown_at_expiry says what an unknown\ntrigger means at settlement without changing the trigger's truth (A05 \u00a75.2). early_expiration: \"when_true\" when the\ncontract expires early once its trigger is true (spec \u00a79.3: \"early_close_condition\"; the Western Grazers terms: \"If\nan event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance\nwith Rule 7.2\"). Its timing is what the contract states: \"first_true\" where the contract itself fixes the instant at\nwhich the trigger is first true on the observations then published; \"per_exchange_rule\" where it defers to a rule\noutside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is\ntrue while the early date stays unresolved, named, until that rule is supplied (A05 \u00a75.2: \"Unsupported procedure\ndetails must be reported, not guessed\"). An extension names its length and what happens if the trigger is still\nunknown after it.",
+     "properties": {
+      "after_extension": {
+       "anyOf": [
+        {
+         "enum": [
+          "no",
+          "yes",
+          "void"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "After Extension"
+      },
+      "conflict_policy": {
+       "$ref": "#/$defs/ConflictPolicy"
+      },
+      "early_expiration": {
+       "enum": [
+        "none",
+        "when_true"
+       ],
+       "title": "Early Expiration",
+       "type": "string"
+      },
+      "early_expiration_at": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_true",
+          "per_exchange_rule"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration At"
+      },
+      "early_expiration_rule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration Rule"
+      },
+      "extension_days": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Extension Days"
+      },
+      "on_unknown_at_expiry": {
+       "enum": [
+        "no",
+        "yes",
+        "extend",
+        "void"
+       ],
+       "title": "On Unknown At Expiry",
+       "type": "string"
+      },
+      "precedence": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Precedence",
+       "type": "array"
+      },
+      "void_transfer": {
+       "$ref": "#/$defs/VoidTransfer"
+      }
+     },
+     "required": [
+      "precedence",
+      "conflict_policy",
+      "on_unknown_at_expiry",
+      "early_expiration",
+      "void_transfer"
+     ],
+     "title": "ResolutionProcedure",
+     "type": "object"
+    },
+    "ScenarioExample": {
+     "additionalProperties": false,
+     "description": "A published example: a scenario that passed fuzzing, with the evaluator's outcome (spec \u00a78.5, I8). `evaluation`\nis the content hash of the ResolutionEvaluation that produced `expected`.",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "evaluation": {
+       "title": "Evaluation",
+       "type": "string"
+      },
+      "expected": {
+       "enum": [
+        "resolved_yes",
+        "resolved_no",
+        "pending",
+        "extended",
+        "void",
+        "disputed"
+       ],
+       "title": "Expected",
+       "type": "string"
+      },
+      "scenario_id": {
+       "title": "Scenario Id",
+       "type": "string"
+      }
+     },
+     "required": [
+      "scenario_id",
+      "description",
+      "expected",
+      "evaluation"
+     ],
+     "title": "ScenarioExample",
+     "type": "object"
+    },
+    "SettlementBinding": {
+     "additionalProperties": false,
+     "description": "What a market record's settlement value reports (ours; spec \u00a79.3: \"settled markets supplying known outcomes\"):\nthe observable whose value the exchange settled on, and the market field (`at_field`) giving the instant that value\nis for.",
+     "properties": {
+      "at_field": {
+       "title": "At Field",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "observable",
+      "at_field"
+     ],
+     "title": "SettlementBinding",
+     "type": "object"
+    },
+    "Source": {
+     "additionalProperties": false,
+     "description": "A source of an observable's values, ranked by authority (spec \u00a74: rank 1 is highest).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "rank": {
+       "title": "Rank",
+       "type": "integer"
+      },
+      "role": {
+       "title": "Role",
+       "type": "string"
+      },
+      "url": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Url"
+      }
+     },
+     "required": [
+      "id",
+      "name",
+      "rank",
+      "role"
+     ],
+     "title": "Source",
+     "type": "object"
+    },
+    "Throughout": {
+     "additionalProperties": false,
+     "description": "The condition holds at every observation in the window (spec \u00a74).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "throughout",
+       "default": "throughout",
+       "title": "Kind",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window"
+     ],
+     "title": "Throughout",
+     "type": "object"
+    },
+    "TimeWindow": {
+     "additionalProperties": false,
+     "description": "A window of time (spec \u00a74), with each endpoint's inclusion stated (addendum A05 \u00a75.4: \"Define open/closed interval\nendpoints, timezone\"). `tz` is the IANA zone in which calendar days of the window are counted.",
+     "properties": {
+      "end": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      },
+      "end_closed": {
+       "title": "End Closed",
+       "type": "boolean"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      },
+      "start_closed": {
+       "title": "Start Closed",
+       "type": "boolean"
+      },
+      "tz": {
+       "default": "UTC",
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end",
+      "start_closed",
+      "end_closed"
+     ],
+     "title": "TimeWindow",
+     "type": "object"
+    },
+    "Timing": {
+     "additionalProperties": false,
+     "description": "The contract's dates (spec \u00a74), with the cutoff for observations and the payment lag distinguished from the\nsettlement determination (A05 \u00a75.3: event, publication, observation cutoff, settlement determination and payment\ndates are different dates). Lags count calendar days or business days, in the time zone `tz` (A05 \u00a75.4: \"Define ...\ntimezone, day-count conventions\"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose\none registered calendar is the United States federal holidays of 5 U.S.C. \u00a76103 (ours: the calendar the contracts\nwe build settle against; another is registered here before a contract can use it, A05 \u00a75.4 \"Mechanical policies\nmust be executable\").",
+     "properties": {
+      "close": {
+       "format": "date-time",
+       "title": "Close",
+       "type": "string"
+      },
+      "expiration": {
+       "format": "date-time",
+       "title": "Expiration",
+       "type": "string"
+      },
+      "holiday_calendar": {
+       "anyOf": [
+        {
+         "const": "us_federal",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Holiday Calendar"
+      },
+      "lag_days": {
+       "enum": [
+        "calendar",
+        "business"
+       ],
+       "title": "Lag Days",
+       "type": "string"
+      },
+      "observation_cutoff": {
+       "format": "date-time",
+       "title": "Observation Cutoff",
+       "type": "string"
+      },
+      "open": {
+       "format": "date-time",
+       "title": "Open",
+       "type": "string"
+      },
+      "payment_lag_days": {
+       "title": "Payment Lag Days",
+       "type": "integer"
+      },
+      "settlement_lag_days": {
+       "title": "Settlement Lag Days",
+       "type": "integer"
+      },
+      "tz": {
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "open",
+      "close",
+      "expiration",
+      "observation_cutoff",
+      "settlement_lag_days",
+      "payment_lag_days",
+      "lag_days",
+      "holiday_calendar",
+      "tz"
+     ],
+     "title": "Timing",
+     "type": "object"
+    },
+    "ValueAt": {
+     "additionalProperties": false,
+     "description": "A numeric observable's value at an instant, selected by the contract's revision and conflict policies (spec \u00a74\nObservable; ours: a computed test reads published rates, such as a minimum wage in effect on a day).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "value_at",
+       "default": "value_at",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "at"
+     ],
+     "title": "ValueAt",
+     "type": "object"
+    },
+    "VoidTransfer": {
+     "additionalProperties": false,
+     "description": "What a void returns per unit (A05 \u00a75.2: \"A void result does not imply a particular refund\").",
+     "properties": {
+      "amount": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Amount"
+      },
+      "returns": {
+       "enum": [
+        "premium",
+        "nothing",
+        "fixed_amount"
+       ],
+       "title": "Returns",
+       "type": "string"
+      }
+     },
+     "required": [
+      "returns"
+     ],
+     "title": "VoidTransfer",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "contract_reader: a filed series read into the IR as an instrument family (core.ContractFamily's fields that are\nthe reader's): the support classification with its assumptions and unsupported terms (core.HarvestedContract), the\nrepresentative market's IR (its id and version are code's), the bindings that say which IR value each per-market\nlisting field fills (core.ListingBinding), and what a market record's settlement value reports\n(core.SettlementBinding). Validated as the core family it drafts, so an answer the definition refuses is refused\nhere, with the definition's reasons.",
+   "properties": {
+    "assumptions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Assumptions",
+     "type": "array"
+    },
+    "bindings": {
+     "items": {
+      "$ref": "#/$defs/ListingBinding"
+     },
+     "title": "Bindings",
+     "type": "array"
+    },
+    "ir": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ContractIR"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "settlement": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/SettlementBinding"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "support": {
+     "enum": [
+      "supported_exact",
+      "supported_with_explicit_assumptions",
+      "unsupported"
+     ],
+     "title": "Support",
+     "type": "string"
+    },
+    "unsupported_terms": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Unsupported Terms",
+     "type": "array"
+    }
+   },
+   "required": [
+    "support",
+    "assumptions",
+    "unsupported_terms",
+    "ir",
+    "bindings",
+    "settlement"
+   ],
+   "title": "HarvestDraft",
+   "type": "object"
+  },
+  "system": "You read a listed event contract series' filed terms into Requisite's contract IR, a formal representation that one evaluator settles in three-valued logic. A series is one set of filed terms listed as many markets that differ only in their listing fields (a strike, their times, the event). You read it as an instrument family: one representative market's IR, and bindings that say which IR value each per-market listing field fills, from which code gives every market its IR. Code validates and tests what you propose; you only propose.\n\nYou are given:\n- series: the exchange's series record.\n- filings: the filed documents' text as extracted from their PDFs (the contract terms, and the product certification where there is one), with anything that could not be read.\n- representative_market: the listing fields of the market whose IR you write.\n- markets: how many markets the series has, their tickers, and each listing field whose value varies across them, with its number of distinct values and its values at a few markets.\n- listing_fields: the market fields a binding may read.\nYou are not shown how any market settled, nor any price. Your IRs are checked afterwards against how the settled markets settled.\n\nProduce:\n- support: \"supported_exact\" when the IR carries every operative term as filed; \"supported_with_explicit_assumptions\" when it carries them only under assumptions you list; \"unsupported\" when a term that decides settlement cannot be expressed, which you name in unsupported_terms. Never simplify a term silently: a term you could not carry exactly is an assumption or an unsupported term, stated in the filing's own words.\n- ir: the representative market's contract in the IR, or null when unsupported. Code sets its id and version.\n- bindings: for each listing field that varies across the markets and that the IR depends on, the IR value it fills: field, node, slot. A slot is a node's \"threshold\" (Cmp, NumCmp), the instant a node reads (\"at\": At, ValueAt), a By's \"since\" or \"deadline\", a window's \"window_start\" or \"window_end\" (Throughout, CountTrue, DurationIn), or, with node null, one of the timing's dates (\"open\", \"close\", \"expiration\", \"observation_cutoff\"). field is one of listing_fields, a dotted path where the value is nested (custom_strike.<key>). The field's value fills the slot exactly as listed, in the slot's type: a number fills a number threshold, a text a text threshold, a timestamp an instant. Write the representative IR with the representative market's own values in every bound slot; code checks that the bindings reproduce it from that market's record. No bindings when unsupported.\n- settlement: what a market's settlement value reports. The exchange's record of a settled market states \"the value that was considered for the settlement\"; name the IR observable whose value that is, and the listing field giving the instant that value is for, the instant the IR reads it at. null where the settlement value is no observable of the IR (for instance, the outcome of a criterion a resolver judges from text), or when unsupported.\n\nHow to read the terms into the IR:\n- Observables are the quantities the terms settle on (a published value, a status, a date), each with the sources the terms name, ranked as the terms rank them, its revision policy as the terms state it, and for a number its unit and published precision.\n- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs.\n- The comparison, and whether its bound is included, come from the filed terms and the market's rules text, never from a field's name; a strike field supplies only the value.\n- Every node has an id, unique in the contract, short and descriptive.\n- Timing, the resolution procedure (source precedence, conflict rule, what an unknown at expiry means, early expiration and its timing, extensions, voids) and the payout follow the terms exactly. Where the terms defer to an exchange rule outside the filing, name the rule (early_expiration_rule) rather than inventing its content. Where a date depends on events (an expiration that is the sooner of when data is available and a latest date), state the date the IR takes as an assumption, quoting the term.\n- Exclusions that change settlement are operative and name the node that carries them; disclosure notes are not.\n\nRead the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR: list it as an assumption with both readings.\n\nWhere carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as\nan assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no\nfaithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:\n- a condition quantified over documents (\"any instrument that ...\", \"a qualifying action\"), where the IR can only\n  read one named instrument;\n- a reading whose answer is a single value other than the top of its range (bands are [low, high));\n- a date read from text and compared;\n- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;\n- an unknown-at-expiry outcome left to the exchange's discretion;\n- a settlement or payment date stated as a deadline (\"no later than\");\n- a known payment whose date is left to an exchange rule;\n- a missing-data rule for a payout quantity;\n- what a binary or capped payout pays per period;\n- an early expiration when the outcome is decided either way (the IR expires early only when its trigger is true).\nWhere the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the\nneutral value and list it as an assumption that the terms state no such rule.\n"
+ },
+ "response": {
+  "duration_ms": 25266,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 21071,
+    "cacheReadInputTokens": 14503,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.2280566,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 2829,
+    "provider": "firstParty",
+    "thinkingTokens": 1517,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "assumptions": [],
+   "bindings": [],
+   "ir": null,
+   "settlement": null,
+   "support": "unsupported",
+   "unsupported_terms": [
+    "Payout Criterion quantified over documents: \"The Payout Criterion for the Contract encompasses the Expiration Values that a Qualifying Action has been taken <time period>.\" A Qualifying Action is any instrument in five open classes: \"a California statute has become law ...\", \"a regulation finally approved ...\", \"a written regulation, binding directive, final order, or formal statewide enforcement policy issued by a California state agency ...\", \"an executive order or proclamation ...\", or \"a written order entered by a California state court or a United States federal court\". Each must also have one of six listed effects and pass five conditions. The IR can only read one named instrument, and no instrument is named. This term decides settlement.",
+    "Net Monthly Cost test, run on each instrument: \"An instrument satisfies the Net Monthly Cost test if the Net Monthly Cost under the instrument does not exceed the monthly minimum wage applicable to sheepherders under California Labor Code Section 2695.2 and Section 4(E) of Industrial Welfare Commission Wage Order No. 14-2001, plus 15%, as in effect on the last day of <time period>.\" The Net Monthly Cost is \"computed under the wage and overtime rules as modified, limited, or rendered unenforceable by the instrument, minus the monthly value of any credit, reimbursement, grant, subsidy, payment, or contract price adjustment legally available to the employer under the instrument\". It uses default hours, rates and premiums \"except to the extent the instrument itself legally modifies\" them, and the deemed-satisfaction rule \"An instrument that enjoins or prohibits the enforcement or collection of the applicable minimum wage and overtime obligations in their entirety is deemed to satisfy this test.\" The Computed and ReadValue inputs would have to be read from whichever instrument is found to qualify. The IR cannot bind them to an instrument that is not named, and its bands cannot give a single value read from text, such as a stated monthly wage of \"no less than $5,200\".",
+    "Dates read from text and compared: the instrument \"was enacted, approved and filed, issued, or entered, as applicable, on or before the end of <time period>\" and \"has qualifying provisions that have taken legal effect, or by their express terms apply to compensation for work performed, on or before the end of <time period>\". Under the legal-date rules (\"The legal date of an instrument controls, and not the date on which it is published, posted, or reported ...\"), these dates are read from each instrument's text.",
+    "Source hierarchy for the evidence behind the interpretive condition: \"Where the records of the Source Agencies conflict, or where a Source Agency retracts, corrects, or removes information, the official records of the body that took the action govern.\" This applies on top of the ranked list of Source Agencies (California Legislative Information first, Fox News last). It governs the evidence for the qualifying-action judgment, not the value of a published observable.",
+    "Outcome when the result is unknown at expiry is left to the exchange: \"If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to determine payouts pursuant to Rule 7.1 in the Rulebook.\"",
+    "Settlement date stated as a deadline: \"The Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.\""
+   ]
+  },
+  "total_cost_usd": 0.2280566,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 21071,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 21071,
+   "cache_read_input_tokens": 14503,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 21071,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 21071,
+     "cache_read_input_tokens": 14503,
+     "input_tokens": 2,
+     "output_tokens": 2829,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 2829,
+   "output_tokens_details": {
+    "thinking_tokens": 1517
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

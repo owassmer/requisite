@@ -55,7 +55,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Literal
@@ -87,6 +87,7 @@ from requisite.core import (
     Proposal,
     ReadValue,
     ResolutionEvaluation,
+    ValueAt,
     walk,
 )
 from requisite.core.contract import TIMING_SLOTS
@@ -508,10 +509,11 @@ class MarketResult:
     and the strike fields an off-by-one of which would change its outcome."""
 
     ticker: str
-    kind: Literal["reproduced", "not_reproduced", "not_checkable", "not_settled"]
+    kind: Literal["reproduced", "not_reproduced", "not_checkable", "not_settled", "joint"]
     text: str
     at_boundary: tuple[str, ...] = ()
     next_to: tuple[str, ...] = ()
+    joint: tuple[datetime, Settled, ContractIR] | None = None  # a market whose record states no value of the observable
 
 
 @dataclass(frozen=True)
@@ -556,7 +558,10 @@ class Check:
             "the IR's choice of observable, source or instant, when the source published, or when the exchange "
             "settled or paid, which the clause-by-clause reading and the fuzzer test. An exchange's settlement is an "
             "observed procedural outcome, so a match is tested equivalence on these markets, not universal "
-            "equivalence.",
+            "equivalence. Where a record states its outcome but no value of the observable, the markets settled at "
+            "one instant are checked jointly: one value of the observable must give every one of them its outcome. "
+            "That tests the comparisons' direction and their strikes' order against the outcomes, with less power than "
+            "a stated value, and says nothing of where between its strikes the value lay.",
         ]
         if self.boundary:
             lines += self._boundary()
@@ -710,8 +715,82 @@ def check(store: Store, filed: FiledSeries, family: ContractFamily, *, boundary:
     results = []
     for ir in sorted(family.markets, key=lambda m: m.id):
         results.append(_market(store, filed, family, ir, exact, observables, (source, unsourced), strikes, boundary))
+    if s is not None and source is not None:
+        results = _joint(results, observables[s.observable], source, filed)
     return Check(filed.as_of, s.observable if s else None, source, s.at_field if s else None, thresholds,
                  tuple(results), boundary)  # fmt: skip
+
+
+def _candidates(observable: Observable, irs: Sequence[ContractIR]) -> list[CmpValue]:
+    """Values of the observable, one in every region the comparisons on it cut its domain into: each threshold and a
+    step of its precision either side (a day, for a date), and for a category each named value and one none names."""
+    found: list[CmpValue] = []
+    for ir in irs:
+        for n in walk(ir.trigger):
+            if isinstance(n, Cmp) and n.observable == observable.id:
+                found.append(n.value)
+            elif isinstance(n, NumCmp) and isinstance(n.expr, ValueAt) and n.expr.observable == observable.id:
+                found.append(Number(value=n.value))
+    if observable.value_type == "number":
+        assert observable.precision is not None
+        step = observable.precision
+        points = sorted({v.value for v in found if isinstance(v, Number)})
+        grid = {x + d for x in points for d in (-step, Decimal(0), step)}
+        if points:
+            grid |= {points[0] - 2 * step, points[-1] + 2 * step}
+        return [Number(value=x) for x in sorted(grid)]
+    if observable.value_type == "date":
+        days = sorted({v.value for v in found if isinstance(v, OnDay)})
+        return [OnDay(value=d + timedelta(days=k)) for d in days for k in (-1, 0, 1)]
+    named = list(dict.fromkeys(v.value for v in found if isinstance(v, Category)))
+    values: list[CmpValue] = [Category(value=v) for v in named]
+    return [*values, Category(value="(a value none of the comparisons names)")]
+
+
+def _joint(results: list[MarketResult], observable: Observable, source: str, filed: FiledSeries) -> list[MarketResult]:
+    """Markets whose records state their outcome but no value of the observable (a ladder settled on "At least 60%"),
+    checked together: is there one value of the observable, for their shared instant, for which every market's IR gives
+    its actual outcome? Such a value is looked for among one candidate in every region the markets' comparisons cut the
+    domain into, so none is missed. The check can fail only where the outcomes differ (all YES, or all NO, any
+    predicate that can go either way fits), so markets whose outcomes are all alike stay not checkable, saying why."""
+    groups: dict[datetime, list[MarketResult]] = {}
+    for r in results:
+        if r.kind == "joint":
+            assert r.joint is not None
+            groups.setdefault(r.joint[0], []).append(r)
+    resolved: dict[str, MarketResult] = {}
+    for at, group in groups.items():
+        outcomes = {r.joint[1].result for r in group if r.joint is not None}
+        stated = sorted({r.joint[1].expiration_value for r in group if r.joint is not None})
+        if len(outcomes) < 2:
+            for r in group:
+                resolved[r.ticker] = MarketResult(r.ticker, "not_checkable", (
+                    f"not checkable: {r.text}, and every market settled on it settled {next(iter(outcomes))}, so no value "
+                    "of the observable is excluded by their outcomes"))  # fmt: skip
+            continue
+        irs = [r.joint[2] for r in group if r.joint is not None]
+        fits = []
+        for v in _candidates(observable, irs):
+            obs = Observation(observable=observable.id, source=source, at=at, value=v, published_at=at, final=True,
+                              artifact=filed.markets[group[0].ticker])  # fmt: skip
+            if all(_reproduces(evaluate(r.joint[2], [obs], {}, at=final_instant(r.joint[2])), r.joint[1])[0]
+                   for r in group if r.joint is not None):
+                fits.append(v)
+        def show(v: CmpValue) -> str:
+            if isinstance(v, Number) and observable.precision is not None:
+                return str(v.value.quantize(observable.precision))
+            return str(v.value)
+
+        shown = (f"{len(fits)} of the values tested fit, from {show(fits[0])} to {show(fits[-1])}" if fits else
+                 "no value of the observable gives every market its outcome")  # fmt: skip
+        head = (f"checked jointly with {len(group) - 1} other market(s) whose records state {stated} rather than a "
+                f"value of {observable.id}: {shown}")  # fmt: skip
+        for r in group:
+            assert r.joint is not None
+            actual = f"the exchange settled {r.joint[1].result}"
+            resolved[r.ticker] = MarketResult(r.ticker, "reproduced" if fits else "not_reproduced",
+                                              f"{'reproduced' if fits else 'NOT reproduced'} {head}; {actual}")  # fmt: skip
+    return [resolved.get(r.ticker, r) for r in results]
 
 
 def _market(store: Store, filed: FiledSeries, family: ContractFamily, ir: ContractIR, exact: Mapping[str, Any],
@@ -739,10 +818,10 @@ def _market(store: Store, filed: FiledSeries, family: ContractFamily, ir: Contra
     if outcome.result not in ("yes", "no", "scalar"):
         return not_checkable(f"its record states no result it settled to ({outcome.result!r})")
     value, why = _value(observables[s.observable], outcome.expiration_value)
-    if value is None:
-        return not_checkable(why)
     record = exact[t]
     at = instant(str(_field(record, s.at_field)[1]))
+    if value is None:
+        return MarketResult(t, "joint", why, joint=(at, outcome, ir))
     observation = Observation(observable=s.observable, source=source, at=at, value=value, published_at=at, final=True,
                               artifact=artifact)  # fmt: skip
     final = final_instant(ir)

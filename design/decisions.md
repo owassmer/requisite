@@ -149,6 +149,15 @@ work is judged against this file; its writer is the coordinator (a worker's repo
 - An eleventh grammar finding (001-4): the IR expires early only when its trigger is true, while Kalshi's terms expire a
   market early once its outcome is decided either way; a faithful IR of those terms stays pending until the latest
   expiration. In the definition batch with the other ten.
+- F1's readings re-run, all five, after two causes were found in the first live run (coordinator, November 1, 22:50
+  ET). The reader was not told that an observable's values are in the form its source publishes them, so it compared
+  the football organizer's result with Kalshi's internal team identifiers, though the filed terms specify teams "by
+  name" (KXUAEPLGAME: a correct counterexample of that reading). And the check called a market not checkable when its
+  record states its outcome but no value of the observable (KXMAMDANIPOLL's "At least 60%"), though the ladder's
+  outcomes bound the value: such markets are now checked jointly, one value of the observable having to give every
+  market at that instant its outcome, and markets whose outcomes are all alike stay not checkable, since then no value
+  is excluded. The prompt and the check are general; every series is re-read under them, the passing ones too, and the
+  new readings stand whatever they show. The earlier proposals stay as the record.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0

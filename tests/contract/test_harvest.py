@@ -392,17 +392,35 @@ def test_the_schema_gate_refuses_bindings_the_harvest_does_not_bear_out(case):
     assert f"its record carries no cap_strike ({SERIES}-26OCT19-T110)" in gate(p2, "schema").detail
 
 
-def test_a_settlement_value_not_stated_in_the_observables_type_leaves_its_market_unchecked(case):
+def test_markets_whose_records_state_only_their_outcome_are_checked_jointly(case):
+    # A ladder settled on "At least 100" states no value of the index, but its outcomes still bound it: the IR is
+    # tested by whether one value gives every market its outcome. Index above the strike: yes at 90 and 95, no from 100,
+    # so any value in (95, 100] fits.
     store, _ = case
     ladder(store, [market(s, value="At least 100", result="yes" if s < 100 else "no") for s in STRIKES])
     p, _ = read(case, draft())
-    assert p.status == "rejected" and [(g.gate, g.passed) for g in p.gates] == [("schema", True), ("tests", False)]
+    assert p.status == "active" and [(g.gate, g.passed) for g in p.gates] == [("schema", True), ("tests", True)]
     detail = gate(p, "tests").detail
-    assert detail.splitlines()[0].startswith("0 checked of 5 markets settled by the draw's instant")
-    assert "5 not checkable" in detail.splitlines()[0]
-    assert "No market was checked, so nothing reproduced: the gate does not pass." in detail
+    assert detail.splitlines()[0].startswith("5 checked of 5 markets settled by the draw's instant")
+    assert "checked jointly" in detail and "less power than a stated value" in detail
+    assert "from 95.01 to 100.00" in line(detail, f"{SERIES}-26OCT19-T90")
+
+
+def test_a_joint_check_catches_a_reversed_comparison_and_cannot_test_alike_outcomes(case):
+    store, _ = case
+    ladder(store, [market(s, value="At least 100", result="yes" if s < 100 else "no") for s in STRIKES])
+    p, _ = read(case, draft(reading(op="<")))  # below the strike: no single value gives yes at 90 and no at 110
+    assert p.status == "rejected" and "no value of the observable gives every market its outcome" in gate(p, "tests").detail
+
+
+def test_a_joint_check_of_outcomes_all_alike_leaves_the_markets_unchecked(case):
+    store, _ = case
+    ladder(store, [market(s, value="At least 80", result="yes") for s in STRIKES])
+    p, _ = read(case, draft())
+    detail = gate(p, "tests").detail
+    assert p.status == "rejected" and "5 not checkable" in detail.splitlines()[0]
     assert line(detail, f"{SERIES}-26OCT19-T90").endswith(
-        "not checkable: its settlement value, 'At least 100', is not a number, which index is (the exchange settled yes)")
+        "every market settled on it settled yes, so no value of the observable is excluded by their outcomes")
 
 
 @pytest.mark.covers("WP12.harvest_f1")
