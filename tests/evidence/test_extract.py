@@ -20,11 +20,20 @@ from requisite.core.evidence import artifact_id
 from requisite.evidence import extract
 
 
-def test_the_fixture_pdf_is_read_by_its_text_layer():
+def carries(method: str) -> int:
+    """The share a page's method says its text layer carries of the words OCR reads, in percent."""
+    return int(method.split(" carries ", 1)[1].split("%", 1)[0])
+
+
+def test_the_fixture_pdf_is_read_by_its_text_layer_checked_against_ocr():
     x = extract.read("pdf", fixture_pdf())
-    assert x.pages == ("text layer",) and x.unreadable == ()
-    assert x.id == f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}"
-    assert x.text.startswith("[page 1 of 1: text layer]\nTechnical Operations\n13th Floor – WHQEG")
+    (method,) = x.pages
+    assert method.startswith("text layer (it carries ") and carries(method) >= extract.CARRIES_AT_LEAST * 100
+    assert x.unreadable == ()
+    versions = extract._versions()
+    assert x.id == (f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}; OCR by pdftoppm {versions['pdftoppm']} and "
+                    f"tesseract {versions['tesseract']}")  # fmt: skip
+    assert x.text.startswith(f"[page 1 of 1: {method}]\nTechnical Operations\n13th Floor – WHQEG")
     assert "United Airlines (UA) has reviewed Ref /A/ and /B/" in x.text
 
 
@@ -41,7 +50,7 @@ def two_pages(first: bytes, second: bytes) -> bytes:
 def test_a_page_without_a_text_layer_is_read_by_ocr_and_each_pages_method_is_recorded(scan):
     assert pypdf.PdfReader(io.BytesIO(scan)).pages[0].extract_text().strip() == ""  # the scan has no text layer
     x = extract.read("pdf", two_pages(fixture_pdf(), scan))
-    assert x.pages == ("text layer", "OCR") and x.unreadable == ()
+    assert x.pages[0].startswith("text layer (it carries ") and x.pages[1] == "OCR" and x.unreadable == ()
     versions = extract._versions()
     assert x.id == (f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}; OCR by pdftoppm {versions['pdftoppm']} and tesseract "
                     f"{versions['tesseract']}")  # fmt: skip
@@ -135,8 +144,6 @@ def test_a_text_layer_in_a_font_with_no_unicode_map_that_does_not_carry_the_page
     content = UNMAPPED.read_bytes()
     reader = pypdf.PdfReader(io.BytesIO(content))
     layer = reader.pages[0].extract_text()
-    assert extract._unmapped(reader.pages[0])  # page 1: its font has no Unicode map
-    assert not extract._unmapped(reader.pages[1]) and extract.suspect(reader.pages[1].extract_text())  # page 2: a wrong map
     x = extract.read("pdf", content)
     assert x.pages and all(m.startswith("OCR (its text layer carries") for m in x.pages)
     first = x.text.split("[page 2 of", 1)[0]
@@ -177,7 +184,9 @@ BETWEEN = 3000
 def test_a_page_pypdf_cannot_wholly_decode_is_read_whole_by_ocr():
     content = form_page("Visible page heading", "Hidden form caption", padding=4000)
     whole = extract.read("pdf", content)
-    assert whole.pages == ("text layer",) and "Hidden form caption" in whole.text  # within its budget, read whole
+    # Within its budget the page is read whole by its layer; its six words are too few for OCR to check the layer.
+    assert whole.pages == (f"text layer (not checked: OCR reads fewer than {extract.CHECK_WORDS} words on the page)",)
+    assert "Hidden form caption" in whole.text
     with pypdf.apply_configuration(stream_parsing_work_maximum_count=BETWEEN):
         layer, undecoded = extract._layer(pypdf.PdfReader(io.BytesIO(content)).pages[0])
         assert "Visible page heading" in layer and "Hidden" not in layer  # pypdf left the form out, and said so
@@ -202,38 +211,6 @@ def test_pypdfs_report_is_read_from_the_thread_reading_the_page():
     finally:
         log.removeHandler(handler)
     assert handler.seen == ["Impossible to decode XFormObject /B: y"]
-
-
-def test_pdf_3_takes_pdf_2s_recorded_reading_where_pypdf_decodes_every_part_and_reads_afresh_where_not(live):
-    spend = cassettes.Budget(run_usd=0.0, run_calls=sys.maxsize, day_usd=float("inf"), log=live / "spend.jsonl")
-    root = live / "cassettes"
-    assert extract.VERSIONS["pdf"] == extract.SAME_AS_PDF_2 + 1
-
-    def recorded_by_pdf_2(content: bytes) -> extract.Extraction:
-        # A reading pdf/2 recorded, told apart from anything read here by its text, so taking it is seen.
-        art = artifact_id(content)
-        kept = extract.Extraction("pdf", "pdf/2 pypdf 0.0; OCR by pdftoppm 0 and tesseract 0", f"read by pdf/2: {art}",
-                                  ("OCR",))  # fmt: skip
-        body = extract._body("pdf", art, extract.SAME_AS_PDF_2)
-        cassettes.call("extraction", "pdf", body, lambda: (kept.kept(), 0.0), budget=spend, estimate_usd=0.0, root=root)
-        return kept
-
-    content = form_page("Visible page heading", "Hidden form caption", padding=4000)
-    earlier = recorded_by_pdf_2(content)
-    x = extract.extract("pdf", artifact_id(content), content, root=root, budget=spend)
-    assert x.text == earlier.text and x.pages == earlier.pages
-    assert x.id == f"pdf/{extract.VERSIONS['pdf']} pypdf 0.0; OCR by pdftoppm 0 and tesseract 0"
-    other = form_page("Another page heading", "Another form caption", padding=4000)
-    recorded_by_pdf_2(other)
-    with pypdf.apply_configuration(stream_parsing_work_maximum_count=BETWEEN):
-        y = extract.extract("pdf", artifact_id(other), other, root=root, budget=spend)
-    assert y.pages[0].startswith("OCR (pypdf could not decode part of its text layer") and "Another form caption" in y.text
-
-
-def test_typed_prose_and_a_table_of_contents_are_not_suspect():
-    assert not extract.suspect(extract.read("pdf", fixture_pdf()).text)
-    assert not extract.suspect("Introduction ........ 1\nScope ........ 3\nCosts, by line ........ 7")
-
 
 def test_a_layer_carries_the_words_ocr_reads_or_says_too_few_were_read():
     words = " ".join(f"word{chr(97 + i % 26)}{'x' * (i // 26)}" for i in range(40))

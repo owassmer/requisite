@@ -264,6 +264,7 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     Unicode map, or more than 15% symbols prose rarely holds (F4's 6,850 text-layer pages: the glyph-coded 0.63-0.65,
     the next 0.46, prose about 0.01). A page that passes the screen is taken from its layer unverified, and a garbling
     into plain letters would pass it; verifying every page by OCR was the alternative, read twice over thousands of pages.
+    Superseded by pdf/4 (below): no page is accepted by a screen.
   - An item is the filing frozen when the sample was read: a re-fetch never replaces it, but a newer reader's reading of
     the same retrieved bytes does (items.committed), and `wide read` re-reads each sample item's files that an older
     reader read, keeping every part that reads the same, so its record stays true of what read it.
@@ -281,6 +282,15 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     pypdf's warnings silenced would make every page pass, so the reader then refuses to run. pdf/3 reads as pdf/2
     wherever pypdf decodes every part of every page, so pdf/2's recorded reading of the same bytes is taken as pdf/3's
     there and its OCR is not run again (136 minutes of serial OCR); no label had been asked over these readings.
+  - Every text layer is checked against OCR (pdf/4; coordinator, November 2, 17:55 ET, before any gold draw; Owen: "Code
+    should never attempt to deterministically check something that is inherently unstructured"). pdf/2's screen (symbols
+    prose rarely holds, or a font with no Unicode map) decided by a pattern over the text which layers were accepted
+    unread by any second reader: 3,544 of F4's text-layer pages. Now every page with a text layer is read by OCR too and
+    the two readings are compared as text: the layer stands where it carries at least half the words OCR reads, OCR's
+    text is used where it does not, and the page's method states the share. Where OCR reads fewer than 20 words or cannot
+    read the page, the layer stands and its method says it was not checked. pdf/3's reuse of pdf/2's recordings goes:
+    pdf/4 differs from both on every text-layer page. Labels asked over pdf/3's reading replay wherever pdf/4 reads an
+    item's text the same; an item whose text it changes is asked again before the gold draw.
 - A frame item is a comment, held once (coordinator, November 2, 15:45 ET). The live F4 frame failed to freeze because
   regulations.gov listed one comment id, CMS-2025-0058-0103, for two records (a withdrawn one posted February 2 and one
   posted February 25, distinct objectIds), and the frame refuses an item twice. The frame now holds each comment id once,

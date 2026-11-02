@@ -27,12 +27,14 @@ def test_an_item_is_the_comment_then_each_file_in_order_each_headed_by_its_artif
         "United Airlines, Inc", "Aviation Partners Boeing", "Boeing Commercial Airplanes")  # fmt: skip
     assert united.container == DOCKET and united.posted_at == datetime(2026, 5, 19, 4, tzinfo=UTC)
     record, letter = united.artifacts
+    letter_read = extract.read("pdf", fixture_pdf())  # the letter as the PDF reader reads it: its method and its tools
     assert united.text.startswith(
         f"[comment {DOCKET}-0005 · {record}]\nDocket No. FAA–2026–2730; Project Identifier AD–2025–01579–T. United "
         f'Airlines (UA) has reviewed and provides comments in attached letter. Thanks.\n\n[attachment 1 "UA Comments '
-        f'FAA-2026-01579-T" · attachment_1.pdf · {letter}]\n[page 1 of 1: text layer]\nTechnical Operations\n'
+        f'FAA-2026-01579-T" · attachment_1.pdf · {letter}]\n[page 1 of 1: {letter_read.pages[0]}]\nTechnical Operations\n'
     )
-    assert united.extractions == [f"comment/{extract.VERSIONS['comment']}", f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}"] and united.unreadable == []
+    assert united.extractions == [f"comment/{extract.VERSIONS['comment']}", letter_read.id] and united.unreadable == []
+    assert letter_read.id.startswith(f"pdf/{extract.VERSIONS['pdf']} pypdf {pypdf.__version__}; OCR by ")
     assert united.addresses == f"{DOCKET}-0001"  # the document it comments on, as the source states it
     assert store.content(letter) == fixture_pdf()
     assert store.extraction(letter, united.extractions[1]) == united.text.split(f"{letter}]\n", 1)[1]
