@@ -188,8 +188,10 @@ class FakeAPI:
         """A document in the record; `key` keeps a second document the source lists under the same id."""
         self.documents[key or resource["id"]] = resource
 
-    def add_comment(self, docket: str, resource: dict[str, Any], detail: dict[str, Any] | None = None) -> None:
-        self.comments[resource["id"]] = (docket, resource)
+    def add_comment(self, docket: str, resource: dict[str, Any], detail: dict[str, Any] | None = None, *,
+                    key: str | None = None) -> None:  # fmt: skip
+        """A listed comment; `key` lets one comment id be listed for two records, as regulations.gov can list it."""
+        self.comments[key or resource["id"]] = (docket, resource)
         if detail is not None:
             self.details[f"comments/{resource['id']}"] = detail
 

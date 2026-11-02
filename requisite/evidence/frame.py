@@ -148,6 +148,23 @@ def _posted(d: Entry) -> datetime:
     return instant(str(d.attributes["postedDate"]))
 
 
+def one_per_comment(entries: Sequence[Entry]) -> tuple[list[Entry], list[str]]:
+    """One listing entry per comment id, and the ids listed for more than one record. regulations.gov can list two
+    records under one comment id (seen November 2: CMS-2025-0058-0103, a withdrawn record posted February 2 and another
+    posted February 25, with distinct objectIds), as it does for documents (identity). A frame item is a comment, so it
+    is the record not withdrawn, or, where every record is withdrawn, the latest posted; its comment's record is read
+    later by its id, which names one."""
+    by: dict[str, list[Entry]] = {}
+    for e in entries:
+        by.setdefault(e.id, []).append(e)
+    out = []
+    for es in by.values():
+        live = [e for e in es if not e.attributes.get("withdrawn")]
+        pool = live or es
+        out.append(max(pool, key=lambda e: (str(e.attributes.get("postedDate")), str(e.attributes.get("lastModifiedDate")))))
+    return out, sorted(i for i, es in by.items() if len(es) > 1)
+
+
 def latest_proposal(documents: Sequence[Entry]) -> Entry | None:
     proposals = [d for d in documents if d.attributes.get("documentType") == "Proposed Rule"]
     return max(proposals, key=lambda d: (_posted(d), d.id)) if proposals else None
@@ -284,10 +301,13 @@ def take_frame(criteria: FrameCriteria, client: RegulationsGov, store: Store, *,
                                              reason=f"{why}; its comments were not listed, since its status drops it"
                                                     f"{set_aside}"))  # fmt: skip
             continue
-        posted = evidence.posted(comments[d], as_of, ended, mode)
+        posted, doubled = one_per_comment(evidence.posted(comments[d], as_of, ended, mode))
         enough = len(posted) >= criteria.min_comments
         count = (f"{len(posted)} public comments posted by as_of"
                  f"{'' if enough else f', fewer than the {criteria.min_comments} asked'}")  # fmt: skip
+        if doubled:
+            count += (f"; {len(doubled)} comment id(s) listed for two or more records ({', '.join(doubled[:5])}), each "
+                      "counted once, as its record not withdrawn (the latest where every one is)")  # fmt: skip
         frame_dockets.append(FrameDocket(docket=d, kept=status and enough, reason=f"{why}; {count}{set_aside}",
                                          comments=len(posted),
                                          artifacts=doc_artifacts + [a.id for a in evidence.pages(comments[d])]))  # fmt: skip

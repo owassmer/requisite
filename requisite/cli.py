@@ -211,9 +211,12 @@ def _f1_draw(args: argparse.Namespace) -> int:
     from requisite.market import f1
     from requisite.market.kalshi import Kalshi
 
-    client = Kalshi(snapshot=args.as_of)
+    at = args.as_of or f1.INSTANT
+    if args.as_of is None:
+        print(f"F1's draw, pinned at {at.isoformat()} (requisite.market.f1.INSTANT)")
+    client = Kalshi(snapshot=at)
     try:
-        print(f1.render(f1.draw(client, args.as_of)))
+        print(f1.render(f1.draw(client, at)))
     finally:
         client.close()
     return 0
@@ -224,9 +227,12 @@ def _f1_retrieve(args: argparse.Namespace) -> int:
     from requisite.market.kalshi import Kalshi
 
     store = _store(args)
-    client = Kalshi(snapshot=args.as_of)
+    at = args.as_of or f1.INSTANT
+    if args.as_of is None:
+        print(f"F1's draw, pinned at {at.isoformat()} (requisite.market.f1.INSTANT)")
+    client = Kalshi(snapshot=at)
     try:
-        d = f1.draw(client, args.as_of)
+        d = f1.draw(client, at)
         harvest = f1.retrieve(client, store, d)
     finally:
         client.close()
@@ -491,11 +497,15 @@ def main(argv: list[str] | None = None) -> int:
     mk = sub.add_parser("market", help="the market lens, read-only (spec §10): Kalshi's filed record, F1's contracts")
     msub = mk.add_subparsers(dest="step", required=True)
     m = msub.add_parser("f1-draw", help="draw F1's filed contracts at an instant and print the rule's evidence")
-    m.add_argument("--as-of", required=True, type=_instant, help="the instant the draw is pinned at, with its zone")
+    m.add_argument("--as-of", type=_instant, default=None,
+                   help="the instant the draw is pinned at, with its zone; F1's own draw is at 2026-11-02T00:00:00Z "
+                        "(requisite.market.f1.INSTANT, fixed before the draw ran), which is what this takes when none is given")  # fmt: skip
     m.set_defaults(run=_f1_draw)
     m = msub.add_parser("f1-retrieve", help="draw, then commit the drawn series' filings, rules and settled outcomes")
     case_args(m)
-    m.add_argument("--as-of", required=True, type=_instant, help="the instant the draw is pinned at, with its zone")
+    m.add_argument("--as-of", type=_instant, default=None,
+                   help="the instant the draw is pinned at, with its zone; F1's own draw is at 2026-11-02T00:00:00Z "
+                        "(requisite.market.f1.INSTANT, fixed before the draw ran), which is what this takes when none is given")  # fmt: skip
     m.set_defaults(run=_f1_retrieve)
     ct = sub.add_parser("contract", help="filed contracts read into the IR (spec §9.3) and checked against settlements")
     csub = ct.add_subparsers(dest="step", required=True)
@@ -533,7 +543,18 @@ def main(argv: list[str] | None = None) -> int:
         args = _revise_parser().parse_args(given[2:])
     else:
         args = parser.parse_args(given)
-    return int(args.run(args))
+    from requisite.cassettes import ReplayOnly
+    from requisite.store import Refused
+
+    try:
+        return int(args.run(args))
+    except Refused as e:
+        # A refusal is the product's answer, said plainly: what it will not do and why (never a crash's traceback).
+        print(f"requisite: refused: {e}", file=sys.stderr)
+        return 2
+    except ReplayOnly as e:
+        print(f"requisite: {e}", file=sys.stderr)
+        return 3
 
 
 if __name__ == "__main__":

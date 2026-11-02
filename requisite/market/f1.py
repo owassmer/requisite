@@ -77,6 +77,9 @@ NAMED = "KXCAGOAT"  # decisions, F1's draw rule: "The Western Grazers contract i
 SALT = "requisite-F1|"  # decisions: sha256("requisite-F1|" + ticker)
 CAP = 4  # decisions: at most four strike types drawn; spec §12 asks for 2-5 contracts with the named one
 LOOKBACK = timedelta(days=45)  # module docstring
+# The instant F1's draw is pinned at, fixed before the live draw ran (decisions, F1's draw rule: "the first midnight UTC
+# after the rule was fixed"). F1 is this draw; another instant is another draw, whose responses a replay does not hold.
+INSTANT = datetime(2026, 11, 2, tzinfo=UTC)
 FIRST_PROBE = timedelta(seconds=60)  # the first window of the latest-event search; each next one doubles it
 MODE = "retrospective_reconstruction"  # the record is read after the instant (module docstring; addendum A11 §11.3)
 SETTLED = "the market's settlement_ts in the listing: when its result was determined"

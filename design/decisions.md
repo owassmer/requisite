@@ -147,6 +147,13 @@ work is judged against this file; its writer is the coordinator (a worker's repo
 - An eleventh grammar finding (001-4): the IR expires early only when its trigger is true, while Kalshi's terms expire a
   market early once its outcome is decided either way; a faithful IR of those terms stays pending until the latest
   expiration. In the definition batch with the other ten.
+- The grammar batch is built tonight, beside the main path, by the coordinator (Owen, November 2, 16:45 ET: "the
+  definition changes are not the slowest kind. You own them and can do them yourself"). Its first measure is Castle's
+  own filed contract, KXCAGOAT: the constructs it needs are general (an existential over an open class of instruments
+  with each instrument's conditions judged for it, a source hierarchy for the evidence of judged conditions, an outcome
+  at expiry left to a named authority's rule, a settlement date stated as a deadline, expiry once the outcome is
+  decided either way), and KXCAGOAT is read again under them by the same reader and checked against how its markets
+  settled.
 - F1's readings re-run, all five, after two causes were found in the first live run (coordinator, November 1, 22:50
   ET). The reader was not told that an observable's values are in the form its source publishes them, so it compared
   the football organizer's result with Kalshi's internal team identifiers, though the filed terms specify teams "by
@@ -247,6 +254,12 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   - The design the draws name is committed (core.SamplingDesign, kind sampling_design) with the gold draw, when its
     phase-2 cells exist. The coverage simulation before the gold is a statement about the design under a label model:
     where that model puts no item in the denominator it says the ratio is undefined and the gold is drawn regardless.
+- A frame item is a comment, held once (coordinator, November 2, 15:45 ET). The live F4 frame failed to freeze because
+  regulations.gov listed one comment id, CMS-2025-0058-0103, for two records (a withdrawn one posted February 2 and one
+  posted February 25, distinct objectIds), and the frame refuses an item twice. The frame now holds each comment id once,
+  as its record not withdrawn, or the latest where every one is withdrawn, counts it once, and says in its docket's
+  reason which ids were listed twice (frame.one_per_comment). Found and fixed before any sample was drawn; the frame is
+  taken again from its recorded responses, from the same objective and as_of.
 - What the wording test's records mean, from the external evaluation (coordinator, November 2, 16:00 ET). Each was a
   record claiming more than the operation that filled it; each is fixed where the record is defined, and each has a test
   built from the evaluation's counterexample (tests/fuzz).

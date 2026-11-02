@@ -149,3 +149,19 @@ def test_every_count_of_a_frame_recomputes_from_the_artifacts_it_names(live, mak
         assert sum(instant(e["attributes"]["postedDate"]) <= frame.as_of for e in listed.values()) == d.comments
     stamps = [store.get("artifact", a, core.Artifact).observed_at for s in frame.searches for a in s.artifacts]
     assert min(stamps) >= frame.retrieval_started and max(stamps) <= frame.retrieval_ended
+
+
+def test_a_comment_id_listed_for_two_records_is_one_item_its_record_not_withdrawn(live, make_client, make_fr, store):
+    # regulations.gov listed CMS-2025-0058-0103 for two records, one withdrawn (November 2): a frame item is a comment,
+    # so the frame holds it once, as its record not withdrawn, and counts it once.
+    api = world()
+    again = comment_entry(f"{DOCKET}-0004", "2026-05-08T04:00:00Z", "2026-09-24T01:05:10Z", withdrawn=True)
+    api.add_comment(DOCKET, again, key=f"{DOCKET}-0004@withdrawn")
+    one = take(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final", "dup", live, make_client, make_fr, store,
+               api=api)  # fmt: skip
+    ids = [i.id for i in one.items]
+    assert ids.count(f"{DOCKET}-0004") == 1
+    (item,) = [i for i in one.items if i.id == f"{DOCKET}-0004"]
+    assert not item.withdrawn
+    d = docket(one, DOCKET)
+    assert d.comments == len(ids) and f"listed for two or more records ({DOCKET}-0004)" in d.reason
