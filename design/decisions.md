@@ -81,6 +81,32 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   run reports beside each family's interval its measured coverage and expected positives. Where a family is so rare in
   the frame that its interval over-covers at any allocation the labelling budget allows, the interval is still valid (it
   covers at least nominally) and wide for a stated reason: the gold saw almost none of it.
+- F4's sample design, fixed before its frame's sizes were seen (coordinator, November 1, 21:20 ET, while the frame was
+  still being taken). Every number below is a rule over the frozen frame, so nobody chooses a stratum, a seed or an item.
+  - Phase-1 strata: each kept docket's comment count (core.FrameDocket.comments) in decades, [min_comments, 100),
+    [100, 1,000), [1,000, 10,000) and [10,000, ∞); an item takes its docket's band. The count is known from the frame
+    alone, so the strata depend on no label. The bands separate where single filers write from where mass campaigns of
+    individuals concentrate (our reasoning: the largest dockets are dominated by form letters), so the voice indicator
+    should differ across them, which is when stratifying gains precision. The phase-2 constraint fixes how few: each
+    phase-1 stratum carries two phase-2 strata of at least two gold items each, out of about 130.
+  - Phase-1 size: 1,200 items, read whole (one API request each, plus attachments from the file CDN), split equally over
+    the nonempty strata; a stratum with no more items than its share is read whole, and what it leaves is shared equally
+    among the rest, repeated until every share fits, the indivisible remainder going one each to the strata in band order.
+    Equal shares read the smaller dockets more than their weight, where leads are likelier; the estimator weights strata
+    by N_h/N, so the estimate is unaffected.
+  - Seeds: phase 1's is the first 16 hex digits of the frame's content hash read as an integer; the stability subsample's
+    and phase 2's are the same of the phase-1 draw's content hash with "stability" or "phase2" appended.
+  - Phase-1 labels: both objective questions on every phase-1 item, by labels.PHASE1_CONFIG; exposure_to_measure is bound
+    to the docket's measure, which code takes from the frame's committed documents listing: the document that decided the
+    docket's comment status (the latest Proposed Rule posted by as_of where it is pending a final rule, otherwise the
+    latest-posted document whose comment period runs at as_of), stated by its title, agency, type, id and posting date.
+  - Stability (spec §2.1, §7.2 step 3): a simple random subsample of 60 phase-1 items (spec: at least 50; ten more so
+    refusals cannot take it under), every configuration of labels.stability_configs, both questions.
+  - Phase 2: the stratifier is the judge's probability that the item is in the estimand's numerator, P(in_population) x
+    P(exposure in labor, inputs or labor_and_inputs) from the phase-1 labels; the cut is 0.5; within each phase-1 stratum
+    130/H gold items (H the nonempty phase-1 strata, rounded down, the remainder one each in band order) split 80/20 by
+    the decision above, each phase-2 stratum at least two. Every gold item gets both questions. measure_coverage on the
+    actual phase-1 predictions is run and reported before the draw.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
