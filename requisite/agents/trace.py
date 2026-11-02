@@ -2,10 +2,11 @@
 leaves a trace of Proposals and gate results"). The run itself is its cassette (requisite/agents/runner.py), so the
 trace names it and the hashes of its input and answer.
 
-A run is identified by its request, so a step run again replays the same run and gets the same answer. The proposals
-that answer led to are already committed, and its trace names them: a step returns those (`made_from`) rather than
-proposing the same answer again, which would commit a second proposal of one run and then a second, different trace
-under the run's one id."""
+A run is identified by its request, so a step run again replays the same run and gets the same answer. Where a proposal
+that answer led to is still proposed or active, a step returns it (`made_from`) rather than proposing the same answer
+again. Where every one was rejected, a step run again proposes the answer anew: the user re-runs it because the cause
+was fixed (a gate that did not exist, a check that was wrong), and its gates judge it again. Each submission leaves its
+own trace, keyed by the run and the submission (`record_run`), so the run's history keeps every proposal it led to."""
 
 from __future__ import annotations
 
@@ -19,14 +20,15 @@ from requisite.agents.runner import AgentResult
 from requisite.store import Store
 
 
+def _traces(store: Store, run: str) -> list[core.AgentRun]:
+    return [t for t in store.all("agent_run", core.AgentRun) if t.id == run[:16]]
+
+
 def made_from(store: Store, result: AgentResult[Any]) -> list[core.Proposal]:
-    """The proposals this run's answer already led to in this case, each as it now stands; none for a run not yet
-    recorded here."""
-    run = store.get("agent_run", result.run[:16], core.AgentRun)
-    if run is None:
-        return []
-    found = [store.proposal(p) for p in run.proposals]
-    return [p for p in found if p is not None]
+    """The proposals this run's answer already led to in this case that still stand (proposed or active), each as it
+    now stands; none where the run is not recorded here or every proposal it led to was rejected."""
+    found = [store.proposal(p) for t in _traces(store, result.run) for p in t.proposals]
+    return [p for p in found if p is not None and p.status != "rejected"]
 
 
 def record_run(store: Store, result: AgentResult[Any], input: Mapping[str, Any], proposals: Sequence[str]) -> None:
@@ -42,4 +44,5 @@ def record_run(store: Store, result: AgentResult[Any], input: Mapping[str, Any],
         proposals=list(proposals),
         at=store.clock(),
     )
-    store.commit("agent_run", run.id, run)
+    earlier = len(_traces(store, result.run))
+    store.commit("agent_run", run.id if not earlier else f"{run.id}.{earlier + 1}", run)
