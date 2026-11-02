@@ -86,6 +86,12 @@ def fuzz_report(page: Page, key: str, body: Any) -> str:
                f"versioned as {code(f'{THRESHOLDS.id} v{THRESHOLDS.version}')} (addendum A01 §2.1: configurable, "
                "versioned heuristics). Scores are over the scenarios whose rendering passed (spec §8.6 step 4).</div>")
 
+    out.append(heading(2, "Payment terms (addendum A09 §10.3)") + para(
+        "Each of the IR's payment terms, as code states it, asked of the prose: whether the readers read the rulebook to "
+        "state it. A scenario's prose transfers are the evaluator's only where every term they use was read as stated."))
+    out.append(table(["term", "the IR's term", "read as", "pooled answers"], [
+        [esc(t.term), esc(t.statement), badge(t.read, "met" if t.read == "states" else "missed"),
+         esc(", ".join(f"{k} {v!r}" for k, v in t.answers.items()))] for t in r.terms]))  # fmt: skip
     out.append(heading(2, "Hard gates (addendum A09 §10.4)"))
     out.append(table(["gate", "result", "detail"], [
         [esc(g.name), badge("passed", "passed") if g.passed else badge("not passed", "failed"), pre(g.detail)]
@@ -98,7 +104,7 @@ def fuzz_report(page: Page, key: str, body: Any) -> str:
              or "<em>none</em>", pre(o.proof) if o.proof else "<em>none</em>",
              ", ".join(node(c) for c in o.coupled_group) or "<em>none</em>"] for o in r.obligations]  # fmt: skip
     out.append(heading(3, "Obligations") + table(["conditions", "status", "witnesses", "proof", "coupled with"], rows))
-    rows = [[node(b.condition), esc(b.point), badge("feasible", "met") if b.feasible else badge("infeasible", "other"),
+    rows = [[node(b.condition), esc(b.point), badge(b.status, {"feasible": "met", "infeasible": "other"}.get(b.status, "missed")),
              esc("; ".join(b.excluded_by)) or "<em>none</em>", scenario(b.scenario) if b.scenario else "<em>none</em>"]
             for b in r.boundaries]  # fmt: skip
     out.append(heading(3, "Boundary points (addendum A09 §10.3)")
@@ -117,7 +123,10 @@ def fuzz_report(page: Page, key: str, body: Any) -> str:
             ("the IR's evaluation (content hash)", code(s.ir_evaluation)), ("the IR's transfers", transfers(s.ir_transfers)),
             ("rendering check", badge("passed", "passed") if s.rendering_passed else badge("failed", "failed")),
             ("the resolvers' pooled distribution", pooled), ("the prose's outcome", code(s.prose_outcome)),
-            ("the prose's transfers", transfers(s.prose_transfers)), ("amount error", money(s.amount_error)),
+            ("the prose's transfers", transfers(s.prose_transfers) if s.prose_transfers is not None else
+             "<em>not established: the readers did not read the prose to state the payment terms this outcome uses (see "
+             "the payment terms above)</em>"),  # fmt: skip
+            ("amount error", money(s.amount_error)),
             ("liquidity discrepancy", money(s.liquidity_discrepancy)),
             ("its packet", page.proposal(s.packet) + packet_documents(page, s.packet)),
         ]) + "</div>")  # fmt: skip

@@ -168,6 +168,36 @@ def band(lo: Decimal, hi: Decimal, last: bool, unit: str) -> str:
     return f"at least {lo} and {'at most' if last else 'less than'} {hi} {unit}"
 
 
+def _money(amount: Decimal, currency: str) -> str:
+    return f"{amount.normalize():f} {currency}"
+
+
+def payment_terms(ir: core.ContractIR) -> dict[str, str]:
+    """The IR's payment terms, each as one statement a reader can check against the prose (core.TermReading): what one
+    contract pays when it resolves YES and when it resolves NO, when it is paid, and what a void returns. Stated from
+    the IR's own fields."""
+    p, t, v = ir.payout, ir.timing, ir.resolution.void_transfer
+    if p.kind == "binary":
+        pays = f"when it resolves YES, one contract pays {_money(p.unit_value, p.currency)}"
+    else:
+        assert p.quantity is not None
+        each = f"{_money(p.unit_value, p.currency)} per unit of {number(ir, p.quantity)}"
+        cap = f", at most {_money(p.cap, p.currency)}" if p.cap is not None else ""
+        pays = f"when it resolves YES, one contract pays {each}{cap}"
+    if p.payment == "per_period":
+        pays += ", paid per period: " + "; ".join(window(w) for w in p.periods)
+    nothing = "when it resolves NO, one contract pays nothing"
+    days = "business days (United States federal holidays excluded)" if t.lag_days == "business" else "calendar days"
+    when = (f"the outcome is determined {t.settlement_lag_days} {days} after expiration ({iso(t.expiration)}) and payment "
+            f"is made {t.payment_lag_days} {days} after that, in the {t.tz} time zone")
+    out = {"payout_yes": pays, "payout_no": nothing, "payment_date": when}
+    if ir.resolution.on_unknown_at_expiry == "void" or ir.resolution.after_extension == "void":
+        refund = {"premium": "the premium paid is returned", "nothing": "nothing is returned",
+                  "fixed_amount": f"{_money(v.amount, p.currency) if v.amount is not None else ''} is returned"}[v.returns]
+        out["void_refund"] = f"if the contract is void, {refund}"
+    return out
+
+
 def reading_question(node: core.ReadValue, question_id: str) -> core.AtomicQuestion:
     """A reading's own question: its template name and bindings, answered as one of its bands (core.ReadValue: "Decision
     models answer it as a closed set of bands"), or not established."""

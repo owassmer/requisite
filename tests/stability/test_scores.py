@@ -11,11 +11,10 @@ from hypothesis import given
 from hypothesis import strategies as st
 from scipy.spatial.distance import jensenshannon
 
+from requisite.core.judgment import SUM_TOLERANCE, TIE_TOLERANCE  # the oracle's, as the definition holds them
 from requisite.stability.scores import (
     EQUAL_PER_CONFIGURATION,
     EQUAL_PER_PROVIDER,
-    SUM_TOLERANCE,
-    TIE_TOLERANCE,
     TOP_SET_EQUALITY,
     NotADistribution,
     check_distribution,

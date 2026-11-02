@@ -107,6 +107,7 @@ from requisite.core.governance import (
     required_gates,
 )
 from requisite.core.judgment import (
+    TIE_TOLERANCE,
     AnswerValue,
     Assumption,
     AtomicQuestion,
@@ -121,9 +122,12 @@ from requisite.core.judgment import (
     ResolvedJudgment,
     SyntheticJudgmentState,
     TimeWindow,
+    top_answers,
 )
 from requisite.core.kleene import Kleene, conj, disj, from_status, neg
 from requisite.core.results import (
+    OUTCOME_TERM,
+    TERM_READINGS,
     Attribution,
     BoundaryPoint,
     CashSummary,
@@ -131,8 +135,11 @@ from requisite.core.results import (
     FuzzReport,
     FuzzScenario,
     OptimizationResult,
+    PaymentTerm,
     PricedCandidate,
     ReducedCost,
+    TermReading,
+    terms_used,
 )
 from requisite.core.world import Branch, BranchPoint, Constraint, EventTree, ProbabilityEstimate, Proposition
 
@@ -187,6 +194,13 @@ __all__ = [
     "FrameSearch",
     "FuzzReport",
     "FuzzScenario",
+    "TermReading",
+    "TIE_TOLERANCE",
+    "top_answers",
+    "PaymentTerm",
+    "OUTCOME_TERM",
+    "terms_used",
+    "TERM_READINGS",
     "GateResult",
     "GoldLabel",
     "HarvestedContract",

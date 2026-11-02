@@ -232,6 +232,16 @@ class JudgeConfig(Record):
 
 
 SUM_TOLERANCE = 1e-10  # the oracle's (spec/verify_math.py `distribution`); decisions, "Numbers"
+TIE_TOLERANCE = 1e-12  # the oracle's (spec/verify_math.py `stability`): answers this close to the maximum are tied
+
+
+def top_answers(p: Mapping[str, float]) -> frozenset[str]:
+    """The answers tied at a distribution's maximum, within TIE_TOLERANCE (addendum A01 §2.1: top-answer ties are
+    handled explicitly); empty for an empty distribution."""
+    if not p:
+        return frozenset()
+    top = max(p.values())
+    return frozenset(a for a, x in p.items() if abs(x - top) <= TIE_TOLERANCE)
 
 
 def correct_roundoff(reported: Sequence[float], step: float) -> list[float] | None:

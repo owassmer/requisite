@@ -59,7 +59,7 @@ class Renderer:
         when = self.published or datetime.fromisoformat(input["evidence_as_of"])
         doc = PacketDocument(title="Record of the scenario", source="the record keeper", published_at=when,
                              text="\n".join(lines))  # fmt: skip
-        run = "double-" + core.sha256(core.canonical_json(dict(input)))
+        run = core.sha256("double|" + core.canonical_json(dict(input)))  # a run id is a hash, as a recording's is
         return runner.AgentResult(role, PacketDraft(documents=[doc]), run, "test-double", effort, True)
 
 
@@ -109,11 +109,29 @@ class Judges:
         found = findings(a.rendered.text)
         if a.question.task == "resolve":
             return judgment(a, distribution(answers, self.resolve(str(a.question.bindings["rules"]), found, a)))
+        if ".term." in a.question.id:
+            return judgment(a, distribution(answers, {read_term(a.question.target): 0.9}))
         target = " ".join(a.question.target.split())
         meaning = next((m for statement, m in found.items() if statement in target), None)
         by_meaning = {m: v for v, m in a.asked.answers.items()}
         top = by_meaning.get(meaning or "", "not_established")
         return judgment(a, distribution(answers, {top: 0.9}))
+
+
+# The words each payment term's statement opens with (requisite.fuzz.statements.payment_terms): where the rules carry
+# them, they speak of that term.
+TERM_SUBJECT = ("when it resolves YES", "when it resolves NO", "the outcome is determined", "if the contract is void")
+
+
+def read_term(target: str) -> str:
+    """A careful reader of a payment-term question (requisite.fuzz.run.term_question): the rules state the term where
+    they carry its statement as written; state it otherwise where they speak of its subject in other words; else not."""
+    term = target.split("\nTerm: ", 1)[1].split("\nContract rules:\n", 1)[0].casefold()
+    rules = target.split("\nContract rules:\n", 1)[1].casefold()
+    if term in rules:
+        return "states"
+    subject = next(k for k in TERM_SUBJECT if term.startswith(k.casefold()))
+    return "states_otherwise" if subject.casefold() in rules else "not_stated"
 
 
 def truth(found: Mapping[str, str], key: str) -> str:

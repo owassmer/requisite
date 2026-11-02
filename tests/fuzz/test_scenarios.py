@@ -133,6 +133,28 @@ def test_boundary_values_are_realized_exactly_where_a_value_can_sit():
         assert [f.value.value for f in by[sid].facts if f.at == W] == [D(v)]
 
 
+def test_a_boundary_reached_only_by_moving_two_inputs_is_built_and_one_no_search_builds_is_unconstructed():
+    # z = 2x + 3y >= 501 over integer-precision inputs. From any reference point, moving x alone steps z by 2 and y alone
+    # by 3, and the parity of the reference decides whether either reaches z = 501; moving both does (x = 99, y = 101).
+    # A point the search builds is feasible with its scenario; a point it cannot build is unconstructed, counted unmet,
+    # never infeasible: only a proof makes a point infeasible (external evaluation, November 2).
+    whole = {"precision": D("1")}
+    ir = contract(c.NumCmp(id="z", op=">=", value=D(501), expr=c.Computed(
+        id="f", node=c.Ref(id="tests.contract.weighted", version=1),
+        inputs={"x": c.ValueAt(id="vx", observable="x", at=W), "y": c.ValueAt(id="vy", observable="y", at=W)})),
+        observables=[observable("x", **whole), observable("y", **whole)])  # fmt: skip
+    p = plan(ir)
+    check(p)
+    by = {s.id: s for s in p.scenarios}
+    for b in p.boundaries:
+        assert b.status in ("feasible", "unconstructed"), b  # no proof of infeasibility exists here
+        if b.status == "feasible" and b.scenario is not None:
+            facts = {f.observable: f.value.value for f in by[b.scenario].facts}
+            assert 2 * facts["x"] + 3 * facts["y"] == D(b.point.rsplit(": ", 1)[1]), b
+    at_501 = [b for b in p.boundaries if b.point.endswith(": 501")]
+    assert at_501 and all(b.status == "feasible" and b.scenario for b in at_501)
+
+
 def test_stress_classes_follow_the_contracts_own_policies():
     two = observable("x", sources=("agency", "backup"))
     precedence = contract(at("x", ">", 10, W, nid="A"), observables=[two], resolution=procedure(precedence=["agency", "backup"]))

@@ -3,9 +3,11 @@ A09 §10.4; A01 §2.5), on test doubles of the clause drafter, the scenario rend
 (tests/fuzz/doubles.py): each test's own input, never a cassette.
 
 The contract is test_run's merger contract: YES when the board approved the agreement and the regulator cleared it, NO
-when either is not established by expiration. Its split, the contract version's, holds out c03, x01, x03 and x07 (the
-first test checks it). The resolver doubles hesitate over words a test seeds into one section (a term no reader can
-apply), on the scenarios whose outcome turns on what that section states; the drafter double removes them, or not."""
+when either is not established by expiration. Its split is the contract version's, as the fuzz run draws it
+(requisite.fuzz.run._split, whose own properties test_run checks); each test derives what it expects from that split and
+from each scenario's (approved, cleared) truths, never from scenario ids one split happened to give. The resolver doubles
+hesitate over words a test seeds into one section (a term no reader can apply), on the scenarios whose outcome turns on
+what that section states; the drafter double removes them, or not."""
 
 import json
 import re
@@ -20,7 +22,7 @@ from irkit import contract
 from requisite import core as c
 from requisite.agents import runner
 from requisite.agents.answers import ProseDraft, ProseSection
-from requisite.fuzz import revise
+from requisite.fuzz import revise, statements
 from requisite.fuzz import run as fuzz
 from requisite.fuzz.scenarios import FuzzError
 from requisite.store import Refused, Store
@@ -30,12 +32,27 @@ APPROVED = c.Interpretive(id="approved", question_template="condition_holds",
 CLEARED = c.Interpretive(id="cleared", question_template="condition_holds",
                          bindings={"condition": "The competition regulator cleared the merger."})  # fmt: skip
 IR = contract(c.And(id="merger", args=[APPROVED, CLEARED]))
+TERMS = statements.payment_terms(IR)
 CLEARANCE = "Clearance means a determination by the competition regulator that the merger may proceed."
 GLORP = "Clearance means a Glorp-certified determination by the competition regulator."
 TRIGGER = ("The contract resolves YES if, by expiration, the company's board approved the merger agreement and the "
            "competition regulator cleared the merger.")  # fmt: skip
 UNKNOWN = "If either condition is not established by expiration, the contract resolves NO."
-HELD_OUT = {"c03", "x01", "x03", "x07"}
+PLAN = fuzz.plan(IR)
+SPLIT = fuzz._split(PLAN)  # the contract version's split, as every run of IR draws it
+STATES = {s.id: (s.truths["approved"].value, s.truths["cleared"].value) for s in PLAN.scenarios}
+HELD_OUT = {sid for sid, x in SPLIT.items() if x == "held_out"}
+
+
+def where(split: str, matters: Callable[[str, str], bool]) -> set[str]:
+    """The scenarios of a set whose (approved, cleared) truths make a seeded puzzle matter."""
+    return {sid for sid, x in SPLIT.items() if x == split and matters(*STATES[sid])}
+
+
+def only_in(split: str) -> set[tuple[str, str]]:
+    """The (approved, cleared) states some scenario of this set has and no scenario of the other set has."""
+    other = {STATES[sid] for sid, x in SPLIT.items() if x != split}
+    return {STATES[sid] for sid, x in SPLIT.items() if x == split} - other
 
 
 def prose(definitions: str = GLORP, trigger: str = TRIGGER, unknown: str = UNKNOWN) -> ProseDraft:
@@ -45,7 +62,9 @@ def prose(definitions: str = GLORP, trigger: str = TRIGGER, unknown: str = UNKNO
                      "published decisions are the sources; where they conflict, the regulator's decision governs.",
                      ir_nodes=[]),
         ProseSection(name="trigger", text=trigger, ir_nodes=["merger", "approved", "cleared"]),
-        ProseSection(name="timing", text="The contract expires on June 1, 2027 at 14:00 UTC.", ir_nodes=[]),
+        ProseSection(name="timing", text="The contract expires on June 1, 2027 at 14:00 UTC. "
+                     + "".join(f"{t[0].upper()}{t[1:]}. " for t in TERMS.values()).strip(),
+                     ir_nodes=[]),  # the IR's payment terms, as code states them
         ProseSection(name="unknown_at_expiry", text=unknown, ir_nodes=[]),
         ProseSection(name="revisions", text="A decision later revised is read as first published.", ir_nodes=[]),
     ])  # fmt: skip
@@ -95,7 +114,7 @@ class Drafter:
         answer = output.model_validate({"sections": [s.model_dump(mode="json") for s in sections],
                                         "not_decided_by_the_ir": undecided,
                                         "rationale": f"revised {input['revise']['name']}"})  # fmt: skip
-        return runner.AgentResult(role, answer, "double-" + c.sha256(c.canonical_json(dict(input))), "test-double",
+        return runner.AgentResult(role, answer, c.sha256("reviser|" + c.canonical_json(dict(input))), "test-double",
                                   effort, True)  # fmt: skip
 
 
@@ -130,15 +149,17 @@ def test_a_seeded_ambiguous_clause_is_revised_and_passes_on_the_held_out_scenari
     drafter = Drafter(fix)
     out = revised(tmp_path, readers(("Glorp", glorp)), drafter)
     base = out.base
-    assert set(base.held_out.scenarios) == HELD_OUT  # the contract version's split
+    failing_dev, failing_held = where("development", glorp), where("held_out", glorp)
+    assert failing_dev and failing_held  # this test's premise: the seeded term matters on both sides of the split
+    assert set(base.held_out.scenarios) == HELD_OUT  # the report keeps the contract version's split
     assert not base.development.meets and not base.held_out.meets
-    assert set(base.held_out.failing) == {"c03", "x01", "x03"}
+    assert set(base.held_out.failing) == failing_held
 
     (rnd,) = out.rounds
     assert rnd.number == 1 and not rnd.flagged
     # Suspected from the development scenarios only: those where the definition decides.
     assert list(rnd.suspected) == ["underlying_and_definitions", "trigger"]
-    assert set(rnd.suspected["underlying_and_definitions"]) == {"c01", "x02", "x04", "x05", "x06"}
+    assert set(rnd.suspected["underlying_and_definitions"]) == failing_dev
     by = {r.sections[0]: r for r in rnd.revisions}
     definitions, trigger = by["underlying_and_definitions"], by["trigger"]
     # Each revision is its own, differs from the base only in its section, and passed its gates.
@@ -156,18 +177,19 @@ def test_a_seeded_ambiguous_clause_is_revised_and_passes_on_the_held_out_scenari
     assert out.validated and out.stopped == "the development scenarios meet the thresholds"
     # The drafter saw development scenarios only; the re-runs kept every scenario's state in its set.
     assert held_out_seen(drafter, HELD_OUT) == []
-    assert {s["scenario"] for x in drafter.inputs for s in x["failing_scenarios"]} == {"c01", "x02", "x04", "x05", "x06"}
+    assert {s["scenario"] for x in drafter.inputs for s in x["failing_scenarios"]} == failing_dev
     for r in [definitions, trigger]:
         assert r.standing is not None
         assert [(x.id, x.state_hash, x.split) for x in r.standing.run.report.scenarios] == [
             (x.id, x.state_hash, x.split) for x in base.run.report.scenarios]
     text = revise.summary(out)
     assert "held-out-validated to that measure" in text
-    assert "c01: not resolved by this revision; its attribution stays open" in text
-    assert "attribution c01: confirmed by revising underlying_and_definitions" in text
+    one = min(failing_dev)
+    assert f"{one}: not resolved by this revision; its attribution stays open" in text
+    assert f"attribution {one}: confirmed by revising underlying_and_definitions" in text
     assert ("not decided by the IR (a finding for the contract, not its wording): whether a clearance given after "
             "expiration but dated before it counts") in text  # fmt: skip
-    assert re.search(r"held out \(never shown to the drafter\): 4 scenarios: fidelity [0-9.]+ -> 1\.000", text)
+    assert re.search(rf"held out \(never shown to the drafter\): {len(HELD_OUT)} scenarios: fidelity [0-9.]+ -> 1\.000", text)
     # The revision is a clause proposal in the case, its trace the drafter's run as clause_reviser; a rulebook this flow
     # made is never revised from, since its rounds count from the rulebook it came from.
     case = Store(tmp_path / "case", case="merger")
@@ -206,28 +228,31 @@ def test_a_revision_that_touches_an_unsuspected_section_is_refused(tmp_path):
 
 
 def test_a_development_pass_with_a_held_out_fail_is_reported_as_such(tmp_path):
-    # Beside the seeded term, the readers hesitate where the board's approval is not established, whatever the prose:
-    # x07, held out. Revising the definitions passes the development scenarios; the held-out ones still fail.
+    # Beside the seeded term, the readers hesitate, whatever the prose, on a state only held-out scenarios have.
+    # Revising the definitions passes the development scenarios; the held-out ones still fail.
+    held_only = only_in("held_out")
+    assert held_only  # this test's premise: some state of the contract is held out alone
     def fix(name: str, texts: Mapping[str, str]) -> tuple[list[ProseSection], list[str]]:
         return ([section(name, CLEARANCE)], []) if name == "underlying_and_definitions" else ([], [])
 
-    out = revised(tmp_path, readers(("Glorp", glorp), ("", lambda a, b: a == "unknown")), Drafter(fix))
+    out = revised(tmp_path, readers(("Glorp", glorp), ("", lambda a, b: (a, b) in held_only)), Drafter(fix))
+    hesitant = where("held_out", lambda a, b: (a, b) in held_only)
     (rnd,) = out.rounds
     after = rnd.reported
     assert after is not None and after.development.meets and not after.held_out.meets
-    assert after.held_out.failing == ("x07",) and not after.passes and not out.validated
+    assert set(after.held_out.failing) == hesitant and not after.passes and not out.validated
     assert out.stopped == "the development scenarios meet the thresholds" and out.examples == ()
     verdict = revise.verdict(out)
     assert verdict.startswith("round 1's run passes on the development scenarios and fails on the held-out scenarios")
-    assert "x07" in verdict
-    # x07's own attribution was never the drafter's to see.
-    assert "x07" not in {sid for sids in rnd.suspected.values() for sid in sids}
+    assert all(sid in verdict for sid in hesitant)
+    # Their own attributions were never the drafter's to see.
+    assert not hesitant & {sid for sids in rnd.suspected.values() for sid in sids}
 
 
 def test_the_examples_are_exactly_the_passing_coverage_scenarios(tmp_path, monkeypatch, capsys):
-    # Readers who resolve as written, but hesitate on c02's state (the board did not approve; the regulator cleared):
-    # 0.08 on AMBIGUOUS there, under the threshold on average. The run passes; c02 does not, so it is no example, and
-    # the stress scenarios are not coverage scenarios.
+    # Readers who resolve as written, but hesitate where the board did not approve and the regulator cleared: 0.08 on
+    # AMBIGUOUS there, under the threshold on average. The run passes; those scenarios do not, so they are no example,
+    # and the stress scenarios are not coverage scenarios.
     from requisite import cli
     from requisite.judgment import providers
 
@@ -244,7 +269,7 @@ def test_the_examples_are_exactly_the_passing_coverage_scenarios(tmp_path, monke
 
     def agent(role, input, output, effort="high"):
         if role == "clause_drafter":
-            run = "double-drafter-" + c.sha256(drafted.model_dump_json())
+            run = c.sha256("drafter|" + drafted.model_dump_json())  # a run id is a hash: the trace reads its first 16
             return runner.AgentResult(role, drafted, run, "test-double", effort, True)
         return renderer(role, input, output, effort)
 
@@ -258,14 +283,19 @@ def test_the_examples_are_exactly_the_passing_coverage_scenarios(tmp_path, monke
     real = Store(tmp_path / "case", case="merger")
     rulebook = report.prose
     published = revise.published(real, rulebook)
-    # Exactly the coverage scenarios (c01-c03; no stress variant) that passed: c02 is not among them.
-    assert [x.scenario_id for x in published] == ["c01", "c03"]
+    # Exactly the coverage scenarios (no stress variant) that passed, in the plan's order: not the hesitant ones.
+    hesitant = {sid for sid, st in STATES.items() if st == ("false", "true")}
+    expected = [s.id for s in PLAN.scenarios if s.role in revise.COVERAGE_SET and s.id not in hesitant]
+    assert hesitant and expected  # this test's premise
+    assert [x.scenario_id for x in published] == expected
     for x in published:
         assert x.expected == scenarios[x.scenario_id].ir_outcome and x.evaluation == scenarios[x.scenario_id].ir_evaluation
-    assert "board approved the merger agreement: holds." in published[1].description
-    assert "The contract resolves YES, paying" in published[1].description
-    assert published[0].description.endswith("The contract resolves NO; nothing is paid.")
-    assert "examples published (the passing coverage scenarios" in out and "1. (c01)" in out and "(c02)" not in out
+    by_state = {STATES[x.scenario_id]: x for x in published}
+    assert "board approved the merger agreement: holds." in by_state[("true", "true")].description
+    assert "The contract resolves YES, paying" in by_state[("true", "true")].description
+    assert by_state[("true", "false")].description.endswith("The contract resolves NO; nothing is paid.")
+    assert "examples published (the passing coverage scenarios" in out and f"1. ({expected[0]})" in out
+    assert not any(f"({sid})" in out for sid in hesitant)
 
     # A run that does not pass publishes none.
     drafted = prose(GLORP)
@@ -277,9 +307,13 @@ def test_the_examples_are_exactly_the_passing_coverage_scenarios(tmp_path, monke
 
 
 def test_a_round_after_the_first_is_flagged_and_its_pass_publishes_no_examples(tmp_path):
-    # Two seeded terms: Glorp in the definitions (where the board approved) and Zorp in the trigger (where it did not).
-    # In round 1 the drafter fixes the definitions and swaps Zorp for another unreadable term; round 1 reports the
-    # definitions' run, which still fails c02. Round 2 revises the trigger from that run and passes: flagged.
+    # Two seeded terms: Glorp in the definitions (where the board approved) and Zorp in the trigger (on a state only
+    # development scenarios have). In round 1 the drafter fixes the definitions and swaps Zorp for another unreadable
+    # term; round 1 reports the definitions' run, which still fails those scenarios. Round 2 revises the trigger from that
+    # run and passes: flagged.
+    dev_only = only_in("development")
+    assert dev_only  # this test's premise: some state of the contract is in development alone
+    zorped = where("development", lambda a, b: (a, b) in dev_only)
     zorp = TRIGGER.replace("cleared the merger.", "cleared the merger (Zorp rules apply).")
 
     def fix(name: str, texts: Mapping[str, str]) -> tuple[list[ProseSection], list[str]]:
@@ -290,12 +324,12 @@ def test_a_round_after_the_first_is_flagged_and_its_pass_publishes_no_examples(t
                             else TRIGGER)], []  # fmt: skip
         return [], []
 
-    puzzled = readers(("Glorp", glorp), ("Zorp", lambda a, b: a == "false"), ("Blorp", lambda a, b: a == "false"))
+    puzzled = readers(("Glorp", glorp), ("Zorp", lambda a, b: (a, b) in dev_only), ("Blorp", lambda a, b: (a, b) in dev_only))
     out = revised(tmp_path, puzzled, Drafter(fix), prose(GLORP, zorp))
     first, second = out.rounds
     assert not first.flagged and second.flagged and second.number == 2
-    assert first.reported is not None and first.reported.development.failing == ("c02",)
-    assert second.base is first.reported and list(second.suspected) == ["trigger"]
+    assert first.reported is not None and set(first.reported.development.failing) == zorped
+    assert second.base is first.reported and set(second.suspected["trigger"]) == zorped
     number, last = out.last
     assert number == 2 and last.passes and not out.validated and out.examples == ()
     assert "the round is flagged" in revise.verdict(out)
@@ -305,7 +339,7 @@ def test_a_round_after_the_first_is_flagged_and_its_pass_publishes_no_examples(t
 
 def test_several_confirmed_sections_are_combined_and_that_run_is_the_one_reported(tmp_path):
     # Glorp in the definitions decides where the board approved and clearance is known; Snarf in the unknown-at-expiry
-    # rule decides where a condition is not established (x08 in development, x07 held out). Each revision alone resolves
+    # rule decides where a condition is not established. Each revision alone resolves
     # its own scenarios; the rulebook combining both is fuzzed once more and reported.
     snarf = UNKNOWN + " Snarf provisions apply."
 
@@ -324,8 +358,11 @@ def test_several_confirmed_sections_are_combined_and_that_run_is_the_one_reporte
     assert combined is not None and combined.proposal is not None and combined.proposal.author == revise.COMBINER
     assert combined.changed == ("underlying_and_definitions", "unknown_at_expiry") and combined.proposal.status == "active"
     assert rnd.reported is combined.standing and combined.standing is not None and combined.standing.passes
-    assert out.validated and [x.scenario_id for x in out.examples] == ["c01", "c02", "c03"]
-    assert "attribution x08: confirmed by revising unknown_at_expiry" in revise.summary(out)
+    coverage = [s.id for s in PLAN.scenarios if s.role in revise.COVERAGE_SET]
+    assert out.validated and [x.scenario_id for x in out.examples] == coverage
+    snarfed = where("development", lambda a, b: "unknown" in (a, b))
+    assert snarfed  # this test's premise
+    assert f"attribution {min(snarfed)}: confirmed by revising unknown_at_expiry" in revise.summary(out)
 
 
 def test_a_rulebook_revision_keeps_every_scenario_in_its_set(tmp_path):
@@ -347,7 +384,7 @@ def test_a_rulebook_revision_keeps_every_scenario_in_its_set(tmp_path):
 def test_the_drafter_is_never_given_a_held_out_scenario(tmp_path):
     out = revised(tmp_path, readers(("Glorp", glorp)), Drafter(lambda n, t: ([], [])))
     with pytest.raises(FuzzError, match="held out: the drafter never sees a held-out scenario"):
-        revise.reviser_input(out.base, "underlying_and_definitions", ["c01", "c03"])
+        revise.reviser_input(out.base, "underlying_and_definitions", sorted(HELD_OUT)[:1])
 
 
 def test_the_cli_revises_a_cases_contract(tmp_path, monkeypatch, capsys):
@@ -365,7 +402,7 @@ def test_the_cli_revises_a_cases_contract(tmp_path, monkeypatch, capsys):
 
     def agent(role, input, output, effort="high"):
         if role == "clause_drafter":
-            return runner.AgentResult(role, prose(), "double-drafter-" + "0" * 40, "test-double", effort, True)
+            return runner.AgentResult(role, prose(), c.sha256("drafter|" + prose().model_dump_json()), "test-double", effort, True)
         return drafter(role, input, output, effort)
 
     monkeypatch.setattr(runner, "run", agent)

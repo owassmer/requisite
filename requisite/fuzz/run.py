@@ -397,15 +397,25 @@ def _check(p: Plan, s: Scenario, packet: Packet, questions: Sequence[Question], 
         asked = ask(q.question, library.original(q.question))
         js = [m.judge(judging.Ask(q.question, h, rendered, asked, _config(pv, "p0"))) for pv in m.providers]
         packet.judgments += js
-        top, _ = _top(js)
         meaning = {a.value: a for a in q.question.answers}
-        if q.by_status:
-            ok = bool(top) and all(from_status(meaning[a].status).value == q.expected for a in top)
-        else:
-            ok = top == {q.expected}
-        if not ok:
-            read = " or ".join(meaning[a].meaning for a in sorted(top)) if top else "no judge gave an answer"
-            packet.missed.append({"condition": q.statement, "intended": q.intended, "judges_read": read})
+
+        def recovered(top: frozenset[str], q: Question = q, meaning: Mapping[str, core.AnswerValue] = meaning) -> bool:
+            if q.by_status:
+                return bool(top) and all(from_status(meaning[a].status).value == q.expected for a in top)
+            return top == {q.expected}
+
+        # Each provider on its own, so "every provider recovered it" is what was checked (external evaluation, November
+        # 2: refusals were dropped before pooling, and one provider's answer passed the check for all).
+        misread = []
+        for j in js:
+            if j.distribution is None:
+                misread.append(f"{j.config.provider} gave no answer (refused: {j.refusal})")
+                continue
+            top = top_set(dict(j.distribution))
+            if not recovered(top):
+                misread.append(f"{j.config.provider} read " + " or ".join(meaning[a].meaning for a in sorted(top)))
+        if misread:
+            packet.missed.append({"condition": q.statement, "intended": q.intended, "judges_read": "; ".join(misread)})
 
 
 def _scenario(p: Plan, s: Scenario, split: Literal["development", "held_out"], rules: str, prose_key: str,
@@ -445,6 +455,44 @@ def _scenario(p: Plan, s: Scenario, split: Literal["development", "held_out"], r
     return out
 
 
+TERM_ANSWERS = (  # core.TERM_READINGS, with their meanings
+    core.AnswerValue(value="states", meaning="the rules state exactly this term", status="affirmative"),
+    core.AnswerValue(value="states_otherwise", meaning="the rules state this term differently (another amount, date, "
+                     "currency, period or refund)", status="negative"),  # fmt: skip
+    core.AnswerValue(value="not_stated", meaning="the rules do not state this term", status="not_established"),
+)
+assert tuple(a.value for a in TERM_ANSWERS) == core.TERM_READINGS
+
+
+def term_question(prefix: str, term: str, statement: str, rules: str) -> core.AtomicQuestion:
+    return core.AtomicQuestion(
+        id=f"{prefix}.term.{term}", version=1, task="classify",
+        target=("Do the contract rules below state the following payment term, exactly as given? Compare what the rules "
+                f"say with the term; do not compute anything the rules do not state.\nTerm: {statement}\n"
+                f"Contract rules:\n{rules}"),
+        answers=list(TERM_ANSWERS),
+    )  # fmt: skip
+
+
+def read_terms(p: Plan, rules: str, prose_key: str, m: _Models) -> tuple[list[core.TermReading], list[core.Judgment]]:
+    """Each payment term of the IR asked of the prose, by every provider in the original wording, over no evidence: the
+    term is the IR's, as code states it (statements.payment_terms), and the readers say whether the prose states it."""
+    prefix = f"{question_prefix(p.ir.ref)}.{prose_key[:12]}"
+    state = core.SyntheticJudgmentState(as_of=p.at, observed=[], scenario="payment_terms")
+    rendered = render_state(state, TEXT, claims={}, artifacts={}, definitions={})
+    out, judgments = [], []
+    for term, statement in statements.payment_terms(p.ir).items():
+        q = term_question(prefix, term, statement, rules)
+        js = [m.judge(judging.Ask(q, state.content_hash(), rendered, ask(q, library.original(q)), _config(pv, "p0")))
+              for pv in m.providers]  # fmt: skip
+        top, pooled = _top(js)
+        read = next(iter(top)) if len(top) == 1 else "ambiguous"
+        out.append(core.TermReading(term=cast(Any, term), statement=statement, answers=pooled or {}, read=cast(Any, read),
+                                    judgments=[j.content_hash() for j in js]))  # fmt: skip
+        judgments += js
+    return out, judgments
+
+
 def _paraphrased(q: core.AtomicQuestion, pset: core.ParaphraseSet, pid: str) -> core.Paraphrase:
     """One paraphrase of the resolver template, its slot filled with the question's binding (the prose)."""
     x = next(x for x in pset.paraphrases if x.id == pid)
@@ -454,14 +502,34 @@ def _paraphrased(q: core.AtomicQuestion, pset: core.ParaphraseSet, pid: str) -> 
 # ---------------------------------------------------------------- scoring and the report
 
 
+def concrete_input(p: Plan, s: Scenario) -> str:
+    """What the scenario puts before the renderer and so before the readers: the hash of its renderer request (the
+    conditions and their intended values, the published values, the stress class, the evidence instant). Two scenarios
+    with one concrete input are one test case, however they were reached."""
+    return core.sha256(core.canonical_json(_renderer_input(p, s, _questions(p, s))))
+
+
 def _split(p: Plan) -> dict[str, Literal["development", "held_out"]]:
-    """The held-out share of the scenarios, ordered by a hash seeded by the contract version alone: the same
-    scenarios are held out however the prose changes (A09 §10.4; A01 §2.5)."""
+    """The held-out share of the scenarios, drawn over their concrete inputs (concrete_input) in an order seeded by the
+    contract version alone: the same test cases are held out however the prose changes (A09 §10.4; A01 §2.5), and
+    scenarios with one concrete input fall in one set (external evaluation, November 2: two scenarios with the same state,
+    renderer request and outcome had sat on both sides). Whole groups are held out, in their order, until the held-out
+    scenarios reach HELD_OUT of the run's, skipping any group that would leave no development scenario; a run whose
+    scenarios are one test case holds none out, and its held_out_reported_separately gate says so."""
     seed = core.sha256(p.ir.content_hash() + "|requisite.fuzz.split")
-    ordered = sorted(p.scenarios, key=lambda s: core.sha256(f"{seed}|{s.id}|{s.state_hash}"))
-    n = len(ordered)
-    held = math.ceil(n * HELD_OUT) if n >= 2 else 0
-    return {s.id: ("held_out" if i < held else "development") for i, s in enumerate(ordered)}
+    groups: dict[str, list[Scenario]] = {}
+    for s in p.scenarios:
+        groups.setdefault(concrete_input(p, s), []).append(s)
+    ordered = sorted(groups, key=lambda k: core.sha256(f"{seed}|{k}"))
+    n = len(p.scenarios)
+    want = math.ceil(n * HELD_OUT) if len(groups) >= 2 else 0
+    held: set[str] = set()
+    for k in ordered:
+        if len(held) >= want:
+            break
+        if len(held) + len(groups[k]) < n:  # a group that would leave no development scenario is skipped
+            held |= {s.id for s in groups[k]}
+    return {s.id: ("held_out" if s.id in held else "development") for s in p.scenarios}
 
 
 def _money(x: Fraction) -> Decimal:
@@ -538,8 +606,12 @@ def _liquidity(ir: core.ContractIR, a: Sequence[core.CashTransfer], b: Sequence[
     return max(abs(x - y) for x, y in zip(prose_cash, ir_cash, strict=True))
 
 
-def _prose_side(p: Plan, r: Resolved) -> tuple[list[core.CashTransfer], Decimal | None, Decimal | None]:
-    """The evaluator's transfers for the prose outcome on the scenario, and the amount and liquidity discrepancies."""
+def _prose_side(p: Plan, r: Resolved, terms: Sequence[core.TermReading]
+                ) -> tuple[list[core.CashTransfer] | None, Decimal | None, Decimal | None]:  # fmt: skip
+    """What the prose pays on the scenario: the evaluator's transfers for the prose outcome, where the readers read the
+    prose to state every payment term that outcome rests on (`terms`; core.terms_used), paying nothing included;
+    otherwise None, and no discrepancy computed, since what the prose pays is then not established. With the amount and
+    liquidity discrepancies."""
     s, ir = r.scenario, p.ir
     ev = s.evaluation
     if r.outcome == ev.procedure_status:
@@ -551,8 +623,15 @@ def _prose_side(p: Plan, r: Resolved) -> tuple[list[core.CashTransfer], Decimal 
             raise FuzzError(f"scenario {s.id}: the outcome {r.outcome} forced gives {prose_ev.procedure_status}")
     else:
         prose_ev = None  # ambiguous or disputed: the prose determines no payment
-    transfers = list(prose_ev.transfers) if prose_ev is not None else []
-    if prose_ev is None or not determined(prose_ev, ir) or not determined(ev, ir):
+    if prose_ev is None:
+        return None, None, None  # the outcome determines no payment (core.FuzzScenario.prose_transfers)
+    transfers = list(prose_ev.transfers)
+    read: dict[str, str] = {t.term: t.read for t in terms}
+    if any(read.get(term) != "states" for term in core.terms_used(r.outcome, transfers)):
+        return None, None, None  # what the prose pays is not established (core.FuzzScenario.prose_transfers)
+    if not determined(prose_ev, ir):
+        return None, None, None  # its amount is not yet determined: unknown, never zero (A05 §5.3)
+    if not determined(ev, ir):
         return transfers, None, None
     amount = _money(abs(total(prose_ev) - total(ev)))
     return transfers, amount, _liquidity(ir, prose_ev.transfers, ev.transfers)
@@ -654,10 +733,11 @@ def run(
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = [ex.submit(_scenario, p, s, split[s.id], rules, key, models) for s in p.scenarios]
         resolved = [f.result() for f in futures]
+    terms, term_judgments = read_terms(p, rules, key, models)
     packets = _propose_packets(store, p, resolved, models)
     resolvers = [_config(pv, pid) for pv, pid in configurations]
-    report = _report(p, resolved, sections, key, rulebook.id, resolvers, packets)
-    _commit(store, p, resolved, report, key, packets)
+    report = _report(p, resolved, sections, key, rulebook.id, resolvers, packets, terms)
+    _commit(store, p, resolved, report, key, packets, term_judgments)
     return Run(report, p, tuple(resolved), template_id, configurations, f"{ir.id}.v{ir.version}.{key[:16]}")
 
 
@@ -715,12 +795,13 @@ def _propose_packets(store: Store, p: Plan, resolved: Sequence[Resolved], m: _Mo
 
 
 def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozenset[str]], key: str, prose: str,
-            resolvers: Sequence[core.JudgeConfig], packets: Mapping[str, core.Proposal]) -> core.FuzzReport:  # fmt: skip
+            resolvers: Sequence[core.JudgeConfig], packets: Mapping[str, core.Proposal],
+            terms: Sequence[core.TermReading]) -> core.FuzzReport:  # fmt: skip
     ir = p.ir
     scenarios: list[core.FuzzScenario] = []
     for r in resolved:
         s = r.scenario
-        transfers, amount, liquid = _prose_side(p, r)
+        transfers, amount, liquid = _prose_side(p, r, terms)
         mandatory = s.id in p.mandatory
         scenarios.append(core.FuzzScenario(
             id=s.id, state_hash=s.state_hash, packet=packets[s.id].id, split=r.split, mandatory=mandatory,
@@ -736,22 +817,23 @@ def _report(p: Plan, resolved: Sequence[Resolved], sections: Mapping[str, frozen
         raise FuzzError(f"no packet of {ir.id}'s {len(resolved)} scenarios passed the rendering check, so nothing "
                         "measures its prose; the renderings' misses are in the run's packets")  # fmt: skip
     diverged = {r.scenario.id for r in rendered if r.outcome != r.scenario.evaluation.procedure_status
-                or not same_transfers(by_id[r.scenario.id])}  # fmt: skip
+                or same_transfers(by_id[r.scenario.id]) is False}  # fmt: skip
+    unread = {r.scenario.id for r in rendered if r.scenario.id not in diverged and by_id[r.scenario.id].prose_transfers is None}
     failed = diverged | {r.scenario.id for r in rendered if r.pooled.get("ambiguous", 0.0) > AMBIGUITY or r.s_arg < CLARITY}
     tags = {r.scenario.id: _tags(p, r.scenario, sections) for r in rendered}
     suspicion = _ochiai(failed, tags, list(sections))
     attributions = _attributions(p, resolved, diverged, failed, tags, suspicion)
-    gates = _gates(p, resolved, scenarios, diverged)
+    gates = _gates(p, resolved, scenarios, diverged, unread)
     if diverged:
         equivalence: Equivalence = "counterexample_found"
-    elif len(rendered) == len(resolved):
+    elif len(rendered) == len(resolved) and not unread:
         equivalence = "tested_equivalent_on_suite"
     else:
         equivalence = "unsupported_or_unassessed"
     return core.FuzzReport(
         contract=ir.ref, prose=prose, prose_hash=key, resolvers=list(resolvers),
         pooling_policy=core.Ref(id=EQUAL_PER_PROVIDER.name, version=EQUAL_PER_PROVIDER.version),
-        whole_trigger=p.whole_trigger, obligations=list(p.obligations), boundaries=list(p.boundaries),
+        whole_trigger=p.whole_trigger, terms=list(terms), obligations=list(p.obligations), boundaries=list(p.boundaries),
         scenarios=scenarios, fidelity=metrics[0], clarity=metrics[1], ambiguity=metrics[2], hard_gates=gates,
         attributions=attributions, equivalence=equivalence,
     )  # fmt: skip
@@ -768,9 +850,10 @@ def _attributions(p: Plan, resolved: Sequence[Resolved], diverged: set[str], fai
         if not r.passed:
             missed = "; ".join(f"{m['condition']} (intended: {m['intended']}; judges read: {m['judges_read']})"
                                for m in r.packets[-1].missed)  # fmt: skip
-            out.append(core.Attribution(scenario=s.id, cause="rendering", status="confirmed",
-                                        evidence=f"the rendering check failed {len(r.packets)} renderings; the last "
-                                                 f"missed: {missed}"))  # fmt: skip
+            out.append(core.Attribution(scenario=s.id, cause="rendering", status="open", evidence=(
+                f"the rendering check failed {len(r.packets)} renderings; the last missed: {missed}. The readers did not "
+                "recover the intended state from the packet: the renderer, the check's question or the readers may be at "
+                "fault, which the check alone does not tell apart (A09 §10.1)")))  # fmt: skip
             continue
         if s.id not in failed:
             continue
@@ -800,13 +883,19 @@ def _attributions(p: Plan, resolved: Sequence[Resolved], diverged: set[str], fai
 
 
 def _gates(p: Plan, resolved: Sequence[Resolved], scenarios: Sequence[core.FuzzScenario],
-           diverged: set[str]) -> list[HardGate]:  # fmt: skip
+           diverged: set[str], unread: set[str]) -> list[HardGate]:  # fmt: skip
     by = {x.id: x for x in scenarios}
     passed = {r.scenario.id for r in resolved if r.passed}
     critical = sorted(sid for sid in diverged if by[sid].severity == "critical" and by[sid].mandatory)
-    gates = [HardGate(name=HARD_GATES[0], passed=not critical,
-                      detail=(f"mismatches on critical mandatory scenarios, none reviewed: {critical}" if critical else
-                              "no critical mandatory scenario's prose outcome or transfers differ from the IR's"))]  # fmt: skip
+    # The gate says no critical scenario's outcome or transfers differ; where the prose's payment is not established,
+    # that is not shown, so the gate does not pass.
+    unshown = sorted(sid for sid in unread if by[sid].severity == "critical" and by[sid].mandatory)
+    detail = "; ".join(x for x in (
+        f"mismatches on critical mandatory scenarios, none reviewed: {critical}" if critical else "",
+        f"critical mandatory scenarios whose prose payment is not established (its payment terms are not read as "
+        f"stated): {unshown}" if unshown else "") if x) or (
+        "no critical mandatory scenario's prose outcome or transfers differ from the IR's")  # fmt: skip
+    gates = [HardGate(name=HARD_GATES[0], passed=not critical and not unshown, detail=detail)]
     policy = [r for r in resolved if r.scenario.stress in ("conflicting_sources", "revised_value", "evidence_missing_at_expiry")]
     # A substitution is another determinate outcome or payment than the IR's policy gives; an AMBIGUOUS answer is no
     # substitution but ambiguity, which the attributions and the ambiguity score carry.
@@ -824,13 +913,16 @@ def _gates(p: Plan, resolved: Sequence[Resolved], scenarios: Sequence[core.FuzzS
     unmet += [f"{b.condition} at {b.point}: no scenario" for b in p.boundaries if b.feasible and b.scenario is None]
     unmet += [f"{b.condition} at {b.point}: scenario {b.scenario} not rendered" for b in p.boundaries
               if b.feasible and b.scenario is not None and b.scenario not in passed]  # fmt: skip
+    unmet += [f"{b.condition} at {b.point}: unconstructed ({'; '.join(b.excluded_by)})" for b in p.boundaries
+              if b.status == "unconstructed"]  # fmt: skip
     unmet += list(p.notes)
-    infeasible = sum(1 for b in p.boundaries if not b.feasible)
+    infeasible = sum(1 for b in p.boundaries if b.status == "infeasible")
     redundant = [o.conditions[0] for o in p.obligations if o.status == "redundant"]
     gates.append(HardGate(name=HARD_GATES[2], passed=not unmet, detail=(
         f"unmet: {unmet}" if unmet else
         f"every feasible obligation met by rendered scenarios ({len(p.obligations)} obligations; redundant under the "
-        f"IR's constraints: {redundant or 'none'}; {infeasible} boundary points infeasible, with their reasons)")))  # fmt: skip
+        f"IR's constraints: {redundant or 'none'}; {infeasible} boundary points proved infeasible, with their "
+        "proofs)")))  # fmt: skip
     gates.append(HardGate(name=HARD_GATES[3], passed=True, detail=(
         "this run accepts no ambiguity: accepting one is a human's decision at G3, recorded with its consequence and "
         "scope in an AcceptanceRecord (spec §8.6 step 7)")))  # fmt: skip
@@ -846,7 +938,7 @@ def _gates(p: Plan, resolved: Sequence[Resolved], scenarios: Sequence[core.FuzzS
 
 
 def _commit(store: Store, p: Plan, resolved: Sequence[Resolved], report: core.FuzzReport, key: str,
-            packets: Mapping[str, core.Proposal]) -> None:  # fmt: skip
+            packets: Mapping[str, core.Proposal], term_judgments: Sequence[core.Judgment] = ()) -> None:  # fmt: skip
     """The run's records, on the caller's thread, after its packets are proposed: each scenario's own definition, every
     judgment, and the report. Records already committed by an earlier run stand as they are."""
     for s in p.scenarios:
@@ -861,6 +953,8 @@ def _commit(store: Store, p: Plan, resolved: Sequence[Resolved], report: core.Fu
                 store.commit_judgment(j)
         for j in r.judgments:
             store.commit_judgment(j)
+    for j in term_judgments:
+        store.commit_judgment(j)
     store.commit("fuzz_report", f"{p.ir.id}.v{p.ir.version}.{key[:16]}", report)
 
 
@@ -1056,7 +1150,7 @@ def summary(r: Run, store: Store) -> str:
         lines.append(f"  attribution {a.scenario} {a.cause} ({a.status}): {a.evidence}")
     for b in rep.boundaries:
         if not b.feasible:
-            lines.append(f"  boundary {b.condition} at {b.point}: infeasible ({'; '.join(b.excluded_by)})")
+            lines.append(f"  boundary {b.condition} at {b.point}: {b.status} ({'; '.join(b.excluded_by)})")
     for note in p.notes:
         lines.append(f"  note: {note}")
     lines.append(f"committed: fuzz_report {r.key} in {store.root}")

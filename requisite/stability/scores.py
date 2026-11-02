@@ -28,10 +28,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import fsum, log2
 
-# The oracle's tolerances (spec/verify_math.py): a distribution sums to one within 1e-10 (`distribution`), and answers
-# within 1e-12 of a configuration's maximum are tied (`stability`).
-SUM_TOLERANCE = 1e-10
-TIE_TOLERANCE = 1e-12
+# The oracle's tolerances (spec/verify_math.py), as the definition holds them: a distribution sums to one within 1e-10
+# (`distribution`), and answers within 1e-12 of a configuration's maximum are tied (`stability`).
+from requisite.core.judgment import SUM_TOLERANCE, top_answers  # noqa: E402
 
 # S_prob lies in [0, 1] for exact distributions (JS_2 is in [0, 1]). Inputs accepted within SUM_TOLERANCE and the
 # rounding of logarithms (about 1e-16) can move the computed value outside by at most about SUM_TOLERANCE; that
@@ -146,8 +145,7 @@ def _unit(x: float) -> float:
 def top_set(p: Mapping[str, float]) -> frozenset[str]:
     """The answers tied at the maximum within TIE_TOLERANCE (the oracle's np.isclose(p, p.max(), atol=1e-12, rtol=0))."""
     check_distribution(p)
-    top = max(p.values())
-    return frozenset(a for a, x in p.items() if abs(x - top) <= TIE_TOLERANCE)
+    return top_answers(p)
 
 
 def scores(configurations: Sequence[Mapping[str, float]]) -> Scores:

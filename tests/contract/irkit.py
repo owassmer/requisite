@@ -98,6 +98,11 @@ def difference(a, b):
     return a - b
 
 
+@node(id="tests.contract.weighted", version=1, inputs=["x", "y"], monotone={"x": "increasing", "y": "increasing"})
+def weighted(x, y):
+    return 2 * x + 3 * y  # z = 2x + 3y: some values it reaches only with both inputs moved (external evaluation, Nov 2)
+
+
 @node(id="tests.contract.square", version=1, inputs=["a"])
 def square(a):
     return a * a

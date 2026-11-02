@@ -487,12 +487,14 @@ def examples() -> list[c.Record]:
             reduced_costs=[c.ReducedCost(candidate="y", value=D("-110"), measured_improvement=F(20))],
         ),
         c.CoverageObligation(conditions=["A"], status="met", witnesses=["s1", "s2"], proof=None),
-        c.BoundaryPoint(condition="rain_ge_0.10", point="0.09", feasible=True, scenario="s3"),
+        c.BoundaryPoint(condition="rain_ge_0.10", point="0.09", status="feasible", scenario="s3"),
         c.FuzzScenario(id="s1", state_hash=H, packet="scenario-s1-1", split="held_out", mandatory=True, severity="critical", ir_outcome="resolved_yes",
                        ir_evaluation=H, ir_transfers=[c.CashTransfer(at=T1, amount=D("100"), currency="USD",
                        basis="payout")], rendering_passed=True, resolver_outcomes={"resolved_yes": 1.0},
                        prose_outcome="resolved_yes", prose_transfers=[c.CashTransfer(at=T1, amount=D("100"),
                        currency="USD", basis="payout")], amount_error=D("0"), liquidity_discrepancy=D("0")),  # fmt: skip
+        c.TermReading(term="payout_yes", statement="when it resolves YES, one contract pays 100 USD",
+                      answers={"states": 0.9, "not_stated": 0.1}, read="states", judgments=[H]),
         c.Attribution(scenario="s1", cause="contract_ambiguity", status="open", evidence="minimal pair pending",
                       suspected_clauses=[("trigger", 0.93)]),  # fmt: skip
         HardGate(name="no unreviewed critical mismatch", passed=True, detail="-"),
@@ -503,6 +505,7 @@ def examples() -> list[c.Record]:
             resolvers=[CONFIG],
             pooling_policy=c.Ref(id="equal_per_provider_split_among_configurations", version=1),
             whole_trigger="ok",
+            terms=[],
             obligations=[c.CoverageObligation(conditions=["B"], status="redundant", witnesses=[], proof="UNSAT"),
                          c.CoverageObligation(conditions=["A", "B"], status="uncovered", witnesses=[], proof=None)],
             boundaries=[],

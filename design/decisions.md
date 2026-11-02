@@ -247,6 +247,38 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   - The design the draws name is committed (core.SamplingDesign, kind sampling_design) with the gold draw, when its
     phase-2 cells exist. The coverage simulation before the gold is a statement about the design under a label model:
     where that model puts no item in the denominator it says the ratio is undefined and the gold is drawn regardless.
+- What the wording test's records mean, from the external evaluation (coordinator, November 2, 16:00 ET). Each was a
+  record claiming more than the operation that filled it; each is fixed where the record is defined, and each has a test
+  built from the evaluation's counterexample (tests/fuzz).
+  - What the prose pays is read, not assumed. The IR's payment terms (what one contract pays, when it is determined and
+    paid, what a void returns) are stated by code from the IR (statements.payment_terms) and asked of the rulebook, by
+    every provider, as core.TermReading (states, states otherwise, not stated; the reading is its pooled answers' top,
+    ambiguous where tied). Every settled outcome rests on its own term, paying nothing included: YES on what YES pays,
+    NO on what NO pays, a void on its refund, and the payment date wherever anything is paid; pending and extended on the
+    payment date (core.terms_used). A scenario's prose transfers are the evaluator's, the one settlement function, only
+    where every term its outcome rests on was read as stated: the prose states exactly the IR's term and the outcome
+    agrees, so the one settlement function gives the prose's transfers. A term read otherwise or not stated leaves the
+    scenario's payment unestablished: no equivalence is claimed, and the critical-mismatch gate does not pass where a
+    critical scenario's payment is unestablished. It is never a counterexample, since a reading of the whole rulebook
+    cannot say one scenario pays differently (the prose may state the term otherwise only where it does not apply:
+    an exception, a rate on a zero quantity, another split of the lags). Comparing each scenario's payments themselves
+    needs the readers to state what the prose pays on that scenario (A09 §10.1); that per-scenario payment reading is
+    the full method, owed after the demo, and this one claims only what it reads. A term not stated, an outcome that determines no payment, or an amount not yet determined leaves the
+    payment unestablished: None, never an empty list that says "pays nothing" (I6), and no equivalence is claimed.
+    One arithmetic, two independently grounded inputs: before, the IR's transfers stood for the prose's whenever the
+    outcomes agreed, and a prose paying 100 times the amount a month late scored fidelity 1.0. Nine rounds of the
+    definition review sharpened this. The clause drafter's prompt now asks for the payout and what a void returns.
+  - A boundary point is infeasible only with a proof (core.BoundaryPoint.status); a point no search built is
+    unconstructed, counted unmet by the coverage gate. The computed-number search moves a second input when one alone
+    does not reach the value (z = 2x + 3y reaches 501 only so).
+  - The rendering check is per provider: a packet passes only where every provider answered and each recovered the
+    intended state; a refusal is a miss, never dropped before pooling.
+  - The development/held-out split is over what the readers are shown (fuzz.concrete_input, the renderer request):
+    scenarios with one concrete input are one test case and fall in one set.
+  - A failed rendering check opens a rendering attribution; it does not confirm one, since the check shows the readers
+    did not recover the state, not whether the renderer, the question or the readers caused it.
+  Tests derive what they expect from the rule and the plan (the split, each scenario's truths), never from ids one
+  split happened to give (Owen, November 2: "Hardcoded values will inherently drift").
 - The static dossier (007-1, accepted by the coordinator, November 2): it renders from a case's store alone, in key
   order, never commit order. It leaves out the fields a build fills from its own clock (AgentRun.at,
   SyntheticArtifact.created_at, DerivationReceipt.computed_at) until they are fixed at their source, so identical stores

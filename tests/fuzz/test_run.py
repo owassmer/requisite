@@ -7,13 +7,16 @@ expiration. Its prose names, in each section, the IR nodes the section states.""
 
 from typing import Any
 
+import irkit
 import pytest
 from doubles import FAILS, HOLDS, UNSET, Judges, Renderer, truth
 from irkit import contract
 
 from requisite import core as c
 from requisite.agents.answers import ProseDraft, ProseSection
+from requisite.core.results import same_transfers
 from requisite.fuzz import run as fuzz
+from requisite.fuzz import statements
 from requisite.store import Store
 
 APPROVED = c.Interpretive(id="approved", question_template="condition_holds",
@@ -21,6 +24,7 @@ APPROVED = c.Interpretive(id="approved", question_template="condition_holds",
 CLEARED = c.Interpretive(id="cleared", question_template="condition_holds",
                          bindings={"condition": "The competition regulator cleared the merger."})  # fmt: skip
 IR = contract(c.And(id="merger", args=[APPROVED, CLEARED]))
+TERMS = statements.payment_terms(IR)
 CLEARANCE = "Clearance means a determination by the competition regulator that the merger may proceed."
 UNDEFINED = "Clearance means a Glorp-certified determination by the competition regulator."
 
@@ -34,7 +38,9 @@ def prose(definitions: str = CLEARANCE) -> ProseDraft:
         ProseSection(name="trigger", text="The contract resolves YES if, by expiration, the company's board approved the "
                      "merger agreement and the competition regulator cleared the merger.",
                      ir_nodes=["merger", "approved", "cleared"]),
-        ProseSection(name="timing", text="The contract expires on June 1, 2027 at 14:00 UTC.", ir_nodes=[]),
+        ProseSection(name="timing", text="The contract expires on June 1, 2027 at 14:00 UTC. "
+                     + "".join(f"{t[0].upper()}{t[1:]}. " for t in TERMS.values()).strip(),
+                     ir_nodes=[]),  # the IR's payment terms, as code states them
         ProseSection(name="unknown_at_expiry", text="If either condition is not established by expiration, the contract "
                      "resolves NO.", ir_nodes=[]),
         ProseSection(name="revisions", text="A decision later revised is read as first published.", ir_nodes=[]),
@@ -100,7 +106,9 @@ def test_a_packet_that_does_not_encode_its_scenario_is_caught_rendered_again_and
     first, second = caught.packets[0], caught.packets[1]
     assert len(caught.packets) == 2 and not first.passed and second.passed
     assert [m["intended"] for m in first.missed] == [HOLDS] and "board approved" in first.missed[0]["condition"]
-    assert first.missed[0]["judges_read"] == FAILS
+    # Each provider's own reading, so the check claims what each recovered (external evaluation, November 2).
+    from requisite.judgment.providers import PROVIDERS
+    assert first.missed[0]["judges_read"] == "; ".join(f"{pv} read {FAILS}" for pv in PROVIDERS)
     # Rendered again with what was not recovered, and that packet passed: the scenario is scored on it alone.
     rerender = next(x for x in renderer.calls if x.get("not_recovered") == first.missed)
     assert rerender["previous_packet"][0]["text"] != ""
@@ -108,15 +116,16 @@ def test_a_packet_that_does_not_encode_its_scenario_is_caught_rendered_again_and
     final_state = fuzz._state(r.plan, caught.scenario, second).content_hash()
     assert {j.state_hash for j in caught.judgments} == {final_state}
 
-    # Never encoded: four renderings (the first and RERENDERS more), recorded as failed, its cause the rendering's,
-    # confirmed by the check, and excluded from scoring. Its resolvers read NO where the IR says YES, and that is not
+    # Never encoded: four renderings (the first and RERENDERS more), recorded as failed, the rendering suspected (open:
+    # the check shows the readers did not recover the state, not which of renderer, question or readers is at fault),
+    # and excluded from scoring. Its resolvers read NO where the IR says YES, and that is not
     # counted against the contract: fidelity is over the scenarios whose rendering passed, and no counterexample is
     # claimed; nor is an equivalence, since one scenario was not tested.
     never = by_state(r, "true", "true")
     assert len(never.packets) == 1 + fuzz.RERENDERS and not never.passed
     assert never.outcome == "resolved_no" and never.scenario.evaluation.procedure_status == "resolved_yes"
     assert not report[never.scenario.id].rendering_passed
-    assert [(a.cause, a.status) for a in r.report.attributions if a.scenario == never.scenario.id] == [("rendering", "confirmed")]
+    assert [(a.cause, a.status) for a in r.report.attributions if a.scenario == never.scenario.id] == [("rendering", "open")]
     assert r.report.fidelity == 1.0
     assert r.report.equivalence == "unsupported_or_unassessed"
     gate = next(g for g in r.report.hard_gates if g.name == "mandatory_coverage_met_or_accepted")
@@ -126,8 +135,11 @@ def test_a_packet_that_does_not_encode_its_scenario_is_caught_rendered_again_and
     store = Store(tmp_path / "fuzz", case="merger.fuzz", synthetic=True)
     artifacts = {a.id for a in store.all("synthetic_artifact", c.SyntheticArtifact)}
     assert {art.id for x in r.resolved for p in x.packets for art, _, _ in p.documents} <= artifacts
-    assert len(store.all("judgment", c.Judgment)) == len({j.content_hash() for x in r.resolved
-                                                          for j in [*x.judgments, *(j for p in x.packets for j in p.judgments)]})  # fmt: skip
+    # Every judgment is committed: the rendering checks', the resolutions' and the payment terms' (FuzzReport.terms).
+    committed = {j.content_hash() for j in store.all("judgment", c.Judgment)}
+    asked = {j.content_hash() for x in r.resolved for j in [*x.judgments, *(j for p in x.packets for j in p.judgments)]}
+    assert committed == asked | {h for t in r.report.terms for h in t.judgments}
+    assert {t.term for t in r.report.terms} == set(statements.payment_terms(IR))
     assert fuzz.reports(store) == [r.report]
     # Each rendering is a scenario proposal (spec I1) whose tests gate is the rendering check: the failed ones rejected,
     # the passing one active, and the report names the packet each scenario was read from.
@@ -221,7 +233,7 @@ def test_the_cli_fuzzes_a_cases_contract_against_the_clause_drafters_prose(tmp_p
     def agent(role, input, output, effort="high"):
         if role == "clause_drafter":
             assert input == {"ir": payload}
-            return runner.AgentResult(role, prose(), "double-drafter-" + "0" * 40, "test-double", effort, True)
+            return runner.AgentResult(role, prose(), c.sha256("drafter|" + prose().model_dump_json()), "test-double", effort, True)
         return renderer(role, input, output, effort)
 
     monkeypatch.setattr(runner, "run", agent)
@@ -278,3 +290,97 @@ def test_the_prose_fuzzed_is_a_rulebook_that_passed_its_gates(tmp_path):
     # The report names its rulebook and the K configurations that read it.
     r = fuzzed(tmp_path, Renderer(), Judges(careful))
     assert r.report.prose == held.id and len(r.report.resolvers) == len(r.configurations) >= 2
+
+
+@pytest.mark.parametrize("ir", [IR, contract(irkit.at("x", ">", 10, irkit.EXPIRY))], ids=["merger", "x_above_10"])
+def test_the_split_keeps_one_concrete_input_in_one_set_and_holds_out_its_share(ir):
+    # The split is over what the readers are shown (fuzz.concrete_input): scenarios with one renderer request are one
+    # test case and fall in one set (external evaluation, November 2: two missing-evidence stress scenarios of an
+    # "x > 10" contract, one state and one request, had sat on both sides). Whole groups are held out until the held-out
+    # scenarios reach HELD_OUT of the run's, never every scenario; derived here from the plan, for any contract.
+    import math
+
+    p = fuzz.plan(ir)
+    split = fuzz._split(p)
+    assert set(split) == {s.id for s in p.scenarios}
+    groups: dict[str, set[str]] = {}
+    for s in p.scenarios:
+        groups.setdefault(fuzz.concrete_input(p, s), set()).add(s.id)
+    for ids in groups.values():
+        assert len({split[i] for i in ids}) == 1, ids
+    held = {i for i, x in split.items() if x == "held_out"}
+    if len(groups) >= 2:
+        assert held and len(held) < len(split)
+        want = math.ceil(len(split) * fuzz.HELD_OUT)
+        largest = max(len(ids) for ids in groups.values())
+        assert len(held) < want + largest
+        rest = [ids for ids in groups.values() if not ids & held]
+        assert len(held) >= want or all(len(held) + len(ids) >= len(split) for ids in rest)
+    else:
+        assert not held
+
+
+def test_prose_that_pays_another_amount_on_another_date_is_not_read_as_the_irs_payment(tmp_path):
+    # The IR pays one contract's YES amount at its payment date; the prose states a hundred times the YES amount, a month
+    # later, and what NO pays as the IR does, with the trigger unchanged. The readers resolve exactly as the IR does, so
+    # the outcomes agree everywhere; what decides is which payment terms each scenario's outcome rests on (external
+    # evaluation, November 2: such a prose scored fidelity 1.0 and tested_equivalent_on_suite).
+    unit = IR.payout.unit_value
+    other = TERMS["payout_yes"].replace(f"{unit.normalize():f} {IR.payout.currency}",
+                                        f"{(unit * 100).normalize():f} {IR.payout.currency}")
+    later = TERMS["payment_date"].replace(f"payment is made {IR.timing.payment_lag_days} ",
+                                          f"payment is made {IR.timing.payment_lag_days + 30} ")
+    assert other != TERMS["payout_yes"] and later != TERMS["payment_date"]  # this test's premise: both terms changed
+    stated = {**TERMS, "payout_yes": other, "payment_date": later}
+    timing = "The contract expires on June 1, 2027 at 14:00 UTC. " + "".join(f"{t[0].upper()}{t[1:]}. " for t in stated.values())
+    sections = [s.model_copy(update={"text": timing.strip()}) if s.name == "timing" else s for s in prose().sections]
+    r = fuzzed(tmp_path, Renderer(), Judges(careful), ProseDraft(sections=sections))
+    reads = {t.term: t.read for t in r.report.terms}
+    assert reads == {"payout_yes": "states_otherwise", "payout_no": "states", "payment_date": "states_otherwise"}
+    rendered = [x for x in r.report.scenarios if x.rendering_passed]
+    assert all(x.prose_outcome == x.ir_outcome for x in rendered)
+    yes = [x for x in rendered if x.prose_outcome == "resolved_yes"]
+    no = [x for x in rendered if x.prose_outcome == "resolved_no"]
+    assert yes and no  # this test's premise
+    # A YES scenario rests on what YES pays and on the payment date, both read as stated otherwise: its payment is not
+    # established (None, never an empty list that says "pays nothing"), and neither is any difference, which a reading
+    # of the whole rulebook cannot show for one scenario.
+    assert all(x.prose_transfers is None and x.amount_error is None for x in yes)
+    # A NO scenario rests on what NO pays, which the prose states as the IR does: both pay nothing, and they agree.
+    assert all(x.prose_transfers is not None and not x.prose_transfers and same_transfers(x) for x in no)
+    # No equivalence is claimed and no counterexample: what the prose pays on YES is not established.
+    assert r.report.equivalence == "unsupported_or_unassessed"
+    critical_yes = [x for x in yes if x.severity == "critical" and x.mandatory]
+    gate = r.report.hard_gates[0]  # A09 §10.4: no unreviewed critical mismatch
+    assert gate.passed == (not critical_yes)
+    if critical_yes:
+        assert "prose payment is not established" in gate.detail
+    # The same rulebook stating the IR's terms is read as stating them, and the IR's transfers stand for the prose's.
+    same = fuzzed(tmp_path / "same", Renderer(), Judges(careful))
+    assert {t.read for t in same.report.terms} == {"states"}
+    assert all(x.prose_transfers is not None and list(x.prose_transfers) == list(x.ir_transfers)
+               for x in same.report.scenarios if x.prose_outcome == x.ir_outcome)  # fmt: skip
+
+
+def test_a_rendering_check_passes_only_where_every_provider_answers_and_recovers_the_state(tmp_path):
+    # One provider reads the packets correctly; the others refuse every rendering-check question, as valid refusal
+    # records. Before, refusals were dropped before pooling and the one answer passed the check for all (external
+    # evaluation, November 2). Now no packet passes, every miss names the providers that gave no answer, and the run
+    # refuses to report a measure of the prose, since no packet was checked by every provider.
+    from requisite.fuzz.scenarios import FuzzError
+    from requisite.judgment.providers import PROVIDERS
+
+    reader = next(iter(PROVIDERS))
+    careful_judges = Judges(careful)
+
+    def partial(a: Any) -> c.Judgment:
+        j = careful_judges(a)
+        if a.question.task == "resolve" or ".term." in a.question.id or a.config.provider == reader:
+            return j
+        return j.model_copy(update={"distribution": None, "reported": None, "precision": None,
+                                    "refusal": "the provider declined to answer"})  # fmt: skip
+
+    with pytest.raises(FuzzError, match="passed the rendering check, so nothing measures its prose"):
+        fuzzed(tmp_path, Renderer(), partial)  # type: ignore[arg-type]
+    checks = [a for a in careful_judges.asked if ".check." in a.question.id]
+    assert {a.config.provider for a in checks} == set(PROVIDERS)  # every provider was asked; the others' refusals count

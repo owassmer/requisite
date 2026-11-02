@@ -256,7 +256,7 @@ def plan(ir: core.ContractIR, *, reference: Sequence[core.Observation] = (), str
             abstracts = [only]
         else:
             b.notes.append(f"the trigger's one feasible outcome could not be built: {why}")
-    unrealized: dict[cov.BoundaryPoint, str] = {}
+    unrealized: dict[cov.BoundaryPoint, Unrealized] = {}
     if whole != "no_feasible_state":
         for pa in point_accounts:
             if pa.feasible:
@@ -274,19 +274,33 @@ def plan(ir: core.ContractIR, *, reference: Sequence[core.Observation] = (), str
     return Plan(ir, lowered, account, b.at, scenarios, obligations, boundaries, whole, mandatory, tuple(b.notes))
 
 
+JOINT_STEPS = 256  # grid steps a second input moves either side of its reference in the joint search (ours)
+
+
+@dataclass(frozen=True)
+class Unrealized:
+    """Why no scenario realizes a boundary point: "infeasible" where that is proved from the IR (its bands, its other
+    bound, its constraints over every feasible state), "unconstructed" where the construction tried failed without a
+    proof (core.BoundaryPoint)."""
+
+    status: Literal["infeasible", "unconstructed"]
+    why: str
+
+
 def _boundary(pa: cov.PointAccount, comparison: evaluate.Comparison, pinned: Mapping[cov.BoundaryPoint, str],
-              unrealized: Mapping[cov.BoundaryPoint, str]) -> core.BoundaryPoint:  # fmt: skip
+              unrealized: Mapping[cov.BoundaryPoint, Unrealized]) -> core.BoundaryPoint:  # fmt: skip
     pin = Pin(comparison, pa.point)
     if not pa.point.in_domain:
-        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), feasible=False,
+        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), status="infeasible",
                                   excluded_by=("outside the values the quantity can take",))  # fmt: skip
     if not pa.feasible:
         sets = tuple(" & ".join(sorted(s)) for s in pa.excluded_by)
-        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), feasible=False, excluded_by=sets)
+        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), status="infeasible",
+                                  excluded_by=sets)  # fmt: skip
     if pa.point in unrealized:
-        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), feasible=False,
-                                  excluded_by=(unrealized[pa.point],))  # fmt: skip
-    return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), feasible=True,
+        u = unrealized[pa.point]
+        return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), status=u.status, excluded_by=(u.why,))
+    return core.BoundaryPoint(condition=pa.point.condition, point=pin.shown(), status="feasible",
                               scenario=pinned.get(pa.point))  # fmt: skip
 
 
@@ -471,13 +485,13 @@ class _Builder:
 
     # ---- boundary points
 
-    def host(self, abstracts: list[_Abstract], pin: Pin) -> str | None:
+    def host(self, abstracts: list[_Abstract], pin: Pin) -> Unrealized | None:
         """Give the point to a chosen scenario that realizes it with every condition kept, or else to a new one.
-        Returns why no scenario can realize the point, where that is proved, or None (a point no scenario this run
-        builds realizes is recorded in the notes and stays unmet)."""
+        Returns why no scenario realizes the point (proved infeasible, or unconstructed with what was tried), or None
+        (a feasible point no scenario this run builds realizes is recorded in the notes and stays unmet)."""
         p = pin.point
         solved = self._solve(pin)
-        if isinstance(solved, str):
+        if isinstance(solved, Unrealized):
             return solved
         pin = solved
         why: list[str] = []
@@ -511,7 +525,8 @@ class _Builder:
             self.notes.append(f"boundary point {pin.shown()} of {p.condition}: no scenario could be built for it ("
                               + "; ".join(dict.fromkeys(why)) + ")")  # fmt: skip
             return None
-        return "no feasible state of the trigger's conditions realizes this value"
+        return Unrealized("infeasible", "no feasible state of the trigger's conditions realizes this value (every state "
+                                        "this value fixes was completed against the IR's constraints)")  # fmt: skip
 
     def _same(self, c: str) -> list[str]:
         """The comparisons of the number condition c compares (c included), where c compares a number."""
@@ -575,9 +590,9 @@ class _Builder:
         truths = self._truths_at(pin)
         return [truths] if truths is not None else []
 
-    def _solve(self, pin: Pin) -> Pin | str:
+    def _solve(self, pin: Pin) -> Pin | Unrealized:
         """The pin, with what realizing it needs solved (the published values a computed number's exact value needs),
-        or why no scenario can realize it."""
+        or why no scenario realizes it: proved from the IR, or a construction that failed."""
         node = self.atoms[pin.condition]
         lay = self.layout_of.get(pin.condition)
         if lay is not None and isinstance(pin.point.value, datetime):
@@ -586,9 +601,9 @@ class _Builder:
             inside = lay.within(lay.region_of(pin.point.value), pin.condition)
             gives = inside if pin.condition not in lay.every else not inside
             if gives != pin.point.holds:
-                return (f"at {pin.point.value.isoformat()} the condition's other bound puts the instant "
-                        f"{'inside' if inside else 'outside'} its bounds, so a value there gives it {gives}, not "
-                        f"{pin.point.holds}")  # fmt: skip
+                return Unrealized("infeasible", f"at {pin.point.value.isoformat()} the condition's other bound puts the "
+                                  f"instant {'inside' if inside else 'outside'} its bounds, so a value there gives it "
+                                  f"{gives}, not {pin.point.holds}")  # fmt: skip
             return pin
         if not isinstance(node, core.NumCmp):
             return pin
@@ -597,25 +612,27 @@ class _Builder:
             if self._truths_at(pin) is None:
                 band = self._band_of(e, Fraction(cast(Decimal, pin.point.value)))
                 where = "no band" if band is None else f"the band {e.bands[band]}"
-                return (f"{e.id} is read as a band, and {where} holding {pin.point.value} {e.unit} decides "
-                        f"'{node.op} {node.value}'")  # fmt: skip
+                return Unrealized("infeasible", f"{e.id} is read as a band, and {where} holding {pin.point.value} "
+                                  f"{e.unit} decides '{node.op} {node.value}'")  # fmt: skip
             return pin
         if not isinstance(e, core.Computed):
             return pin
         banded = [r.id for r in core.walk(e) if isinstance(r, core.ReadValue) and r.bands[-1][0] != r.bands[-1][1]]
         if banded:
-            return (f"{e.id} is computed from readings answered as bands ({', '.join(banded)}), so its value is an "
-                    "interval, never one value")  # fmt: skip
+            return Unrealized("infeasible", f"{e.id} is computed from readings answered as bands ({', '.join(banded)}), "
+                              "so its value is an interval, never one value")  # fmt: skip
         other = [n for n, sub in e.inputs.items() if not isinstance(sub, core.ReadValue | core.ValueAt)]
         if other:
-            return f"{e.id}'s inputs {other} are neither readings nor published values; their exact value is not solved"
+            return Unrealized("unconstructed", f"{e.id}'s inputs {other} are neither readings nor published values; "
+                              "this run does not solve for their exact value")  # fmt: skip
         return self._solve_computed(pin, e)
 
-    def _solve_computed(self, pin: Pin, e: core.Computed) -> Pin | str:
-        """The pin with the published values that give a computed number exactly its value (`_solve_value`)."""
+    def _solve_computed(self, pin: Pin, e: core.Computed) -> Pin | Unrealized:
+        """The pin with the published values that give a computed number exactly its value (`_solve_value`). A search
+        that finds none proves nothing about the node, so the point stands unconstructed."""
         solved = self._solve_value(e, Fraction(cast(Decimal, pin.point.value)), ())
         if isinstance(solved, str):
-            return f"{solved}: the node steps over it"
+            return Unrealized("unconstructed", solved)
         return replace(pin, solution=solved)
 
     def _pin_places(self, lay: Layout, pin: Pin) -> list[tuple[int, int]]:
@@ -1161,9 +1178,12 @@ class _Builder:
 
     def _solve_value(self, e: core.Computed, v: Fraction, facts: Iterable[Fact]
                      ) -> tuple[tuple[str, datetime, core.CmpValue], ...] | str:  # fmt: skip
-        """Published values giving a computed number exactly v, its readings at their single values: one published input
+        """Published values giving a computed number exactly v, its readings at their single values. Each published input
         the node is declared monotone in is searched on its precision grid by bisection (a value the node refuses being
-        outside its domain), the others at their reference or default values."""
+        outside its domain), the others at their reference or default values; then, where that finds none, each such
+        input is bisected again while one other free published input steps through JOINT_STEPS grid steps either side
+        of its reference value (external evaluation, November 2: z = 2x + 3y reaches 501 only with both inputs moved).
+        Returns the values, or what was searched where none was found, which proves nothing about the node."""
         fn = registry.get(e.node)
         args: dict[str, Fraction] = {}
         for name, sub in e.inputs.items():
@@ -1173,23 +1193,24 @@ class _Builder:
                 assert isinstance(sub, core.ValueAt)  # the callers refuse other inputs
                 args[name] = Fraction(cast(core.Number, self._value_for(sub.observable, sub.at, facts)).value)
         placed = {(f.observable, f.at) for f in facts}
-        for name, sub in e.inputs.items():
-            if not isinstance(sub, core.ValueAt) or fn.monotone.get(name) is None:
-                continue
-            if (sub.observable, _utc(sub.at)) in placed:
-                continue
-            obs = self.observables[sub.observable]
-            assert obs.precision is not None
-            step = Fraction(obs.precision)
+        free = {name: sub for name, sub in e.inputs.items()
+                if isinstance(sub, core.ValueAt) and (sub.observable, _utc(sub.at)) not in placed}  # fmt: skip
+        step = {name: Fraction(cast(Decimal, self.observables[sub.observable].precision)) for name, sub in free.items()}
+
+        def value(name: str, k: int) -> core.Number:
+            obs = self.observables[free[name].observable]
+            return core.Number(value=evaluate._to_decimal(k * step[name]).quantize(cast(Decimal, obs.precision)))
+
+        def bisect(name: str, base: Mapping[str, Fraction]) -> int | None:
             up = fn.monotone[name] == "increasing"
 
-            def f(k: int, name: str = name, step: Fraction = step) -> Fraction | None:
+            def f(k: int) -> Fraction | None:
                 try:
-                    return Fraction(fn.fn(**{**args, name: k * step}))
+                    return Fraction(fn.fn(**{**base, name: k * step[name]}))
                 except ValueError:
                     return None  # the node refuses this input: outside its domain
 
-            k0 = int(args[name] / step)
+            k0 = int(base[name] / step[name])
             lo, hi, span = k0, k0, 1
             while (y := f(lo)) is not None and (y > v if up else y < v) and span < 2**62:
                 lo, span = lo - span, span * 2
@@ -1205,10 +1226,26 @@ class _Builder:
                     lo = mid + 1
                 else:
                     hi = mid
-            if f(lo) == v:
-                value = core.Number(value=evaluate._to_decimal(lo * step).quantize(obs.precision))
-                return ((sub.observable, _utc(sub.at), value),)
-        return f"no published value of {e.id}'s inputs, on its precision grid, gives it exactly {v}"
+            return lo if f(lo) == v else None
+
+        monotone = [n for n in free if fn.monotone.get(n) is not None]
+        for name in monotone:
+            k = bisect(name, args)
+            if k is not None:
+                return ((free[name].observable, _utc(free[name].at), value(name, k)),)
+        for name in monotone:
+            for other in (o for o in free if o != name):
+                k1 = int(args[other] / step[other])
+                for d in sorted(range(-JOINT_STEPS, JOINT_STEPS + 1), key=abs):
+                    if d == 0:
+                        continue
+                    k = bisect(name, {**args, other: (k1 + d) * step[other]})
+                    if k is not None:
+                        return ((free[name].observable, _utc(free[name].at), value(name, k)),
+                                (free[other].observable, _utc(free[other].at), value(other, k1 + d)))
+        searched = (f"each of {monotone} bisected on its precision grid, the other inputs at their reference values"
+                    + (f", then with one other free input stepped {JOINT_STEPS} steps either side" if len(free) > 1 else ""))
+        return f"no published value of {e.id}'s inputs found giving it exactly {v} ({searched})"
 
     def alone(self, node: Any, observations: Sequence[core.SyntheticObservation],
               interps: Mapping[str, Interpretation]) -> Kleene:  # fmt: skip
