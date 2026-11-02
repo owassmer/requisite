@@ -6,8 +6,9 @@ read (a PDF rendition where the API offers one, else the original by its format)
 Code then commits, in the sample's order: each response as an artifact (its record, published at its postedDate; each
 file, published with it), each text as an extraction, and the core Item, whose text is the comment and then each file in
 the order filed, each part headed by the artifact it came from. What could not be read (a restricted attachment, a file
-the host no longer serves, a format no reader here reads, a corrupt file) is stated in the text where it stands and on
-the item's `unreadable`, never dropped.
+the host no longer serves, a format no reader here reads, a corrupt file, an empty text) is stated in the text where it
+stands and on its part's reading status (core.ItemPart), never dropped. The document the comment addresses is kept as
+the source states it (commentOnDocumentId).
 
 A comment the frame listed but the API no longer serves (404) stays an item: its artifact is the API's answer, its
 docket and posted time are the frame's, and its text says what was found.
@@ -22,7 +23,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
-from requisite.core import FrameItem, Item
+from requisite.core import FrameItem, Item, ItemPart
 from requisite.core.evidence import artifact_id
 from requisite.evidence import extract
 from requisite.evidence.artifacts import commit
@@ -41,6 +42,7 @@ class _File:
     fetched: Fetched | None
     extraction: extract.Extraction | None
     unreadable: str | None  # why the file itself could not be fetched or has no reader here
+    by: str | None = None  # "source" or "reader" (core.ItemPart.by), where unreadable
 
 
 @dataclass(frozen=True)
@@ -101,14 +103,14 @@ def _restriction(attributes: Mapping[str, Any]) -> str:
 def _file(client: RegulationsGov, once: _Once, label: str, attributes: Mapping[str, Any]) -> _File:
     formats = attributes.get("fileFormats") or []
     if not formats:
-        return _File(label, None, None, _restriction(attributes))
+        return _File(label, None, None, _restriction(attributes), "source")
     chosen, reader = choose(formats)
     url = str(chosen["fileUrl"])
     fetched = client.download(url)
     if fetched.status != 200:
-        return _File(label, None, None, f"the file host answered {fetched.status} for {url}")
+        return _File(label, None, None, f"the file host answered {fetched.status} for {url}", "source")
     if reader is None:
-        return _File(label, fetched, None, f".{_format(chosen)}: no reader here, and no PDF rendition is offered")
+        return _File(label, fetched, None, f".{_format(chosen)}: no reader here, and no PDF rendition is offered", "reader")
     aid = artifact_id(fetched.content)
     extraction = once(
         f"{reader}|{aid}",
@@ -143,7 +145,8 @@ def _fetch(client: RegulationsGov, once: _Once, entry: FrameItem) -> _Read:
         attachments.append((rank if isinstance(rank, int) else position + 1, position, aid, a))
     for rank, _, aid, a in sorted(attachments, key=lambda x: (x[0], x[1])):
         if a is None:
-            files.append(_File(f"attachment {rank} ({aid})", None, None, "the record names it but does not include it"))
+            files.append(_File(f"attachment {rank} ({aid})", None, None, "the record names it but does not include it",
+                               "source"))  # fmt: skip
             continue
         title = (a.get("attributes") or {}).get("title")
         label = f'attachment {rank} "{title}"' if title else f"attachment {rank}"
@@ -163,55 +166,73 @@ def submitter(attributes: Mapping[str, Any]) -> str | None:
 
 
 def _item(store: Store, read: _Read) -> Item:
-    """Commit one comment's artifacts and extractions, and its item."""
+    """Commit one comment's artifacts and extractions, and its item: each part with its reading status (core.ItemPart),
+    a part whose text is empty recorded as unreadable for that reason, its extraction still committed as what was read."""
     entry = read.entry
     if read.comment is None:  # the API no longer serves the record
         gone = commit(store, read.record, published_at=None, basis=GONE_BASIS)
-        note = (f"the comment's record: regulations.gov answered {read.record.status} for it at "
-                f"{gone.observed_at.isoformat()}; it was listed in the frame and is no longer served")  # fmt: skip
-        item = Item(id=entry.id, source=SOURCE, container=entry.docket, posted_at=entry.posted_at, submitter=None,
-                    artifacts=[gone.id], text=f"[comment {entry.id} · {gone.id}]\n({note})", extractions=[],
-                    unreadable=[note])  # fmt: skip
+        note = (f"regulations.gov answered {read.record.status} for it at {gone.observed_at.isoformat()}; it was listed "
+                "in the frame and is no longer served")  # fmt: skip
+        part = ItemPart(label="the comment's record", locator=read.record.locator, artifact=gone.id, extraction=None,
+                        unreadable=note, by="source")  # fmt: skip
+        item = Item(id=entry.id, source=SOURCE, container=entry.docket, addresses=None, posted_at=entry.posted_at,
+                    submitter=None, parts=[part], text=f"[comment {entry.id} · {gone.id}]\n(the comment's record: {note})")  # fmt: skip
         store.commit("item", f"{item.id}|{item.content_hash()}", item)
         return item
     data = read.record.json()["data"]
     attributes = data.get("attributes") or {}
     posted = instant(str(attributes["postedDate"]))
     record = commit(store, read.record, published_at=posted, basis=RECORD_BASIS)
-    artifacts, extractions, parts, unreadable = [record.id], [], [], []
     if read.comment.id is None or read.comment.text is None:
-        raise ValueError(f"comment {entry.id}: its record has no readable comment field")
+        raise ValueError(f"comment {entry.id}: the comment reader returned no text for its record")
     store.commit_extraction(record.id, read.comment.id, read.comment.text)
-    extractions.append(read.comment.id)
-    parts.append(f"[comment {data['id']} · {record.id}]\n{read.comment.text}".rstrip("\n"))
+    parts: list[ItemPart] = []
+    texts: list[str] = []
+    head = f"[comment {data['id']} · {record.id}]"
+    if read.comment.text.strip():
+        parts.append(ItemPart(label="the comment", locator=read.record.locator, artifact=record.id,
+                              extraction=read.comment.id, unreadable=None, by=None))  # fmt: skip
+        texts.append(f"{head}\n{read.comment.text}".rstrip("\n"))
+    else:
+        parts.append(ItemPart(label="the comment", locator=read.record.locator, artifact=record.id, extraction=None,
+                              unreadable="its comment field is empty", by="source"))  # fmt: skip
+        texts.append(f"{head}\n(its comment field is empty)")
     for f in read.files:
         if f.fetched is None:
-            parts.append(f"[{f.label}]\n(its text could not be read: {f.unreadable})")
-            unreadable.append(f"{f.label}: {f.unreadable}")
+            parts.append(ItemPart(label=f.label, locator=None, artifact=None, extraction=None, unreadable=f.unreadable,
+                                  by="source"))  # fmt: skip
+            texts.append(f"[{f.label}]\n(its text could not be read: {f.unreadable})")
             continue
         art = commit(store, f.fetched, published_at=posted, basis=FILE_BASIS)
-        artifacts.append(art.id)
         heading = f"[{f.label} · {urlsplit(f.fetched.locator).path.rsplit('/', 1)[-1]} · {art.id}]"
         x = f.extraction
         if x is None or x.id is None or x.text is None:
-            why = f.unreadable or "; ".join(x.unreadable if x is not None else ())
-            parts.append(f"{heading}\n(its text could not be read: {why})")
-            unreadable.append(f"{f.label}: {why}")
+            why = f.unreadable or "; ".join(x.unreadable if x is not None else ()) or "no reader returned text"
+            parts.append(ItemPart(label=f.label, locator=f.fetched.locator, artifact=art.id, extraction=None,
+                                  unreadable=why, by="reader" if f.by == "reader" else "source"))  # fmt: skip
+            texts.append(f"{heading}\n(its text could not be read: {why})")
             continue
         store.commit_extraction(art.id, x.id, x.text)
-        extractions.append(x.id)
-        parts.append(f"{heading}\n{x.text}".rstrip("\n"))
-        unreadable.extend(f"{f.label}: {u}" for u in x.unreadable)
+        if not x.text.strip():
+            why = "; ".join(("no text was found in it", *x.unreadable))
+            parts.append(ItemPart(label=f.label, locator=f.fetched.locator, artifact=art.id, extraction=None,
+                                  unreadable=why, by="source"))  # fmt: skip
+            texts.append(f"{heading}\n(its text could not be read: {why})")
+            continue
+        partial = "; ".join(x.unreadable) or None
+        parts.append(ItemPart(label=f.label, locator=f.fetched.locator, artifact=art.id, extraction=x.id,
+                              unreadable=partial, by="source" if partial else None))  # fmt: skip
+        texts.append(f"{heading}\n{x.text}".rstrip("\n"))
+    addressed = attributes.get("commentOnDocumentId")
     item = Item(
         id=str(data["id"]),
         source=SOURCE,
         container=str(attributes["docketId"]),
+        addresses=str(addressed) if addressed else None,
         posted_at=posted,
         submitter=submitter(attributes),
-        artifacts=artifacts,
-        text="\n\n".join(parts),
-        extractions=extractions,
-        unreadable=unreadable,
+        parts=parts,
+        text="\n\n".join(texts),
     )
     store.commit("item", f"{item.id}|{item.content_hash()}", item)
     return item

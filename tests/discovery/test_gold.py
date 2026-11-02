@@ -17,7 +17,8 @@ OBJECTIVE = core.WideObjective(
     horizon=core.TimeWindow(start=T, end=None, start_closed=True, end_closed=False), loss_definition="higher costs",
     estimand="share of items", unit="item",
 )  # fmt: skip
-MEASURES = {"D-1": "A proposed rule raising the overtime salary threshold."}
+MEASURES = {f"C-{i}": core.ItemMeasure(item=f"C-{i}", document="D-1-0001",
+                                         statement="A proposed rule raising the overtime salary threshold.", artifacts=[]) for i in range(10)}  # fmt: skip
 
 
 @pytest.fixture(autouse=True)
@@ -32,8 +33,10 @@ def make_items(store: Store, n: int) -> core.SampleDraw:
     drawn = []
     for i in range(n):
         art = artifact_id(f"comment {i}".encode())
-        item = core.Item(id=f"C-{i}", source="regulations.gov", container="D-1", posted_at=T, submitter=f"Firm {i}",
-                         artifacts=[art], text=f"Comment text {i}.", extractions=["rg-comment-v1"])  # fmt: skip
+        item = core.Item(id=f"C-{i}", source="regulations.gov", container="D-1", addresses="D-1-0001", posted_at=T,
+                         submitter=f"Firm {i}", text=f"Comment text {i}.",
+                         parts=[core.ItemPart(label="the comment", locator=f"https://example/{i}", artifact=art,
+                                              extraction="rg-comment-v1", unreadable=None, by=None)])  # fmt: skip
         store.commit("item", item.id, item)
         drawn.append(core.DrawnItem(item=item.id, stratum="all.neg", inclusion_prob=F(1, 10)))
     return core.SampleDraw(design=core.Ref(id="design", version=1), phase=2, seed=3, items=drawn)
@@ -73,7 +76,7 @@ def test_a_session_labels_blind_in_the_seeds_order_and_keeps_unsure(tmp_path):
     n2, shown2 = session(store, draw, ["5", "1", "3", "2", "1"])
     assert n2 == 3 and "All drawn items are labelled" in shown2
     assert len(store.all("gold_label", core.GoldLabel)) == 6
-    assert gold.pending(store, draw, lambda item: ["voice_in_population", f"exposure_to_measure.{item.container}"]) == []
+    assert gold.pending(store, draw, lambda item: ["voice_in_population", "exposure_to_measure.D-1-0001"]) == []
 
 
 def test_an_answer_out_of_range_is_asked_again(tmp_path):

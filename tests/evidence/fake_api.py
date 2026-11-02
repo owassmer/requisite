@@ -234,6 +234,34 @@ def fixture_world(api: FakeAPI, *, scanned_0003: bytes | None = None) -> FakeAPI
     return api
 
 
+# ---------------------------------------------------------------- the Federal Register
+
+
+@dataclass
+class FakeFederalRegister:
+    """The Federal Register's documents endpoint, as it answers a request for several document numbers: each number it
+    knows with its stated effective date (None: it states none), the rest as not found."""
+
+    effective: dict[str, str | None] = field(default_factory=dict)  # document number -> effective_on, or None
+    requests: list[httpx.Request] = field(default_factory=list)
+
+    def transport(self) -> httpx.MockTransport:
+        return httpx.MockTransport(self.handle)
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "www.federalregister.gov" and request.headers["user-agent"] == USER_AGENT
+        self.requests.append(request)
+        numbers = request.url.path.removeprefix("/api/v1/documents/").removesuffix(".json").split(",")
+        found = [{"document_number": n, "type": "Rule", "publication_date": None, "effective_on": self.effective[n],
+                  "dates": f"This rule is effective {self.effective[n]}." if self.effective[n] else None}
+                 for n in numbers if n in self.effective]  # fmt: skip
+        missing = [n for n in numbers if n not in self.effective]
+        body: dict[str, Any] = {"count": len(found), "results": found}
+        if missing:
+            body["errors"] = {"not_found": missing}
+        return httpx.Response(200, json=body, headers={"content-type": "application/json; charset=utf-8"})
+
+
 # ---------------------------------------------------------------- PDFs for the OCR path
 
 

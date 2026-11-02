@@ -33,36 +33,37 @@ class ItemState:
 
 
 def item_state(store: Store, item: core.Item, *, evaluated_at: datetime) -> ItemState:
-    """The item's filing as a judgment state: each of its artifacts' extracted text as one observed claim (spec §5:
-    Supports, with a span), committed through the store, every one observable at the state's as_of (spec I3)."""
+    """The item's filing as a judgment state: each read part's text as one observed claim (spec §5: Supports, with a
+    span) asserted by its submitter, committed through the store, every artifact observable at the state's as_of (spec
+    I3). Only a readable item has a state (core.Item.readable); anything missing that the item says was read is an
+    integrity failure and stops the step, never a reason to set the item aside."""
+    if not item.readable:
+        raise ValueError(f"item {item.id} has no readable part, so it has no state to judge: {item.unreadable}")
     claims: dict[str, core.Claim] = {}
     artifacts: dict[str, core.Artifact] = {}
+    authority = item.submitter or "the filer (name not published)"
     for art_id in item.artifacts:
         artifact = store.get("artifact", art_id, core.Artifact)
         if artifact is None:
             raise Refused(f"item {item.id} names artifact {art_id}, which is not committed")
         artifacts[art_id] = artifact
-        texts = [(e, store.extraction(art_id, e)) for e in item.extractions]
-        found = [(e, t) for e, t in texts if t is not None]
-        if not found:
-            if not any(art_id in u for u in item.unreadable):
-                raise Refused(f"artifact {art_id} of item {item.id} has no extraction and is not recorded unreadable")
+    for part in item.parts:
+        if part.extraction is None:
             continue
-        extraction, text = found[0]
-        if not text.strip():
-            continue
+        assert part.artifact is not None  # core.ItemPart: text is read from retrieved content
+        text = store.extraction(part.artifact, part.extraction)
+        if text is None:
+            raise Refused(f"item {item.id}: {part.label}'s extraction {part.extraction} is not committed")
         claim = core.Claim(
-            id=core.claim_id(art_id, extraction, (0, len(text)), text),
-            artifact=art_id,
-            extraction=extraction,
+            id=core.claim_id(part.artifact, part.extraction, (0, len(text)), text, authority),
+            artifact=part.artifact,
+            extraction=part.extraction,
             span=(0, len(text)),
             text=text,
-            authority=item.submitter or "the filer (name not published)",
+            authority=authority,
         )
         store.commit_claim(claim)
         claims[claim.id] = claim
-    if not claims:
-        raise Refused(f"item {item.id} has no readable text: {list(item.unreadable)}")
     as_of = max(a.available_from for a in artifacts.values())
     for a in artifacts.values():
         if not core.observable_at(a, as_of, evaluated_at):
@@ -71,12 +72,23 @@ def item_state(store: Store, item: core.Item, *, evaluated_at: datetime) -> Item
     return ItemState(item, state, claims, artifacts)
 
 
+def horizon(window: core.TimeWindow) -> str:
+    """The objective's horizon as the question states it."""
+    start = window.start.isoformat() if window.start is not None else "no start"
+    end = window.end.isoformat() if window.end is not None else "no end"
+    return (f"from {start} ({'included' if window.start_closed else 'excluded'}) to {end} "
+            f"({'included' if window.end_closed else 'excluded'}), {window.tz}")  # fmt: skip
+
+
 def questions(
-    objective: core.WideObjective, measures: Mapping[str, str], item: core.Item
+    objective: core.WideObjective, measures: Mapping[str, core.ItemMeasure], item: core.Item
 ) -> dict[str, core.AtomicQuestion]:
-    """The objective's two questions for one item, its docket's measure bound into the exposure question."""
-    if item.container not in measures:
-        raise Refused(f"no measure is recorded for docket {item.container}")
+    """The objective's two questions for one item: the population; and the exposure question with the measure the item
+    addresses (core.ItemMeasure) and the objective's event class, horizon and loss definition bound, each as the
+    approved objective states it, so the question asked is the one the estimand counts."""
+    if item.id not in measures:
+        raise Refused(f"no measure is committed for item {item.id}")
+    measure = measures[item.id]
     voice = library.instantiate(
         library.template("voice_in_population"),
         {"population": objective.population},
@@ -85,10 +97,11 @@ def questions(
     )
     exposure = library.instantiate(
         library.template("exposure_to_measure"),
-        {"measure": measures[item.container], "loss_definition": objective.loss_definition},
-        question_id=f"exposure_to_measure.{item.container}",
+        {"measure": measure.statement, "events": objective.events, "horizon": horizon(objective.horizon),
+         "loss_definition": objective.loss_definition},
+        question_id=f"exposure_to_measure.{measure.document}",
         paraphrase_set="ps.exposure_to_measure",
-    )
+    )  # fmt: skip
     return {"voice_in_population": voice, "exposure_to_measure": exposure}
 
 

@@ -56,7 +56,7 @@ def label_session(
     store: Store,
     draw: core.SampleDraw,
     objective: core.WideObjective,
-    measures: Mapping[str, str],
+    measures: Mapping[str, core.ItemMeasure],
     *,
     labeler: str,
     read: Callable[[str], str] = input,
@@ -73,6 +73,8 @@ def label_session(
     write(f"{len(todo)} of {len(draw.items)} drawn items still need labels. You will not see any model's answer.")
     write("For each question, type the number of your answer, 'u' if you are unsure, or 'q' to stop (labels are kept).")
     write("\nPopulation definition (the first question refers to it):\n" + textwrap.fill(objective.population, 110))
+    write("\nEvent class (the second question refers to it):\n" + objective.events)
+    write("\nLoss definition (the second question refers to it):\n" + objective.loss_definition)
     committed = 0
     labelled = {(g.item, g.question.id) for g in store.all("gold_label", core.GoldLabel) if g.design == draw.design}
     have = read_items_of(store, [d.item for d in todo])
@@ -80,14 +82,16 @@ def label_session(
         item = have[drawn.item]  # pending() checked
         write("\n" + "=" * 110)
         write(f"Item {n} of {len(todo)}  ·  {item.id}  ·  docket {item.container}  ·  posted {item.posted_at.date()}")
-        write(f"Measure: {measures[item.container]}")
+        write(f"Measure: {measures[item.id].statement}")
         write("-" * 110)
         write(item.text)
         write("-" * 110)
         for q in labels.questions(objective, measures, item).values():
             if (item.id, q.id) in labelled:
                 continue
-            target = q.target.replace(objective.population, "(the population definition shown at the start)")
+            target = (q.target.replace(objective.population, "(the population definition shown at the start)")
+                      .replace(objective.events, "(the event class shown at the start)")
+                      .replace(objective.loss_definition, "(the loss definition shown at the start)"))  # fmt: skip
 
             def ask(q: core.AtomicQuestion = q, target: str = target) -> tuple[dict[str, str], float]:
                 write("\n" + target)

@@ -1,7 +1,7 @@
 """A wide run's results after its gold labels (spec §7.2 steps 5-6; decisions, "F4 from the labels to the leads"):
 
-9. families: an agent proposes the event families over the kept dockets' measures (the objective: "Families are
-   defined by the run from what it finds"); its tests gate holds every kept docket in exactly one family.
+9. families: an agent proposes the event families over the measures the readable phase-1 items address (the objective:
+   "Families are defined by the run from what it finds"); its tests gate holds every such measure in exactly one family.
 10. estimate: the objective's share, overall and per family, from the committed phase-1 judgments and gold labels
    under the run's two-phase design, bounded over the unresolved gold labels by its two completions.
 11. leads: the phase-1 items in the numerator, asked the spec's item templates and their stated impacts extracted, ranked
@@ -39,35 +39,41 @@ LEAD_CUT = 0.5  # decisions, "F4 from the labels to the leads": P(in_population)
 # ---------------------------------------------------------------- 9. families
 
 
-def _kept(store: Store) -> list[str]:
-    return sorted(d.docket for d in wide.the_frame(store).dockets if d.kept)
+def item_measures(store: Store) -> dict[str, core.ItemMeasure]:
+    """Each readable phase-1 item's measure (the document it addresses, with its status)."""
+    states, _ = wide._states(store, [d.item for d in wide.drawn(store, 1).items])
+    return wide.measures(store, [st.item.id for st in states])
 
 
 def families_gate(store: Store, proposal: core.Proposal) -> core.GateResult:
-    """The tests gate of an event_families proposal: its frame is the case's, and every kept docket of it is in exactly
-    one family (core.EventFamilies holds the 'at most one'; this holds the 'every')."""
+    """The tests gate of an event_families proposal: its frame is the case's, and every measure a readable phase-1 item
+    addresses is in exactly one family (core.EventFamilies holds the 'at most one'; this holds the 'every')."""
     fams = core.EventFamilies.model_validate_json(core.canonical_json(dict(proposal.payload)))
     frame = wide.the_frame(store)
     if fams.frame != frame.id:
         return core.GateResult(gate="tests", passed=False, detail=f"the case's frame is {frame.id}, not {fams.frame}")
-    kept = set(_kept(store))
-    placed = {d for f in fams.families for d in f.dockets}
-    missing, foreign = sorted(kept - placed), sorted(placed - kept)
+    addressed = {m.document for m in item_measures(store).values()}
+    placed = {m for f in fams.families for m in f.measures}
+    missing, foreign = sorted(addressed - placed), sorted(placed - addressed)
     if missing or foreign:
-        detail = "; ".join(x for x in (f"kept dockets in no family: {missing}" if missing else "",
-                                        f"dockets the frame did not keep: {foreign}" if foreign else "") if x)  # fmt: skip
+        detail = "; ".join(x for x in (f"measures in no family: {missing}" if missing else "",
+                                        f"measures no item addresses: {foreign}" if foreign else "") if x)  # fmt: skip
         return core.GateResult(gate="tests", passed=False, detail=detail)
     return core.GateResult(gate="tests", passed=True,
-                           detail=f"all {len(kept)} kept dockets in exactly one of {len(fams.families)} families")  # fmt: skip
+                           detail=f"all {len(addressed)} measures in exactly one of {len(fams.families)} families")  # fmt: skip
 
 
 def draft_families(store: Store, agent: Callable[..., Any] | None = None) -> core.Proposal:
-    """Step 9: the family_drafter's families over the kept dockets' measures, proposed through their gates."""
+    """Step 9: the family_drafter's families over the measures the readable phase-1 items address, proposed through
+    their gates."""
     store.register_gate("event_families", "tests", families_gate)
-    objective, frame, ms = wide.approved_objective(store), wide.the_frame(store), wide.measures(store)
-    dockets = [{"docket": d.docket, "measure": ms[d.docket], "comments": d.comments} for d in frame.dockets if d.kept]
-    agent_input = {"events": objective.events, "loss_definition": objective.loss_definition,
-                   "dockets": sorted(dockets, key=lambda x: str(x["docket"]))}  # fmt: skip
+    objective, frame = wide.approved_objective(store), wide.the_frame(store)
+    by_measure: dict[str, tuple[str, int]] = {}
+    for m in item_measures(store).values():
+        text, n = by_measure.get(m.document, (m.statement, 0))
+        by_measure[m.document] = (text, n + 1)
+    measures = [{"document": d, "measure": t, "sampled_comments": n} for d, (t, n) in sorted(by_measure.items())]
+    agent_input = {"events": objective.events, "loss_definition": objective.loss_definition, "measures": measures}
     result = (agent or runner.run)("family_drafter", agent_input, FamiliesDraft, effort="high")
     if done := made_from(store, result):
         return done[0]
@@ -138,13 +144,13 @@ def estimate(store: Store, *, level: float = 0.95) -> core.WideEstimate:
     objective = wide.approved_objective(store)
     frame, draw, gold = wide.the_frame(store), wide.drawn(store, 1), wide.drawn(store, 2)
     fam_proposal, fams = the_families(store)
-    family_of = {d: f.id for f in fams.families for d in f.dockets}
+    family_of = {m: f.id for f in fams.families for m in f.measures}
     f = wide.predictions(store)
     unread = wide.unreadable(store)
+    measure_of = {i: m.document for i, m in item_measures(store).items()}
     labels_ = _gold(store, gold)
     strata = wide.phase1_strata(frame)
     items = list(draw.items)
-    docket = {i.id: i.docket for i in frame.items}
     readable_strata = list(dict.fromkeys(d.stratum for d in items if d.item in f))
     allocation = wide.gold_allocation(readable_strata)
     cuts: list[float]
@@ -164,7 +170,8 @@ def estimate(store: Store, *, level: float = 0.95) -> core.WideEstimate:
         y = [(0, 0) if d.item in unread or d.item not in labels_ else _complete(*labels_[d.item], lowest) for d in items]
         nums = {}
         for scope in scopes:
-            inside = [scope == "overall" or family_of.get(docket[d.item]) == scope for d in items]
+            inside = [scope == "overall" or (d.item in measure_of and family_of[measure_of[d.item]] == scope)
+                      for d in items]  # fmt: skip
             nums[scope] = ([fn if k else 0.0 for fn, k in zip(f_num, inside, strict=True)],
                            [yy[1] if k else 0 for yy, k in zip(y, inside, strict=True)])  # fmt: skip
         return inference.two_phase_ratio(
@@ -250,7 +257,8 @@ def _impacts(store: Store, st: labels.ItemState, result: Any, agent_input: Mappi
                 continue
             base = st.claims[cid]
             span = (base.span[0] + at, base.span[0] + at + len(imp.quote))
-            claim = core.Claim(id=core.claim_id(base.artifact, base.extraction, span, imp.quote), artifact=base.artifact,
+            claim = core.Claim(id=core.claim_id(base.artifact, base.extraction, span, imp.quote, base.authority),
+                               artifact=base.artifact,
                                extraction=base.extraction, span=span, text=imp.quote, authority=base.authority)  # fmt: skip
             store.commit_claim(claim)
             annual = Fraction(amount) * 12 if imp.period == "month" else Fraction(amount) if imp.period == "year" else None
@@ -266,10 +274,10 @@ def find_leads(store: Store, *, workers: int = 16, agent: Callable[..., Any] | N
     if store.get("wide_estimate", est_key, core.WideEstimate) is None:
         raise Refused("the estimate is not committed: run `wide estimate`")
     _, fams = the_families(store)
-    family_of = {d: f.id for f in fams.families for d in f.dockets}
+    family_of = {m: f.id for f in fams.families for m in f.measures}
     f = wide.predictions(store)
     gold = _gold(store, wide.drawn(store, 2))
-    ms = wide.measures(store)
+    ms = item_measures(store)
     candidates: dict[str, tuple[Literal["gold", "judged"], float]] = {}
     for item, (voice, exposed) in f.items():
         g = gold.get(item)
@@ -296,7 +304,7 @@ def find_leads(store: Store, *, workers: int = 16, agent: Callable[..., Any] | N
         answers.setdefault(item, {})[a.question.id] = top
         jids.setdefault(item, []).append(j.content_hash())
     with ThreadPoolExecutor(max_workers=4) as ex:
-        futures = {i: ex.submit(_extract, st, ms[st.item.container], agent or runner.run) for i, st in by_item.items()}
+        futures = {i: ex.submit(_extract, st, ms[i].statement, agent or runner.run) for i, st in by_item.items()}
         extracted = {i: fu.result() for i, fu in futures.items()}
     impacts = {i: _impacts(store, by_item[i], *extracted[i]) for i in sorted(extracted)}
     items = committed(store, list(candidates))
@@ -309,7 +317,8 @@ def find_leads(store: Store, *, workers: int = 16, agent: Callable[..., Any] | N
 
     ranked_items = sorted(candidates, key=key)
     leads = [core.Lead(rank=n, tier=cast(Literal[1, 2, 3], key(i)[0]), item=i, docket=items[i].container,
-                       family=family_of[items[i].container], submitter=items[i].submitter, basis=candidates[i][0],
+                       measure=ms[i].document, family=family_of[ms[i].document], submitter=items[i].submitter,
+                       basis=candidates[i][0],
                        probability=candidates[i][1], answers=answers[i], judgments=jids[i], impact=impacts[i])
              for n, i in enumerate(ranked_items, 1)]  # fmt: skip
     out = core.LeadList(estimate=est_key, leads=leads)

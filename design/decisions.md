@@ -97,9 +97,7 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   - Seeds: phase 1's is the first 16 hex digits of the frame's content hash read as an integer; the stability subsample's
     and phase 2's are the same of the phase-1 draw's content hash with "stability" or "phase2" appended.
   - Phase-1 labels: both objective questions on every phase-1 item, by labels.PHASE1_CONFIG; exposure_to_measure is bound
-    to the docket's measure, which code takes from the frame's committed documents listing: the document that decided the
-    docket's comment status (the latest Proposed Rule posted by as_of where it is pending a final rule, otherwise the
-    latest-posted document whose comment period runs at as_of), stated by its title, agency, type, id and posting date.
+    to the item's own measure (amended November 2, below: "What each record means, from the external evaluation").
   - Stability (spec §2.1, §7.2 step 3): a simple random subsample of 60 phase-1 items (spec: at least 50; ten more so
     refusals cannot take it under), every configuration of labels.stability_configs, both questions.
   - Phase 2: the stratifier is the judge's probability that the item is in the estimand's numerator, P(in_population) x
@@ -202,8 +200,9 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     of the denominator otherwise). The interval read is from the lower completion's lower bound to the upper
     completion's upper bound, and the number of unresolved labels is shown beside it.
   - Event families: the clause the objective approved ("Families are defined by the run from what it finds"). An agent
-    proposes families over the kept dockets' measures, each a cost channel (labor, inputs, or both) and a mechanism;
-    every kept docket is in exactly one family (the proposal's tests gate). An item's family is its docket's.
+    proposes families over the measures the readable phase-1 items address, each a cost channel (labor, inputs, or both)
+    and a mechanism; every such measure is in exactly one family (the proposal's tests gate). An item's family is its
+    measure's (amended November 2, below).
   - Leads (spec §7.2 step 5): a lead is a phase-1 item in the estimand's numerator: by its gold labels where it has
     them, otherwise by the phase-1 judge's probability P(in_population) x P(exposed) >= 0.5. Each lead is asked the
     spec's item templates cost_driver, direction and seeks_certainty (phase-1 configuration), and an agent extracts its
@@ -213,6 +212,41 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     stated annual cost impact in one currency (larger first; none stated last), then item id. Reason: a business that
     states what the rule would cost it and asks for certainty is the one for whom protection is both sizable and
     wanted, which is what construction needs; the order is fixed before any lead is seen.
+- What each record means, from the external evaluation (coordinator, November 2, 14:30 ET; Owen: "patterns and proxies
+  standing in for meaning ... segments standing in for the curve"). The evaluation found records that claimed more than
+  the operation that filled them, each verified in the code before this change. F4's are fixed here, at the definition,
+  before any phase-1 label, gold label or estimate exists, so nothing is re-rolled: the flow runs again from the same
+  objective (G1) and the same as_of, with each fix's cause recorded here.
+  - The frame's events are the objective's. The objective puts in class measures "proposed but not final" and "final but
+    not yet effective" as of 2026-11-01. The status test dropped every docket whose proposal a final rule followed,
+    unread, so its "pending" meant only the first: 183 dockets of the live frame were dropped for that alone, 121 with a
+    rule posted in the last year. Now a final rule keeps its docket when it takes effect after as_of, by the effective
+    date the Federal Register states (regulations.gov states none: its effectiveDate is null in the listing and in the
+    rule's record, checked on two rules), and a rule whose date the Federal Register does not state leaves the status
+    unknown, kept and said, never in effect (I6). Every statement read is an artifact the docket names.
+  - Each item is asked about the measure it addresses. A docket can hold several rulemakings; the source states which
+    document each comment answers (commentOnDocumentId), and the item had discarded it, binding every comment to its
+    docket's latest proposal. Now core.Item.addresses keeps it, and core.ItemMeasure, committed when the item is read,
+    states that document with its own status as of the frame's as_of; where the source names none, the docket's own
+    measure, said so. Event families group measures, not dockets.
+  - The exposure question binds the objective's event class and horizon (exposure_to_measure v2), and answers
+    not_in_class where the measure as stated is outside it. Version 1 bound only the measure and the loss definition,
+    whose text refers to the event class and horizon without stating them, so the judges and the gold answered a
+    narrower question than the estimand counts. Its paraphrase set is drafted again for v2 before labelling.
+  - What could not be read is a fact about each part, recorded by the reader with whose fact it is
+    (core.ItemPart.by): the source's (restricted, not served, empty, a file whose own bytes no reader reads) or ours (a
+    format no reader here reads). Only an item with no readable part is outside the readable scope, read from its
+    parts; an item holding a part of ours stops the run until it is read; a judgment state that cannot be built for a
+    readable item is an error, never "unreadable". Before, every refusal, integrity failures included, was counted
+    unreadable and taken out of the gold's scope, and an unreadable attachment made a readable filing unreadable.
+  - A claim is an assertion: its id hashes who asserts it with its words and where they are. Identical bytes filed by
+    two submitters share an artifact (I2) and are two claims; the part keeps where each filing's copy was retrieved.
+  - An approval authorizes one gate. The store's human gate passes only on an approval at the gate the kind requires
+    (core.HUMAN_GATE: G1 for an objective, a decision spec, an entity model and a lead's promotion); before, any gate's
+    approval of the exact payload passed it.
+  - The design the draws name is committed (core.SamplingDesign, kind sampling_design) with the gold draw, when its
+    phase-2 cells exist. The coverage simulation before the gold is a statement about the design under a label model:
+    where that model puts no item in the denominator it says the ratio is undefined and the gold is drawn regardless.
 - The static dossier (007-1, accepted by the coordinator, November 2): it renders from a case's store alone, in key
   order, never commit order. It leaves out the fields a build fills from its own clock (AgentRun.at,
   SyntheticArtifact.created_at, DerivationReceipt.computed_at) until they are fixed at their source, so identical stores

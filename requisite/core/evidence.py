@@ -101,13 +101,17 @@ class Claim(Record):
             raise ValueError(f"a span is [start, end) with 0 <= start < end, not {self.span}")
         if end - start != len(self.text):
             raise ValueError("a claim's text is exactly its span of the artifact")
-        if self.id != claim_id(self.artifact, self.extraction, self.span, self.text):
-            raise ValueError("a claim's id is the hash of its artifact, extraction, span and text")
+        if self.id != claim_id(self.artifact, self.extraction, self.span, self.text, self.authority):
+            raise ValueError("a claim's id is the hash of its artifact, extraction, span, text and authority")
         return self
 
 
-def claim_id(artifact: str, extraction: str, span: tuple[int, int], text: str) -> str:
-    return f"clm_{sha256(f'{artifact}|{extraction}|{span[0]}:{span[1]}|{text}')}"
+def claim_id(artifact: str, extraction: str, span: tuple[int, int], text: str, authority: str) -> str:
+    """A claim is an assertion: these words, at this span of this content, asserted by this authority. Identical bytes
+    filed by two submitters share an artifact (spec I2: content addressing) and are two claims (external evaluation,
+    November 2: content identity had stood for assertion identity, and the second filer's claim collided with the
+    first's)."""
+    return f"clm_{sha256(f'{artifact}|{extraction}|{span[0]}:{span[1]}|{text}|{authority}')}"
 
 
 class SyntheticArtifact(Record):
@@ -162,29 +166,88 @@ def observable_at(artifact: Artifact, as_of: Instant, evaluated_at: Instant, mod
     return mode == "retrospective_reconstruction" or artifact.available_from <= as_of
 
 
+class ItemPart(Record):
+    """One part of what a submitter filed, in the order filed: the filing's own record, then each file. Its reading status
+    is stated part by part, so what could not be read is a fact about that part, never inferred from text (external
+    evaluation, November 2: an unreadable attachment recorded by its label made the whole item read as unreadable).
+
+    locator: where this filing's part was retrieved from, None where nothing was retrieved. Two filings of identical
+    bytes share one artifact (spec I2), so where each occurred is recorded here, on the filing. artifact: the content
+    retrieved, None where nothing was (a restricted file, one the record names but does not include). extraction: the
+    extraction whose text is this part's, None where no text could be read. unreadable: why some or all of it could not
+    be read (a part read with some pages unreadable has both), None where it was read whole. by: whose fact that is:
+    "source" where the source published nothing readable (restricted, no longer served, empty, a file whose own bytes
+    no reader can read), "reader" where the file is published in a format no reader here reads, which is work not done
+    rather than a fact about the filing (AGENTS.md; posture: an unknown caused by work we did not do is our defect)."""
+
+    label: str
+    locator: str | None
+    artifact: ArtifactId | None
+    extraction: str | None
+    unreadable: str | None
+    by: Literal["source", "reader"] | None
+
+    @model_validator(mode="after")
+    def _status(self) -> ItemPart:
+        if self.extraction is None and self.unreadable is None:
+            raise ValueError(f"{self.label}: a part is read, or says why it could not be")
+        if (self.unreadable is None) != (self.by is None):
+            raise ValueError(f"{self.label}: what could not be read says whose fact that is, and only it does")
+        if self.extraction is not None and self.artifact is None:
+            raise ValueError(f"{self.label}: text is read from retrieved content")
+        if (self.artifact is None) != (self.locator is None):
+            raise ValueError(f"{self.label}: retrieved content has the locator it was retrieved from, and only it does")
+        return self
+
+
 class Item(Record):
     """One unit of a wide corpus (spec §7.2: "split it into items: comments, letters, filings, posts"): what one
     submitter filed, read whole (decisions: an item's text is everything filed, scans read by OCR).
 
-    container: the docket or collection it was filed in. submitter: the name or organization the submitter gave, as the
-    source publishes it, or None where none is given. artifacts: the filing's record and each attachment, in order.
-    text: the comment and each attachment's extracted text, in that order, each part headed by the artifact it came from.
-    extractions: the extraction ids that produced the text. unreadable: any attachment whose text could not be read, with
-    the reason; the item still stands, and what could not be read is stated rather than dropped.
+    container: the docket or collection it was filed in. addresses: the document the source states the filing comments
+    on (regulations.gov's commentOnDocumentId), None where the source states none; the measure an item is asked about is
+    the one it addresses, never inferred from its docket (external evaluation, November 2: a docket can hold several
+    documents and rulemakings). submitter: the name or organization the submitter gave, as the source publishes it, or
+    None where none is given. parts: the filing's record and each file, in the order filed, each with its reading status.
+    text: every part, each headed by its label and artifact, read text where there is some and the reason where there is
+    not; what could not be read is stated rather than dropped.
     """
 
     id: str
     source: str
     container: str
+    addresses: str | None
     posted_at: Instant
     submitter: str | None
-    artifacts: Sequence[ArtifactId]
+    parts: Sequence[ItemPart]
     text: str
-    extractions: Sequence[str]
-    unreadable: Sequence[str] = ()
 
     @model_validator(mode="after")
     def _whole(self) -> Item:
-        if not self.artifacts:
+        if not self.parts or self.parts[0].artifact is None:
             raise ValueError("an item is read from at least its own record")
         return self
+
+    @property
+    def artifacts(self) -> list[str]:
+        """The content retrieved for its parts, in order, each once."""
+        return list(dict.fromkeys(p.artifact for p in self.parts if p.artifact is not None))
+
+    @property
+    def extractions(self) -> list[str]:
+        return [p.extraction for p in self.parts if p.extraction is not None]
+
+    @property
+    def unreadable(self) -> list[str]:
+        """Each part that could not be read whole, with why."""
+        return [f"{p.label}: {p.unreadable}" for p in self.parts if p.unreadable is not None]
+
+    @property
+    def unread_by_us(self) -> list[str]:
+        """Each part published in a format no reader here reads: to be read, never set aside."""
+        return [f"{p.label}: {p.unreadable}" for p in self.parts if p.by == "reader"]
+
+    @property
+    def readable(self) -> bool:
+        """Whether any part's text was read (an empty text is recorded as unreadable when the item is read)."""
+        return any(p.extraction is not None for p in self.parts)

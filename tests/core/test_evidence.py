@@ -33,8 +33,19 @@ def test_artifacts_and_claims_are_content_addressed():
     with pytest.raises(ValidationError, match="exactly its span"):
         c.Claim(id=CLM, artifact=ART, extraction="plain-v1", span=(4, 11), text=TEXT[4:10], authority="x")
     with pytest.raises(ValidationError, match="hash"):
-        c.Claim(id=claim_id(ART, "plain-v1", (4, 10), "other!"), artifact=ART, extraction="plain-v1", span=(4, 10),
+        c.Claim(id=claim_id(ART, "plain-v1", (4, 10), "other!", "x"), artifact=ART, extraction="plain-v1", span=(4, 10),
                 text=TEXT[4:10], authority="x")  # fmt: skip
+
+
+def test_one_content_asserted_by_two_filers_is_two_claims():
+    # Identical bytes share an artifact (spec I2); who asserts them is part of the claim (external evaluation, Nov 2).
+    alice = c.Claim(id=claim_id(ART, "plain-v1", (4, 10), TEXT[4:10], "Alice LLC"), artifact=ART, extraction="plain-v1",
+                    span=(4, 10), text=TEXT[4:10], authority="Alice LLC")  # fmt: skip
+    bob = c.Claim(id=claim_id(ART, "plain-v1", (4, 10), TEXT[4:10], "Bob Inc"), artifact=ART, extraction="plain-v1",
+                  span=(4, 10), text=TEXT[4:10], authority="Bob Inc")  # fmt: skip
+    assert alice.id != bob.id
+    with pytest.raises(ValidationError, match="hash"):
+        c.Claim(id=alice.id, artifact=ART, extraction="plain-v1", span=(4, 10), text=TEXT[4:10], authority="Bob Inc")
 
 
 def test_an_instant_carries_its_zone():

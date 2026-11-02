@@ -17,7 +17,7 @@ H = "0" * 64
 
 ART = artifact_id(b"the docket comment text")
 TEXT = "the docket comment text"
-CLM = claim_id(ART, "plain-v1", (4, 10), TEXT[4:10])
+CLM = claim_id(ART, "plain-v1", (4, 10), TEXT[4:10], "a commenter")
 SYN_ART = "syn_art_" + "1" * 64
 REF = c.Ref(id="q.cover", version=1)
 WINDOW = c.TimeWindow(start=T0, end=T1, start_closed=True, end_closed=False, tz="America/New_York")
@@ -122,11 +122,11 @@ DIAG = c.QuestionDiagnostic(question=REF, resolved=H, s_arg=1.0, s_prob=0.93, pr
 
 
 FAMILY = c.EventFamily(id="overtime", name="Overtime pay", channel="labor", mechanism="a higher overtime threshold",
-                       dockets=["DOCKET-1"])  # fmt: skip
+                       measures=["DOCKET-1-0001"])  # fmt: skip
 READ = c.RatioRead(estimate=0.4, interval=[(0.2, 0.6)], interval_kind="interval", fieller=[(None, -3.0), (0.18, None)],
                    fieller_kind="two_rays")  # fmt: skip
 IMPACT_Q = c.QuantifiedImpact(claim=CLM, amount=F(80000), currency="USD", period="year", annual=F(80000))
-LEAD = c.Lead(rank=1, tier=1, item="COMMENT-1", docket="DOCKET-1", family="overtime", submitter="A landscaping company",
+LEAD = c.Lead(rank=1, tier=1, item="COMMENT-1", docket="DOCKET-1", measure="DOCKET-1-0001", family="overtime", submitter="A landscaping company",
               basis="judged", probability=0.72, answers={"seeks_certainty": "asks"}, judgments=[H], impact=[IMPACT_Q])  # fmt: skip
 
 
@@ -181,8 +181,15 @@ def examples() -> list[c.Record]:
             observed_at=T0,
             availability="retrieved",
         ),
-        c.Item(id="COMMENT-1", source="regulations.gov", container="DOCKET-1", posted_at=T0, submitter="A Company",
-               artifacts=[ART], text=TEXT, extractions=["rg-comment-text-v1"]),  # fmt: skip
+        c.Item(id="COMMENT-1", source="regulations.gov", container="DOCKET-1", addresses="DOCKET-1-0001", posted_at=T0,
+               submitter="A Company", text=TEXT, parts=[
+                   c.ItemPart(label="the comment", locator="https://api.regulations.gov/v4/comments/COMMENT-1",
+                              artifact=ART, extraction="rg-comment-text-v1", unreadable=None, by=None),
+                   c.ItemPart(label="attachment 1", locator="https://downloads.regulations.gov/x.wpd", artifact=ART,
+                              extraction=None, unreadable=".wpd: no reader here, and no PDF rendition is offered",
+                              by="reader")]),  # fmt: skip
+        c.ItemPart(label="attachment 2", locator=None, artifact=None, extraction=None,
+                   unreadable="restricted by the agency; no file is published", by="source"),
         c.Claim(id=CLM, artifact=ART, extraction="plain-v1", span=(4, 10), text=TEXT[4:10], authority="a commenter"),
         c.SyntheticArtifact(id=SYN_ART, scenario="s1", generator="run-1", media_type="text/plain", size=5,
                             published_at=T0, created_at=T0),  # fmt: skip
@@ -408,6 +415,10 @@ def examples() -> list[c.Record]:
         c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART]),
         c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120, artifacts=[ART]),
         c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0, withdrawn=False),
+        c.ItemMeasure(item="COMMENT-1", document="DOCKET-1-0001",
+                      statement='"Overtime threshold" (WHD Proposed Rule DOCKET-1-0001, posted 2026-04-21). Its status as '
+                                "of 2026-11-01: proposed, not final: no final rule follows it in its docket by as_of.",
+                      artifacts=[ART]),  # fmt: skip
         c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0, retrieval_started=T0, retrieval_ended=T0,
                 mode="prospective",
                 searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART])],

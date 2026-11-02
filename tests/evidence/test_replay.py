@@ -8,12 +8,12 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 from fake_api import DOCKET, FakeAPI, comment_entry, fixture_world
-from test_frame import criteria
+from test_frame import criteria, register
 
 from requisite import cassettes, cli, core
 from requisite.core import Artifact, Item
 from requisite.evidence import extract
-from requisite.evidence.frame import frame_gate, take_frame
+from requisite.evidence.frame import frame_gate, measures, take_frame
 from requisite.evidence.items import read_items
 from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.store import Store
@@ -21,13 +21,15 @@ from requisite.store import Store
 CRITERIA = criteria(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final")
 
 
-def record(live, make_client, scan):
+def record(live, make_client, make_fr, scan):
     api = fixture_world(FakeAPI(), scanned_0003=scan)
     api.add_comment(DOCKET, comment_entry(f"{DOCKET}-0002", "2026-05-08T04:00:00Z", "2026-05-20T11:00:00Z", withdrawn=True))
     client = make_client(api, live / "cassettes", live)
+    fr = make_fr(register(), live / "cassettes", live)
     store = Store(live / "recorded", case="wide")
-    frame = take_frame(CRITERIA, client, store)
+    frame = take_frame(CRITERIA, client, store, federal_register=fr)
     items = read_items(client, store, frame.items)
+    measures(store, frame, items, regulations_gov=lambda: client, federal_register=lambda: fr)  # recorded, as `wide read`
     return frame, items, store
 
 
@@ -44,31 +46,35 @@ def offline(monkeypatch):
     monkeypatch.setattr(extract, "read", refuse)
 
 
-def test_a_frame_and_its_items_replay_from_cassettes_with_the_transport_removed(live, make_client, scan, monkeypatch, request):
-    frame, items, recorded = record(live, make_client, scan)
+def test_a_frame_and_its_items_replay_from_cassettes_with_the_transport_removed(
+    live, make_client, make_fr, scan, monkeypatch, request
+):
+    frame, items, recorded = record(live, make_client, make_fr, scan)
     assert frame.mode == "retrospective_reconstruction" and len(items) == 4
     assert [i.withdrawn for i in frame.items] == [False, True, False, False]
     request.getfixturevalue("offline")
     fresh = Store(live / "fresh", case="wide")
     client = make_client(None, live / "cassettes", live)  # no transport of ours: a request would go to the network
-    again = take_frame(CRITERIA, client, fresh)
+    again = take_frame(CRITERIA, client, fresh, federal_register=make_fr(None, live / "cassettes", live))
     assert again == fresh.get("frame", again.id, type(again)) == frame
     assert read_items(client, fresh, again.items) == items
     assert {a.id: a for a in fresh.all("artifact", Artifact)} == {a.id: a for a in recorded.all("artifact", Artifact)}
     for item in items:
-        for art, x in zip(item.artifacts, item.extractions, strict=False):
-            assert fresh.extraction(art, x) == recorded.extraction(art, x)
+        for part in item.parts:
+            if part.extraction is not None:
+                assert part.artifact is not None
+                assert fresh.extraction(part.artifact, part.extraction) == recorded.extraction(part.artifact, part.extraction)
     assert fresh.all("item", Item) == recorded.all("item", Item)
     # The replayed frame's times are the recording's: its retrieval ended when the last response was recorded.
     assert again.retrieval_ended - again.retrieval_started < timedelta(minutes=5)
 
 
 def test_the_flow_freezes_its_frame_through_the_gate_and_reads_its_sample_from_cassettes_the_same_each_time(
-    live, make_client, scan, monkeypatch, capsys, request
+    live, make_client, make_fr, scan, monkeypatch, capsys, request
 ):
     # The frame is taken only by a frame proposal's tests gate, and the sample read is the design's draw: the CLI has no
     # command that freezes hand-written criteria or reads hand-picked ids (decisions, "Discovery finds what it analyzes").
-    frame, items, _ = record(live, make_client, scan)
+    frame, items, _ = record(live, make_client, make_fr, scan)
     request.getfixturevalue("offline")
     monkeypatch.setattr(cassettes, "CASSETTES", live / "cassettes")
     runs = []

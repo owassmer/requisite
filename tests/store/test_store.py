@@ -102,6 +102,12 @@ def test_a_human_gate_waits_for_an_approval_of_that_exact_payload(store):
     waiting = store.submit_proposal(proposal)
     assert waiting.status == "proposed" and waiting.gates[-1].gate == "human"
     lineage = c.sha256(c.canonical_json(proposal.payload))
+    # An approval at another gate authorizes something else: it does not pass this one (core.HUMAN_GATE; external
+    # evaluation, November 2: a G4 approval of the exact payload had activated a proposal that requires G1).
+    store.commit_approval(c.Approval(id="a0", gate="G4", subject=c.Ref(id="g1", version=1), lineage_hash=lineage,
+                                     approver="owen", at=NOW, decision="approved", reason="as drafted", scope="case1"))  # fmt: skip
+    still = store.resubmit_after_approval("g1")
+    assert still.status == "proposed" and "G1" in still.gates[-1].detail
     store.commit_approval(c.Approval(id="a1", gate="G1", subject=c.Ref(id="g1", version=1), lineage_hash=lineage,
                                      approver="owen", at=NOW, decision="approved", reason="as drafted", scope="case1"))  # fmt: skip
     assert store.resubmit_after_approval("g1").status == "active"
@@ -139,11 +145,11 @@ def test_a_claim_is_its_artifacts_text_at_its_span(store):
     store.commit_artifact(a, body)
     store.commit_extraction(a.id, "plain-v1", body.decode())
     span, text = (4, 25), body.decode()[4:25]
-    store.commit_claim(c.Claim(id=claim_id(a.id, "plain-v1", span, text), artifact=a.id, extraction="plain-v1",
+    store.commit_claim(c.Claim(id=claim_id(a.id, "plain-v1", span, text, "a commenter"), artifact=a.id, extraction="plain-v1",
                                span=span, text=text, authority="a commenter"))  # fmt: skip
     wrong = "costs fell 40% under t"[: span[1] - span[0]]
     with pytest.raises(Refused):
-        store.commit_claim(c.Claim(id=claim_id(a.id, "plain-v1", span, wrong), artifact=a.id, extraction="plain-v1",
+        store.commit_claim(c.Claim(id=claim_id(a.id, "plain-v1", span, wrong, "x"), artifact=a.id, extraction="plain-v1",
                                    span=span, text=wrong, authority="x"))  # fmt: skip
 
 

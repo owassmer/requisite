@@ -28,8 +28,10 @@ from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
 from requisite.agents.trace import made_from, record_run
 from requisite.discovery import labels, sampling
+from requisite.evidence import frame as framing
+from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.fetched import free_budget
-from requisite.evidence.frame import docket_documents, entries, frame_gate, measure_document
+from requisite.evidence.frame import entries, frame_gate
 from requisite.evidence.frame import frames as evidence_frames
 from requisite.evidence.items import committed, read_items
 from requisite.evidence.regulations_gov import RegulationsGov
@@ -213,11 +215,14 @@ def draft_paraphrases(store: Store, template_id: str) -> core.Proposal:
 
 
 def paraphrase_set(store: Store, template_id: str) -> core.ParaphraseSet:
-    """The case's active paraphrase set for a template."""
+    """The case's active paraphrase set for the library's current version of a template (a set of an earlier version
+    words an earlier question)."""
+    version = library.template(template_id).version
     for p in _proposals(store, "paraphrase_set"):
-        if p.status == "active" and p.payload.get("template", {}).get("id") == template_id:
+        t = p.payload.get("template", {})
+        if p.status == "active" and t.get("id") == template_id and t.get("version") == version:
             return core.ParaphraseSet.model_validate_json(core.canonical_json(dict(p.payload)))
-    raise Refused(f"no active paraphrase set for template {template_id}")
+    raise Refused(f"no active paraphrase set for template {template_id} v{version}: run `requisite paraphrases`")
 
 
 # ---------------------------------------------------------------- the sample (decisions, "F4's sample design")
@@ -327,9 +332,11 @@ def draw_sample(store: Store) -> core.SampleDraw:
 
 
 def read_sample(
-    store: Store, client: Callable[[], RegulationsGov] = RegulationsGov, *, workers: int = 8
+    store: Store, client: Callable[[], RegulationsGov] = RegulationsGov, *, workers: int = 8,
+    federal_register: Callable[[], FederalRegister] = FederalRegister,
 ) -> list[core.Item]:
-    """Step 5: every phase-1 item read whole and committed (items already read are not read again)."""
+    """Step 5: every phase-1 item read whole and committed, with the measure it addresses (core.ItemMeasure; items and
+    measures already committed are not read again)."""
     ids = [d.item for d in drawn(store, 1).items]
     have = committed(store, ids)
     todo = [i for i in ids if i not in have]
@@ -340,47 +347,54 @@ def read_sample(
         finally:
             regulations_gov.close()
         have = committed(store, ids)
-    return [have[i] for i in ids if i in have]
+    read = [have[i] for i in ids if i in have]
+    unmeasured = [i for i in read if store.get("item_measure", i.id, core.ItemMeasure) is None]
+    if unmeasured:
+        found = framing.measures(store, the_frame(store), unmeasured, regulations_gov=client,
+                                 federal_register=federal_register)  # fmt: skip
+        for m in found.values():
+            store.commit("item_measure", m.item, m)
+    return read
 
 
-def measures(store: Store) -> dict[str, str]:
-    """Each kept docket's measure, bound into the exposure question: the document frame.measure_document names, stated
-    by its title, agency, type, id and posting date, from the frame's committed documents listing."""
-    frame = the_frame(store)
-    out = {}
-    for d in frame.dockets:
-        if not d.kept:
-            continue
-        m = measure_document(docket_documents(store, frame, d), frame.as_of)
-        if m is None:
-            raise Refused(f"kept docket {d.docket} has neither a proposed rule nor a running comment period by as_of")
-        a = m.attributes
-        out[d.docket] = (f"{a.get('title')} ({a.get('agencyId')} {a.get('documentType')} {m.id}, posted "
-                         f"{str(a.get('postedDate'))[:10]})")  # fmt: skip
-    return out
+def measures(store: Store, ids: Sequence[str]) -> dict[str, core.ItemMeasure]:
+    """Each item's measure, as committed when it was read (core.ItemMeasure)."""
+    out = {i: store.get("item_measure", i, core.ItemMeasure) for i in ids}
+    missing = [i for i, m in out.items() if m is None]
+    if missing:
+        raise Refused(f"{len(missing)} item(s) have no measure committed: run `wide read` ({', '.join(missing[:5])})")
+    return {i: m for i, m in out.items() if m is not None}
 
 
 @dataclass(frozen=True)
 class Labelled:
-    """What a labelling step did: the judgments it holds, and the items whose filing has no readable text, which no
-    judge is asked about (each with the reason labels.item_state gives)."""
+    """What a labelling step did: the judgments it holds, and the items whose filing has no readable part, which no
+    judge is asked about (each with what its parts record)."""
 
     judgments: list[core.Judgment]
     unreadable: dict[str, str]
 
 
 def _states(store: Store, ids: Sequence[str]) -> tuple[list[labels.ItemState], dict[str, str]]:
+    """The readable items' judgment states, and the items with no readable part, each with what its parts record. Which
+    items are unreadable is read from each item's parts (core.ItemPart), as the reader recorded them; a state that
+    cannot be built for a readable item is an error that stops the step, never a reason to set the item aside (external
+    evaluation, November 2: integrity failures had been counted as unreadable and taken out of the gold's scope)."""
     now = store.clock()
     states, unreadable = [], {}
     have = committed(store, ids)
+    ours = {i: have[i].unread_by_us for i in ids if i in have and have[i].unread_by_us}
+    if ours:
+        raise Refused(f"{len(ours)} item(s) hold a file published in a format no reader here reads; read it before any "
+                      "item is judged (core.ItemPart.by): " + "; ".join(f"{i}: {u}" for i, u in list(ours.items())[:10]))  # fmt: skip
     for item_id in ids:
         item = have.get(item_id)
         if item is None:
             raise Refused(f"sampled item {item_id} is not read: run `wide read`")
-        try:
-            states.append(labels.item_state(store, item, evaluated_at=now))
-        except Refused as e:
-            unreadable[item_id] = str(e)
+        if not item.readable:
+            unreadable[item_id] = "; ".join(item.unreadable)
+            continue
+        states.append(labels.item_state(store, item, evaluated_at=now))
     return states, unreadable
 
 
@@ -388,9 +402,10 @@ def _judge(
     store: Store, ids: Sequence[str], configs: Sequence[tuple[str, str, Any]], workers: int,
     on_done: Callable[[int, int], None] | None,
 ) -> Labelled:  # fmt: skip
-    objective, ms = approved_objective(store), measures(store)
+    objective = approved_objective(store)
     psets = {t: paraphrase_set(store, t) for t in labels.OBJECTIVE_TEMPLATES}
     states, unreadable = _states(store, ids)
+    ms = measures(store, [st.item.id for st in states])
     asks = [a for st in states for a in labels.asks(st, labels.questions(objective, ms, st.item), psets, configs)]
     done = 0
     lock = threading.Lock()
@@ -455,10 +470,11 @@ def predictions(store: Store) -> dict[str, tuple[float, float]]:
     (decisions, "F4 from the labels to the leads"): a question the judge refused takes the mean of that question's
     probability over the answered items of its phase-1 stratum. An item with no readable text is not in the result
     (unreadable); a question not yet asked is an error, since the labels are a step of their own."""
-    objective, ms = approved_objective(store), measures(store)
+    objective = approved_objective(store)
     draw = drawn(store, 1)
     stratum = {d.item: d.stratum for d in draw.items}
     states, _ = _states(store, [d.item for d in draw.items])
+    ms = measures(store, [st.item.id for st in states])
     spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
     phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
                               paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
@@ -564,4 +580,51 @@ def draw_gold(store: Store) -> core.SampleDraw:
              for d, c, chosen in zip(readable, cell, mask, strict=True) if chosen]  # fmt: skip
     gold = core.SampleDraw(design=draw.design, phase=2, seed=s, items=items)
     store.commit("sample_draw", f"{gold.design.id}.phase2", gold)
+    unread = [d for d in draw.items if d.item not in f]
+    store.commit("sampling_design", draw.design.id, sampling_design(store, draw, held, allocation, unread))
     return gold
+
+
+def sampling_design(
+    store: Store, draw: core.SampleDraw, held: Mapping[tuple[str, int], int], allocation: Mapping[tuple[str, int], int],
+    unread: Sequence[core.DrawnItem],
+) -> core.SamplingDesign:  # fmt: skip
+    """The run's design as drawn, the record its draws name (addendum A07 §8.1; external evaluation, November 2: the
+    draws named a design no record held): the frame, its phase-1 strata and sizes, the phase-2 cells the judge's
+    probabilities formed in each, with the items each holds and the gold each drew, and the unreadable items' cell,
+    taken whole since their indicators are known (decisions, "F4 from the labels to the leads"). Committed with the gold
+    draw, when every part of it is known; the rules it states were fixed in decisions.md before the frame was seen."""
+    frame, objective = the_frame(store), approved_objective(store)
+    strata = phase1_strata(frame)
+    drawn_in = {h: sum(1 for d in draw.items if d.stratum == h) for h in strata}
+    phase2 = []
+    for h in strata:
+        n_unread = sum(1 for d in unread if d.stratum == h)
+        if n_unread:
+            phase2.append(core.SubStratum(name=f"{h}.unreadable", parent=h, phase1_count=n_unread, sample_size=n_unread,
+                                          rule="no readable part (core.Item.readable): both indicators known 0, taken whole"))  # fmt: skip
+        for b in (0, 1):
+            n = held.get((h, b), 0)
+            if n:
+                rule = f"P(in_population) x P(exposed) {'<' if b == 0 else '>='} {PHASE2_CUT}, by the phase-1 judge"
+                phase2.append(core.SubStratum(name=f"{h}.bin{b}", parent=h, phase1_count=n,
+                                              sample_size=min(allocation[(h, b)], n), rule=rule))  # fmt: skip
+    spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
+    return core.SamplingDesign(
+        id=draw.design.id, version=draw.design.version, frame=core.Ref(id=frame.id, version=1),
+        frame_hash=frame.content_hash(), frame_size=len(frame.items), unit="item", estimand=objective.estimand,
+        filter_policy="every item of the frame is in the frame; an item with no readable part is in the unreadable cell, "
+                      "outside the readable scope; a part no reader here reads stops the run until it is read",
+        dedup_policy="none: each filing is its own item, identical texts included",
+        sample="two_phase_stratified_srswor",
+        phase1=[core.Stratum(name=h, frame_size=len(items), sample_size=drawn_in[h]) for h, items in strata.items()],
+        phase2=phase2,
+        allocation=core.Ref(id="phase1_equal_shares.gold_equal_per_stratum_80_20", version=1),
+        seed=draw.seed,
+        estimator=core.Ref(id="two_phase_ratio", version=1),
+        predictor=[*(core.Ref(id=t, version=library.template(t).version) for t in labels.OBJECTIVE_TEMPLATES),
+                   core.Ref(id=f"{spec.name}:{spec.model}:{labels.PHASE1_CONFIG[1]}:{labels.PHASE1_CONFIG[2].id}",
+                            version=1)],
+        gold_policy="one labeller, blind to every model's answer; 'unsure' and not_established are unresolved, never 0; "
+                    "the estimate is bounded over unresolved labels by its two completions",
+    )  # fmt: skip

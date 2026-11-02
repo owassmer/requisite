@@ -30,6 +30,7 @@ API's documentation gives for large result sets, dropping the entries the seam r
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from collections import deque
@@ -152,6 +153,13 @@ class Pacer:
         self._resume: float | None = None  # a 429's Retry-After: no request goes before it
         self._probe_at: float | None = None  # while waiting: when one request goes to read the count afresh
         self._limit: int | None = None  # the key's hourly limit, as the API states it
+        self._told: float | None = None  # when a long wait was last reported
+
+    def tell(self, what: str) -> None:
+        """Report a pacing event on stderr, so a run that waits says why (November 2: a frame sat idle for half an hour
+        and nothing it printed could say whether it was pacing, refused or unreached)."""
+        sys.stderr.write(f"{datetime.now().astimezone().isoformat(timespec='seconds')} regulations.gov pacer: {what}\n")
+        sys.stderr.flush()
 
     def _expire(self, now: float, *, frees: bool) -> None:
         while self._sent and self._sent[0] <= now - self.window:
@@ -200,6 +208,12 @@ class Pacer:
                         self._sent.append(now)
                         return now
                     wait = self._wait(now)
+                if wait >= 30 and (self._told is None or now - self._told >= 60):
+                    self._told = now
+                    self.tell(f"waiting {wait:.0f}s: remaining {self._remaining}, in flight {self._inflight}, this run's "
+                              f"requests in the hour {len(self._sent)}, limit {self._limit}, probe at "
+                              f"{None if self._probe_at is None else round(self._probe_at - now)}s, resume at "
+                              f"{None if self._resume is None else round(self._resume - now)}s")  # fmt: skip
             self.sleep(wait)
 
     def settle(self, remaining: int | None, limit: int | None = None) -> None:
@@ -215,6 +229,7 @@ class Pacer:
     def refused(self, sent_at: float, retry_after: float | None) -> None:
         """The API answered 429. The refused request spent nothing. Where the API said when to retry, nothing goes before
         then and the next request reads the count afresh; otherwise nothing remains until the hour frees a slot."""
+        self.tell(f"429: Retry-After {retry_after}")
         with self._lock:
             if sent_at in self._sent:
                 self._sent.remove(sent_at)
@@ -290,6 +305,7 @@ class RegulationsGov:
                 if now - first_unreached > NETWORK_WAIT_S:
                     raise RegulationsGovError(f"{url}: no response for {now - first_unreached:.0f}s: {e!r}") from e
                 unreached += 1
+                self.pacer.tell(f"no response from {url}: {e!r}; retrying in {_backoff(unreached):.0f}s")
                 self.pacer.sleep(_backoff(unreached))
                 continue
             if api:

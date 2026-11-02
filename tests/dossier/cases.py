@@ -20,7 +20,7 @@ import pytest
 import test_harvest as th
 from doubles import Judges, Renderer
 from fake_api import KEY, FakeAPI, FakeTime, fixture_world
-from test_frame import criteria
+from test_frame import criteria, register
 from test_run import IR, careful, prose
 from test_wide_flow import OBJECTIVE, stand_in
 
@@ -28,6 +28,7 @@ from requisite import cassettes, core, secrets
 from requisite.agents.answers import ProseDraft, ProseSection
 from requisite.contract import harvest
 from requisite.discovery import gold, labels, wide
+from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.frame import frame_gate
 from requisite.evidence.regulations_gov import Pacer, RegulationsGov
 from requisite.fuzz import run as fuzz
@@ -113,16 +114,24 @@ def wide_case(monkeypatch: pytest.MonkeyPatch, tmp: Path) -> Path:
                               for i, suffix in (("p1", " Answer from the filing."), ("p2", " Read the whole filing.")))],
         )  # fmt: skip
         _approve(store, "paraphrase_set", pset.model_dump(mode="json"))
-    store.register_gate("frame", "tests", frame_gate(client))
+    fr = register()
+
+    def federal_register() -> FederalRegister:
+        return FederalRegister(transport=fr.transport(), root=root,
+                               budget=cassettes.Budget(run_usd=0.0, run_calls=10**9, day_usd=float("inf"),
+                                                       log=tmp / "spend.jsonl"))  # fmt: skip
+
+    store.register_gate("frame", "tests", frame_gate(client, federal_register))
     frame = _approve(store, "frame", criteria(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final")
                      .model_dump(mode="json"))  # fmt: skip
     assert frame.status == "active", frame.gates
     wide.draw_sample(store)
-    wide.read_sample(store, client, workers=1)
+    wide.read_sample(store, client, workers=1, federal_register=federal_register)
     wide.label_phase1(store, workers=1)
     wide.test_stability(store, workers=1)
     gold_draw = wide.draw_gold(store)
-    gold.label_session(store, gold_draw, wide.approved_objective(store), wide.measures(store), labeler="tester",
+    gold.label_session(store, gold_draw, wide.approved_objective(store),
+                       wide.measures(store, [d.item for d in gold_draw.items]), labeler="tester",
                        read=lambda _: "1", write=lambda _: None)  # fmt: skip
     store.close()
     return case_dir

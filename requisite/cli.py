@@ -162,6 +162,8 @@ def _wide_gold_draw(args: argparse.Namespace) -> int:
     report = wide.gold_coverage(store)
     print(f"the gold design's coverage of the estimand, a ratio, under labels simulated from the judge's probabilities "
           f"({report.draws} draws, seed {report.seed}; a statement about the design, not the frame):")  # fmt: skip
+    if report.not_measured:
+        print(f"  not measured: {report.not_measured}; the gold is drawn regardless, since it measures the frame itself")
     for r in report.ratios:
         for c in r.intervals:
             print(f"  {c.estimator}: coverage {c.coverage:.3f} (MC se {c.monte_carlo_se:.3f}), missed below "
@@ -190,7 +192,8 @@ def _gold(args: argparse.Namespace) -> int:
     from requisite.discovery import gold, wide
 
     store = _store(args)
-    gold.label_session(store, wide.drawn(store, 2), wide.approved_objective(store), wide.measures(store),
+    gold.label_session(store, wide.drawn(store, 2), wide.approved_objective(store),
+                       wide.measures(store, [d.item for d in wide.drawn(store, 2).items]),
                        labeler=args.labeler)  # fmt: skip
     return 0
 

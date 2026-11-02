@@ -12,14 +12,18 @@ from requisite.dossier.html import badge, code, dl, esc, heading, para, pre, tab
 from requisite.dossier.refs import refs
 from requisite.dossier.site import PAYLOADS, Page, Site, renders, renders_payload, status_badge, summarizes
 
-# The human gate a proposal of each kind awaits, and what it asks (spec §2.4: "G1: the objective, horizon and loss
-# definition"; spec §7.1 step 1: the entity model's parameters, "a human confirms at gate G1"). core.REQUIRED_GATES gives
-# a human gate to exactly these kinds; G2-G4 approve committed state rather than a proposal (core.governance).
-HUMAN_GATES: dict[str, tuple[str, str]] = {
-    "decision_spec": ("G1", "the decision's objective, horizon and loss definition"),
-    "objective": ("G1", "the run's objective: its population, events, horizon, loss definition and estimand"),
-    "entity_model": ("G1", "the entity model: its driver tree, liquidity profile, horizon and loss definition"),
+# What a human decides at a kind's human gate, in words; which gate it is is the definition's (core.HUMAN_GATE).
+ASKS: dict[str, str] = {
+    "decision_spec": "the decision's objective, horizon and loss definition",
+    "objective": "the run's objective: its population, events, horizon, loss definition and estimand",
+    "entity_model": "the entity model: its driver tree, liquidity profile, horizon and loss definition",
+    "lead": "promoting this lead into a deep case",
 }
+
+
+def human_gate(kind: str) -> tuple[str, str]:
+    """The gate a kind awaits and what it asks."""
+    return core.HUMAN_GATE[kind], ASKS[kind]
 
 
 def awaiting(p: core.Proposal) -> bool:
@@ -53,7 +57,7 @@ def proposal(page: Page, key: str, body: Any) -> str:
         out.append(para(badge("rejected", "rejected") + esc(f" Its {failed.gate} gate did not pass; it stands as the "
                                                               "record of what was proposed and why it was refused.")))
     if awaiting(p):
-        gate, asks = HUMAN_GATES[p.kind]
+        gate, asks = human_gate(p.kind)
         out.append(para(badge("awaiting", "awaiting") + esc(f" Awaits {gate}: a human decides on {asks}, as proposed.")))
     out.append(dl([("proposal", code(p.id)), ("kind", esc(p.kind)), ("status", status_badge(p.status)),
                    ("case", esc(p.case)), ("author", authored(page, p.author))]))  # fmt: skip
@@ -120,7 +124,7 @@ def queue(site: Site) -> None:
     if waiting:
         rows = []
         for p in waiting:
-            gate, asks = HUMAN_GATES[p.kind]
+            gate, asks = human_gate(p.kind)
             rows.append([page.proposal(p.id), esc(p.kind), esc(gate), esc(f"a decision on {asks}, as proposed"),
                          esc(p.gates[-1].detail)])  # fmt: skip
         body = table(["proposal", "kind", "gate", "what it asks", "the gate's detail"], rows)

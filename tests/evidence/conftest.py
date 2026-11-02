@@ -8,9 +8,10 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from fake_api import KEY, FakeAPI, FakeTime, fixture_pdf, rasterized
+from fake_api import KEY, FakeAPI, FakeFederalRegister, FakeTime, fixture_pdf, rasterized
 
 from requisite import cassettes, secrets
+from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.regulations_gov import Pacer, RegulationsGov
 from requisite.store import Store
 
@@ -45,6 +46,17 @@ def client(api: FakeAPI | None, root: Path, tmp: Path, time: FakeTime | None = N
 @pytest.fixture
 def make_client() -> Callable[..., RegulationsGov]:
     return client
+
+
+def federal_register(fr: FakeFederalRegister | None, root: Path, tmp: Path) -> FederalRegister:
+    """A Federal Register client over the fake (or, with None, over no transport of ours: a replay), recording into
+    `root`."""
+    return FederalRegister(transport=fr.transport() if fr is not None else None, root=root, budget=budget(tmp))
+
+
+@pytest.fixture
+def make_fr() -> Callable[..., FederalRegister]:
+    return federal_register
 
 
 @pytest.fixture

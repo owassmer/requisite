@@ -4,12 +4,14 @@ recorded with its reason. Extractions are recorded, and a replay never re-runs O
 
 import io
 import json
+import sys
 import zipfile
 
 import pypdf
 import pytest
 from fake_api import fixture_pdf, load
 
+from requisite import cassettes
 from requisite.core.evidence import artifact_id
 from requisite.evidence import extract
 
@@ -99,10 +101,10 @@ def test_what_cannot_be_read_is_recorded_with_its_reason():
 
 
 def test_an_extraction_is_recorded_and_a_replay_never_reruns_ocr(live, scan, monkeypatch):
-    from conftest import budget
-
+    # The fixture's budget, not an import of conftest by name: two test directories' conftests share that module name.
+    spend = cassettes.Budget(run_usd=0.0, run_calls=sys.maxsize, day_usd=float("inf"), log=live / "spend.jsonl")
     art = artifact_id(scan)
-    first = extract.extract("pdf", art, scan, root=live / "cassettes", budget=budget(live))
+    first = extract.extract("pdf", art, scan, root=live / "cassettes", budget=spend)
     kept = json.loads(next((live / "cassettes" / "extraction").glob("*.json")).read_text())
     assert kept["request"] == {"artifact": art, "extractor": "requisite.evidence.extract.pdf", "version": 1}
     monkeypatch.setenv("REQUISITE_REPLAY_ONLY", "1")

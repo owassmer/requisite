@@ -24,7 +24,7 @@ from test_run import IR as MERGER
 from requisite import core
 from requisite.dossier import render
 from requisite.dossier.html import anchor
-from requisite.dossier.proposals import HUMAN_GATES
+from requisite.dossier.proposals import ASKS
 from requisite.fuzz.run import asked_node
 from requisite.store import Refused, open_case
 
@@ -312,7 +312,7 @@ def test_the_review_queue_lists_what_awaits_a_human_gate_with_what_it_asks(built
     (waiting,) = [p for p in (case.proposal(k.split("|")[0]) for k in case.keys("proposal")) if p and p.status == "proposed"]
     assert waiting.kind == "objective" and html.escape(waiting.id) in text and "<td>G1</td>" in text
     # The gate each kind awaits is the definition's: exactly the kinds whose required gates end at a human.
-    assert set(HUMAN_GATES) == {k for k, gates in core.REQUIRED_GATES.items() if "human" in gates}
+    assert set(ASKS) == set(core.HUMAN_GATE) == {k for k, gates in core.REQUIRED_GATES.items() if "human" in gates}
     case.close()
 
 

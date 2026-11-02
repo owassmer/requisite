@@ -165,3 +165,15 @@ def test_the_naive_ratio_misses_under_a_judge_biased_differently_in_numerator_an
     assert by[NAIVE_RATIO].coverage < 0.05, summary
     assert abs(by["score"].coverage - report.level) <= 0.03, summary
     assert abs(by["Fieller"].coverage - report.level) <= 0.03, summary
+
+
+def test_a_simulated_frame_with_no_denominator_item_measures_no_coverage_and_still_states_the_gold():
+    # The coverage check runs before the gold is drawn; under a label model that puts no item in the denominator the
+    # ratio is undefined, which is said, never divided by zero, and never stops the gold that measures the frame
+    # (external evaluation, November 2).
+    zeros = np.zeros(20)
+    frame = {"s": (zeros, np.full(20, 0.1), {"exposed": (zeros, np.full(20, 0.05))}, np.full(20, 0.05))}
+    report = measure_ratio_coverage(frame=frame, phase1_sample_sizes={"s": 10}, phase2_cuts=[0.5],
+                                    phase2_allocation={("s", 0): 4, ("s", 1): 2}, draws=5, seed=1)  # fmt: skip
+    assert report.ratios == () and report.not_measured and "undefined" in report.not_measured
+    assert [(g.stratum, g.bin) for g in report.gold] == [("s", 0)] and report.gold[0].expected_gold == pytest.approx(4)

@@ -31,7 +31,8 @@ def test_an_item_is_the_comment_then_each_file_in_order_each_headed_by_its_artif
         f'Airlines (UA) has reviewed and provides comments in attached letter. Thanks.\n\n[attachment 1 "UA Comments '
         f'FAA-2026-01579-T" · attachment_1.pdf · {letter}]\n[page 1 of 1: text layer]\nTechnical Operations\n'
     )
-    assert united.extractions == ("comment/1", f"pdf/1 pypdf {pypdf.__version__}") and united.unreadable == ()
+    assert united.extractions == ["comment/1", f"pdf/1 pypdf {pypdf.__version__}"] and united.unreadable == []
+    assert united.addresses == f"{DOCKET}-0001"  # the document it comments on, as the source states it
     assert store.content(letter) == fixture_pdf()
     assert store.extraction(letter, united.extractions[1]) == united.text.split(f"{letter}]\n", 1)[1]
     assert len(partners.artifacts) == 1 and partners.text.startswith(f"[comment {DOCKET}-0004 · {partners.artifacts[0]}]\nAPB")
@@ -80,6 +81,16 @@ def test_files_are_read_in_filing_order_and_what_cannot_be_read_is_stated_on_the
         f'attachment 4 "Photo": the file host answered 403 for {url}/attachment_4.jpg',
     ]
     assert "(its text could not be read: .wpd: no reader here, and no PDF rendition is offered)" in item.text
+    # Whose fact each unread part is: the agency's restriction and the host's 403 are the source's; a format no reader
+    # here reads is work not done, which stops the item being judged until it is read (core.ItemPart.by).
+    assert [(p.label, p.by) for p in item.parts if p.unreadable] == [
+        ('attachment 2 "Cost data"', "source"), ('attachment 3 "Original letter"', "reader"),
+        ('attachment 4 "Photo"', "source")]  # fmt: skip
+    assert item.readable and item.unread_by_us == ['attachment 3 "Original letter": .wpd: no reader here, and no PDF '
+                                                   "rendition is offered"]  # fmt: skip
+    # Identical bytes filed twice are one artifact; each filing keeps where its own part was retrieved from.
+    (wpd,) = [p for p in item.parts if p.by == "reader"]
+    assert wpd.locator == f"{url}/attachment_3.wpd"
 
 
 def test_a_comment_no_longer_served_stays_an_item_from_its_frame_entry(live, make_client, store):
@@ -87,6 +98,6 @@ def test_a_comment_no_longer_served_stays_an_item_from_its_frame_entry(live, mak
     gone = entry("0042", posted="2026-05-11T04:00:00Z")
     (item,) = read_items(make_client(api, live / "cassettes", live), store, [gone])
     assert (item.container, item.posted_at, item.submitter) == (DOCKET, gone.posted_at, None)
-    assert len(item.artifacts) == 1 and item.extractions == ()
-    assert item.unreadable[0].startswith("the comment's record: regulations.gov answered 404 for it at ")
+    assert len(item.artifacts) == 1 and item.extractions == [] and not item.readable
+    assert item.parts[0].by == "source" and item.unreadable[0].startswith("the comment's record: regulations.gov answered 404 for it at ")
     assert store.artifacts_at(f"https://api.regulations.gov/v4/comments/{DOCKET}-0042?include=attachments")[0].published_at is None

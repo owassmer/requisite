@@ -17,7 +17,7 @@ ARTIFACT = c.Artifact(
     published_at=datetime(2026, 3, 1, tzinfo=UTC), published_at_basis="fixture", observed_at=AS_OF,
     availability="retrieved",
 )  # fmt: skip
-CLAIM = c.Claim(id=claim_id(ART, "plain-v1", (0, len(TEXT)), TEXT), artifact=ART, extraction="plain-v1",
+CLAIM = c.Claim(id=claim_id(ART, "plain-v1", (0, len(TEXT)), TEXT, "a city ordinance (fixture)"), artifact=ART, extraction="plain-v1",
                 span=(0, len(TEXT)), text=TEXT, authority="a city ordinance (fixture)")  # fmt: skip
 STATE = c.JudgmentState(as_of=AS_OF, observed=[CLAIM.id])
 QUESTION = c.AtomicQuestion(

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from requisite import core
 from requisite.dossier import contracts, fuzzing, proposals, records, wide
 from requisite.dossier.html import badge, code, esc, heading, link, para, table, ul
 from requisite.dossier.refs import link_all, refs
@@ -128,7 +129,7 @@ def index(site: Site) -> None:
         link(page.href(site.page_path("queue")), "The review queue") + esc(
             f": {len(waiting)} proposals await a human gate." if waiting else ": no proposal awaits a human gate.")))
     if waiting:
-        out.append(ul(page.proposal(p.id) + esc(f" ({p.kind}) awaits {proposals.HUMAN_GATES[p.kind][0]}")
+        out.append(ul(page.proposal(p.id) + esc(f" ({p.kind}) awaits {core.HUMAN_GATE[p.kind]}")
                       for p in waiting))  # fmt: skip
     rejected = [p for p in case.all_proposals() if p.status == "rejected"]
     if rejected:

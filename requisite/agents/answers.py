@@ -117,12 +117,12 @@ class FamilyDraft(_Answer):
     name: str
     channel: str
     mechanism: str
-    dockets: Sequence[str]
+    measures: Sequence[str]
 
 
 class FamiliesDraft(_Answer):
-    """family_drafter: a wide run's event families over its kept dockets' measures (core.EventFamilies; its frame is
-    code's). Every docket given is in exactly one family."""
+    """family_drafter: a wide run's event families over the measures its items address (core.EventFamilies; its frame
+    is code's). Every measure given is in exactly one family."""
 
     families: Sequence[FamilyDraft]
     rationale: str

@@ -320,11 +320,14 @@ class Store:
         return GateResult(gate="schema", passed=True, detail=f"a valid {cls.__name__}")
 
     def _human(self, proposal: Proposal) -> GateResult:
-        approvals = [a for a in self.all("approval", Approval) if a.subject.id == proposal.id]
+        """Passes on the latest decision at the gate this kind requires (core.HUMAN_GATE), on this exact payload; a
+        decision at any other gate authorizes something else and is not read here."""
+        gate = core.HUMAN_GATE[proposal.kind]
+        approvals = [a for a in self.all("approval", Approval) if a.subject.id == proposal.id and a.gate == gate]
         lineage = sha256(core.canonical_json(proposal.payload))
         current = [a for a in approvals if a.lineage_hash == lineage]
         if not current:
-            return GateResult(gate="human", passed=False, detail="awaiting a human approval of this exact payload")
+            return GateResult(gate="human", passed=False, detail=f"awaiting a human approval at {gate} of this exact payload")
         last = current[-1]
         return GateResult(gate="human", passed=last.decision != "rejected", detail=f"{last.gate} {last.decision}")
 

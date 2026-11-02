@@ -8,7 +8,7 @@ from fractions import Fraction
 
 import pytest
 from fake_api import DOCKET, FakeAPI, fixture_world
-from test_frame import criteria
+from test_frame import criteria, register
 
 from requisite import cassettes, core
 from requisite.agents.runner import AgentResult
@@ -40,7 +40,8 @@ def stand_in(spec, body):
     elif "relief, protection or predictability" in text:
         p = {"asks": 0.85, "does_not": 0.1, "not_established": 0.05}
     else:
-        p = {"labor": 0.7, "inputs": 0.05, "labor_and_inputs": 0.05, "no_loss": 0.15, "not_established": 0.05}
+        p = {"labor": 0.7, "inputs": 0.05, "labor_and_inputs": 0.05, "no_loss": 0.1, "not_in_class": 0.05,
+             "not_established": 0.05}  # fmt: skip
     if spec.name == "openai_decisions":
         answers = [{"type": "choice", "name": name, "probabilities": [{"value": v, "probability": x} for v, x in p.items()]}]
         return {"model": spec.model, "answers": answers}, 0.0
@@ -55,7 +56,7 @@ def approve(store: Store, kind: str, payload: dict) -> None:
 
 
 @pytest.fixture
-def case(live, make_client, scan, monkeypatch):
+def case(live, make_client, make_fr, scan, monkeypatch):
     monkeypatch.setattr(cassettes, "CASSETTES", live / "cassettes")
     monkeypatch.setattr(providers, "_send", stand_in)
     api = fixture_world(FakeAPI(), scanned_0003=scan)
@@ -71,30 +72,37 @@ def case(live, make_client, scan, monkeypatch):
                               for i, suffix in (("p1", " Answer from the filing."), ("p2", " Read the whole filing.")))],
         )  # fmt: skip
         approve(store, "paraphrase_set", pset.model_dump(mode="json"))
-    store.register_gate("frame", "tests", frame_gate(lambda: make_client(api, live / "cassettes", live)))
+    fr = register()
+    store.register_gate("frame", "tests", frame_gate(lambda: make_client(api, live / "cassettes", live),
+                                                     lambda: make_fr(fr, live / "cassettes", live)))  # fmt: skip
     approve(store, "frame", criteria(datetime(2026, 6, 20, 12, tzinfo=UTC), "closed_pending_final").model_dump(mode="json"))
-    return store, (lambda: make_client(api, live / "cassettes", live))
+    return store, (lambda: make_client(api, live / "cassettes", live)), (lambda: make_fr(fr, live / "cassettes", live))
 
 
 def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
-    store, client = case
+    store, client, fr = case
     frame = wide.the_frame(store)
     assert [d.docket for d in frame.dockets if d.kept] == [DOCKET]
     draw = wide.draw_sample(store)
     assert draw.phase == 1 and draw.seed == wide.seed(frame.content_hash())
     n = len(frame.items)
     assert n >= 3 and [(d.stratum, d.inclusion_prob) for d in draw.items] == [("under_100", Fraction(1))] * n  # a census
-    items = wide.read_sample(store, client)
+    items = wide.read_sample(store, client, federal_register=fr)
     assert sorted(i.id for i in items) == sorted(d.item for d in draw.items)
-    assert wide.read_sample(store, client) == items  # read once; a second run reads nothing again
+    assert wide.read_sample(store, client, federal_register=fr) == items  # read once; a second run reads nothing again
 
-    (measure,) = wide.measures(store).values()
-    assert f"{DOCKET}-0001, posted" in measure and "Proposed Rule" in measure
+    # Each item is asked about the document it addresses, with that document's status as of the frame's as_of: the
+    # proposal, its final rule (posted October 1) not yet posted by June 20.
+    ms = wide.measures(store, [i.id for i in items])
+    served = [i for i in items if i.addresses is not None]
+    assert served and all(ms[i.id].document == i.addresses == f"{DOCKET}-0001" for i in served)
+    statement = ms[served[0].id].statement
+    assert f"Proposed Rule {DOCKET}-0001, posted" in statement and "proposed, not final" in statement
 
     done = wide.label_phase1(store)
     readable = len(items) - len(done.unreadable)
     assert len(done.judgments) == 2 * readable
-    assert {j.question.id for j in done.judgments} == {"voice_in_population", f"exposure_to_measure.{DOCKET}"}
+    assert {j.question.id for j in done.judgments} == {"voice_in_population", f"exposure_to_measure.{DOCKET}-0001"}
     assert len(store.all("judgment", core.Judgment)) == len(done.judgments)
 
     f = wide.predictions(store)
@@ -108,15 +116,19 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     # Every item's probability, 0.64, is above the cut: the above-cut stratum of 26 holds them all and takes them whole.
     assert gold.phase == 2 and [(d.stratum, d.inclusion_prob) for d in gold.items] == [("under_100.bin1", Fraction(1))] * n
     assert gold.seed == wide.seed(draw.content_hash(), "phase2")
+    # The design both draws name is committed whole: the frame it drew from, its strata, the cells and their gold.
+    design = store.get("sampling_design", draw.design.id, core.SamplingDesign)
+    assert design is not None and design.frame_hash == frame.content_hash() and design.seed == draw.seed
+    assert [(s.name, s.phase1_count, s.sample_size) for s in design.phase2] == [("under_100.bin1", n, n)]
 
 
 def agent_double(role, agent_input, output, *, effort):
     """The family_drafter and impact_extractor answering as a test's own input (never a cassette)."""
     if role == "family_drafter":
-        dockets = [d["docket"] for d in agent_input["dockets"]]
+        measures = [m["document"] for m in agent_input["measures"]]
         draft = {"families": [{"id": "airline_labor", "name": "Airline labor", "channel": "labor",
                                "mechanism": "the measure raises the hours or pay airlines must provide",
-                               "dockets": dockets}], "rationale": "one docket, one family"}  # fmt: skip
+                               "measures": measures}], "rationale": "one measure, one family"}  # fmt: skip
     else:
         draft = {"impacts": []}
     return AgentResult(role, output.model_validate(draft), "run-" + core.sha256(core.canonical_json(agent_input)),
@@ -126,9 +138,9 @@ def agent_double(role, agent_input, output, *, effort):
 def test_the_flow_goes_from_gold_labels_to_an_estimate_ranked_leads_and_a_lead_proposed_at_g1(case):
     from requisite.discovery import results
 
-    store, client = case
+    store, client, fr = case
     wide.draw_sample(store)
-    wide.read_sample(store, client)
+    wide.read_sample(store, client, federal_register=fr)
     wide.label_phase1(store)
     gold = wide.draw_gold(store)
     fams = results.draft_families(store, agent_double)

@@ -137,6 +137,20 @@ def required_gates(kind: str, payload: Mapping[str, Any]) -> tuple[Gate, ...]:
 
 HumanGate = Literal["G1", "G2", "G3", "G4"]
 
+# Which human gate a kind's "human" gate is (spec §2.4). An approval names what it authorizes: one given at another gate
+# authorizes something else, so it never passes this one (external evaluation, November 2: a G4 approval of the exact
+# payload activated an objective that requires G1). G1 approves "the objective, horizon and loss definition" (spec
+# §2.4): a wide run's objective, a deep case's decision spec, and its entity model ("a human confirms at gate G1", spec
+# §7.1 step 1); a lead's promotion opens a deep case whose objective it sets, at G1 (spec §7.2 step 6).
+HUMAN_GATE: Mapping[str, HumanGate] = {
+    "decision_spec": "G1",
+    "objective": "G1",
+    "entity_model": "G1",
+    "lead": "G1",
+}
+if set(HUMAN_GATE) != {k for k, gates in REQUIRED_GATES.items() if "human" in gates}:
+    raise RuntimeError("every kind with a human gate names which one it is, and no other kind does")
+
 
 class Approval(Record):
     """A human's decision at a gate (spec §2.4, §3 "Humans ... Approval"). It approves one version of its subject with
@@ -485,6 +499,12 @@ class WideObjective(Record):
 
 
 DocumentType = Literal["Proposed Rule", "Rule", "Notice"]  # regulations.gov's document types that state a change
+# Which dockets a frame reaches, by the state of their measure at as_of (requisite/evidence/frame.py states each test):
+# "open", a comment period is running; "closed_pending_final", every comment period has closed and the measure is still
+# pending as the objective's events define pending (proposed but not final, or final but not yet in effect: a final rule
+# whose effective date, as the Federal Register states it, is after as_of); "either", one or the other. (Coordinator,
+# November 2, from the external evaluation: the earlier test dropped every docket whose proposal a final rule followed,
+# which narrowed the approved objective's events to "proposed but not final".)
 CommentStatus = Literal["open", "closed_pending_final", "either"]
 
 
@@ -569,6 +589,21 @@ class FrameItem(Record):
     withdrawn: bool
 
 
+class ItemMeasure(Record):
+    """The measure an item is asked about (coordinator, November 2, from the external evaluation: a docket is not one
+    measure): the document the item addresses as its source states it (core.Item.addresses), or its docket's own
+    measure where the source states none, said so in the statement. statement: the document's title, agency, type, id
+    and posting date, and its status as of the frame's as_of (proposed, final not yet in effect, in effect, or its
+    effective date not known), as the exposure question binds it. artifacts: the responses the statement is read from
+    (the frame's listing of its docket's documents or the document's own record, and the Federal Register's statement of
+    the deciding rule's effective date; spec I2). Committed once, when the item is read, and read thereafter."""
+
+    item: str
+    document: str
+    statement: str
+    artifacts: Sequence[ArtifactId]
+
+
 class Frame(Record):
     """A wide run's frozen frame: what its criteria searched, which dockets they reached and kept, and every item of the
     kept dockets posted by as_of (spec §7.2 step 1: a snapshot of the corpus, split into items). Its content hash is the
@@ -614,29 +649,31 @@ class Frame(Record):
 class EventFamily(Record):
     """One event family of a wide run. The objective approved at G1 defines it: "An event family is a group of events
     that share a cost channel (labor or input) and a mechanism ... Families are defined by the run from what it finds."
-    It holds the kept dockets whose pending measures it groups; an item's family is its docket's (decisions, "F4 from
-    the labels to the leads"). The channel is free text here, since which channels a run's loss counts is its
-    objective's (an objective over energy costs names energy); the agent is given them."""
+    It holds the measures it groups, each the document a phase-1 item addresses (requisite/evidence/frame.measures); an
+    item's family is its measure's (coordinator, November 2, from the external evaluation: a family per docket assumed a
+    docket is one measure). The channel is free text here, since which channels a run's loss counts is its objective's
+    (an objective over energy costs names energy); the agent is given them."""
 
     id: str
     name: str
     channel: str  # the cost channel, among those the run's objective defines its loss over (for F4's: labor, inputs)
     mechanism: str
-    dockets: Sequence[str]
+    measures: Sequence[str]
 
     @model_validator(mode="after")
-    def _dockets(self) -> EventFamily:
-        if not self.dockets or len(set(self.dockets)) != len(self.dockets):
-            raise ValueError("a family groups one or more dockets, each once")
+    def _measures(self) -> EventFamily:
+        if not self.measures or len(set(self.measures)) != len(self.measures):
+            raise ValueError("a family groups one or more measures, each once")
         if not self.channel.strip() or not self.mechanism.strip():
             raise ValueError("a family states its cost channel and its mechanism")
         return self
 
 
 class EventFamilies(Record):
-    """A wide run's event families over its frame's kept dockets, proposed by an agent (kind "event_families"; spec I1).
-    Every kept docket is in exactly one family, so the estimate can be reported for each family (the objective: "reported
-    overall and separately for each event family"); the proposal's tests gate checks this against the frame."""
+    """A wide run's event families over the measures its phase-1 items address, proposed by an agent (kind
+    "event_families"; spec I1). Every such measure is in exactly one family, so the estimate can be reported for each
+    family (the objective: "reported overall and separately for each event family"); the proposal's tests gate checks
+    this against the read items."""
 
     frame: str
     families: Sequence[EventFamily]
@@ -646,9 +683,9 @@ class EventFamilies(Record):
         ids = [f.id for f in self.families]
         if not ids or len(set(ids)) != len(ids):
             raise ValueError("a run's families have distinct ids, and there is at least one")
-        dockets = [d for f in self.families for d in f.dockets]
-        if len(set(dockets)) != len(dockets):
-            raise ValueError("a docket is in one family only")
+        measures = [m for f in self.families for m in f.measures]
+        if len(set(measures)) != len(measures):
+            raise ValueError("a measure is in one family only")
         return self
 
 
@@ -753,6 +790,7 @@ class Lead(Record):
     tier: Literal[1, 2, 3]
     item: str
     docket: str
+    measure: str  # the document the item addresses, which its questions were asked about (core.Item.addresses)
     family: str
     submitter: str | None
     basis: Literal["gold", "judged"]

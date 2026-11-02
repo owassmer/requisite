@@ -44,7 +44,7 @@ class Nodes:
 
 def claim(text: str) -> c.Claim:
     art = artifact_id(text.encode())
-    return c.Claim(id=claim_id(art, "plain-v1", (0, len(text)), text), artifact=art, extraction="plain-v1",
+    return c.Claim(id=claim_id(art, "plain-v1", (0, len(text)), text, "a filer"), artifact=art, extraction="plain-v1",
                    span=(0, len(text)), text=text, authority="a filer")  # fmt: skip
 
 

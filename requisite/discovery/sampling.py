@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -321,6 +322,7 @@ class RatioCoverageReport:
     seed: int
     ratios: tuple[RatioCoverage, ...]
     gold: tuple[RatioGoldExpectation, ...]
+    not_measured: str | None = None  # why no coverage is measured (the simulated frame defines no ratio), else None
 
 
 NAIVE_RATIO = (
@@ -345,6 +347,37 @@ def _set_coverage(
         unbounded=float(np.mean([s.kind not in ("interval", "union", "empty") for s in sets])),
         whole_unit=float(np.mean([any(lo <= 0.0 and hi >= 1.0 for lo, hi in s.pieces) for s in within])),
     )
+
+
+def _ratio_gold(names: Sequence[str], N_h: Mapping[str, int], N: int, ss: Mapping[str, Any], yd: Mapping[str, Any],
+                yn: Mapping[tuple[str, str], Any], numerators: Sequence[str], phase1_sample_sizes: Mapping[str, int],
+                phase2_cuts: Sequence[float], phase2_allocation: Mapping[tuple[str, int], int]
+                ) -> tuple[RatioGoldExpectation, ...]:  # fmt: skip
+    """What each phase-2 stratum's gold is expected to hold under the design, from the simulated frame's labels."""
+    expected = []
+    for s in names:
+        p2 = _phase2_strata(
+            (s,), np.full(N_h[s], s), ss[s], phase2_cuts, {key: v for key, v in phase2_allocation.items() if key[0] == s}
+        )
+        for b in range(p2.bins):
+            in_cell = p2.cell == b
+            K = int(in_cell.sum())
+            if K == 0:
+                continue
+            m = np.arange(0, min(K, phase1_sample_sizes[s]) + 1)
+            pm = stats.hypergeom.pmf(m, N_h[s], K, phase1_sample_sizes[s])
+            e_gold = float(np.sum(pm * np.minimum(p2.allocation[b], m)))
+            expected.append(
+                RatioGoldExpectation(
+                    stratum=s,
+                    bin=b,
+                    frame_share=K / N,
+                    expected_gold=e_gold,
+                    expected_denominator=e_gold * float(yd[s][in_cell].mean()),
+                    expected_numerators={k: e_gold * float(yn[s, k][in_cell].mean()) for k in numerators},
+                )
+            )
+    return tuple(expected)
 
 
 def measure_ratio_coverage(
@@ -382,6 +415,14 @@ def measure_ratio_coverage(
     N_h = {s: len(yd[s]) for s in names}
     N = sum(N_h.values())
     den_total = sum(float(yd[s].sum()) for s in names)
+    expected = _ratio_gold(names, N_h, N, ss, yd, yn, numerators, phase1_sample_sizes, phase2_cuts, phase2_allocation)
+    if den_total == 0:
+        # The simulated frame holds no denominator item, so the ratio it would estimate is undefined: there is no
+        # coverage to measure, which is a statement about the label model, never a reason to withhold the gold that
+        # measures the frame itself (external evaluation, November 2).
+        return RatioCoverageReport(denominator_truth=0.0, level=level, draws=draws, seed=seed, ratios=(), gold=expected,
+                                   not_measured="the simulated labels put no item in the denominator, so the ratio is "
+                                                "undefined under this label model")  # fmt: skip
     truths = {k: sum(float(yn[s, k].sum()) for s in names) / den_total for k in numerators}
     z = float(stats.norm.ppf(0.5 + level / 2))
     W = np.array([N_h[s] / N for s in names])
@@ -425,6 +466,10 @@ def measure_ratio_coverage(
             fieller_unit[k].append(out[k].fieller_unit)
             mean_den = np.array([fd[s][picks[s]].mean() for s in names])
             mean_num = np.array([fn[s, k][picks[s]].mean() for s in names])
+            if float(W @ mean_den) == 0.0:  # the model puts no probability in the denominator: no ratio to read
+                naive[k].append(RatioSet(pieces=(), kind="empty", reason=f"{NAIVE_RATIO}: undefined, the model's "
+                                                                          "denominator mean is 0 in this draw"))  # fmt: skip
+                continue
             ratio = float(W @ mean_num) / float(W @ mean_den)
             resid = [fn[s, k][picks[s]] - ratio * fd[s][picks[s]] for s in names]
             var = np.array([r.var(ddof=1) if len(r) > 1 else 0.0 for r in resid])
@@ -434,10 +479,14 @@ def measure_ratio_coverage(
 
     ratios = []
     for k in numerators:
-        clipped = [
-            RatioSet(((max(lo, 0.0), min(hi, 1.0)),) if lo <= 1.0 and hi >= 0.0 else (), "interval", NAIVE_RATIO)
-            for ((lo, hi),) in (s.pieces for s in naive[k])
-        ]
+        clipped = []
+        for n in naive[k]:
+            if not n.pieces:  # undefined in that draw: nothing to clip
+                clipped.append(n)
+                continue
+            ((lo, hi),) = n.pieces
+            clipped.append(RatioSet(((max(lo, 0.0), min(hi, 1.0)),) if lo <= 1.0 and hi >= 0.0 else (), "interval",
+                                    NAIVE_RATIO))  # fmt: skip
         ratios.append(
             RatioCoverage(
                 numerator=k,
@@ -450,34 +499,11 @@ def measure_ratio_coverage(
             )
         )
 
-    expected = []
-    for s in names:
-        p2 = _phase2_strata(
-            (s,), np.full(N_h[s], s), ss[s], phase2_cuts, {key: v for key, v in phase2_allocation.items() if key[0] == s}
-        )
-        for b in range(p2.bins):
-            in_cell = p2.cell == b
-            K = int(in_cell.sum())
-            if K == 0:
-                continue
-            m = np.arange(0, min(K, phase1_sample_sizes[s]) + 1)
-            pm = stats.hypergeom.pmf(m, N_h[s], K, phase1_sample_sizes[s])
-            e_gold = float(np.sum(pm * np.minimum(p2.allocation[b], m)))
-            expected.append(
-                RatioGoldExpectation(
-                    stratum=s,
-                    bin=b,
-                    frame_share=K / N,
-                    expected_gold=e_gold,
-                    expected_denominator=e_gold * float(yd[s][in_cell].mean()),
-                    expected_numerators={k: e_gold * float(yn[s, k][in_cell].mean()) for k in numerators},
-                )
-            )
     return RatioCoverageReport(
         denominator_truth=den_total / N,
         level=level,
         draws=draws,
         seed=seed,
         ratios=tuple(ratios),
-        gold=tuple(expected),
+        gold=expected,
     )
