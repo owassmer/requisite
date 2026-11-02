@@ -28,3 +28,19 @@ How to read the terms into the IR:
 
 Read the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR:
 list it as an assumption with both readings.
+
+Where carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as
+an assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no
+faithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:
+- a condition quantified over documents ("any instrument that ...", "a qualifying action"), where the IR can only
+  read one named instrument;
+- a reading whose answer is a single value other than the top of its range (bands are [low, high));
+- a date read from text and compared;
+- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;
+- an unknown-at-expiry outcome left to the exchange's discretion;
+- a settlement or payment date stated as a deadline ("no later than");
+- a known payment whose date is left to an exchange rule;
+- a missing-data rule for a payout quantity;
+- what a binary or capped payout pays per period.
+Where the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the
+neutral value and list it as an assumption that the terms state no such rule.
