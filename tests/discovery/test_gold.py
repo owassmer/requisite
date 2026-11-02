@@ -6,7 +6,7 @@ from fractions import Fraction as F
 
 import pytest
 
-from requisite import core
+from requisite import cassettes, core, secrets
 from requisite.core.evidence import artifact_id
 from requisite.discovery import gold
 from requisite.store import Store
@@ -18,6 +18,14 @@ OBJECTIVE = core.WideObjective(
     estimand="share of items", unit="item",
 )  # fmt: skip
 MEASURES = {"D-1": "A proposed rule raising the overtime salary threshold."}
+
+
+@pytest.fixture(autouse=True)
+def recording(monkeypatch, tmp_path):
+    """A labelling session records each answer, as the live session does, into a fresh cassette directory."""
+    monkeypatch.delenv("REQUISITE_REPLAY_ONLY", raising=False)
+    monkeypatch.setattr(secrets, "known_values", lambda: [])
+    monkeypatch.setattr(cassettes, "CASSETTES", tmp_path / "cassettes")
 
 
 def make_items(store: Store, n: int) -> core.SampleDraw:
@@ -81,3 +89,19 @@ def test_a_drawn_item_that_was_never_read_is_refused(tmp_path):
                            items=[core.DrawnItem(item="missing", stratum="s", inclusion_prob=F(1, 2))])  # fmt: skip
     with pytest.raises(Exception, match="not committed"):
         session(store, draw, ["q"])
+
+
+def test_a_clean_clone_replays_the_recorded_labels_without_asking_anyone(tmp_path, monkeypatch):
+    # The labels are outside ground truth the estimate rests on: a fresh store, replay only, commits the same labels.
+    store = Store(tmp_path / "case", case="case", clock=lambda: T)
+    draw = make_items(store, 2)
+    n, _ = session(store, draw, ["1", "u", "2", "1"])
+    assert n == 4
+    monkeypatch.setenv("REQUISITE_REPLAY_ONLY", "1")
+    fresh = Store(tmp_path / "fresh", case="case", clock=lambda: T)
+    make_items(fresh, 2)
+    replayed, shown = session(fresh, draw, [])  # nothing to read: every answer is replayed
+    assert replayed == 4 and "> " not in shown
+    key = lambda g: (g.item, g.question.id, g.outcome, g.label, g.labeled_at)  # noqa: E731
+    assert sorted(map(key, fresh.all("gold_label", core.GoldLabel))) == sorted(
+        map(key, store.all("gold_label", core.GoldLabel)))

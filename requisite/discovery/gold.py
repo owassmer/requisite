@@ -4,6 +4,11 @@ The labeller answers the same questions the models answered, in the original wor
 in an order the seed fixes, never seeing any model's answer (core.GoldLabel.blind). "Unsure" is an answer of its own,
 recorded as unresolved, never dropped or read as zero (A07 §8.1). Labels are committed one at a time, so a session can
 stop and resume; nothing chooses which items get labelled but the draw.
+
+Each answer is recorded as the human's response to that question about that item's exact text, through the cassettes
+(provider "human"), as a provider's answer is: a gold label is outside ground truth the estimate rests on, so a clean
+clone replaying the recordings commits the same labels and computes the same estimate, without asking anyone again.
+A label already recorded is replayed, not asked.
 """
 
 from __future__ import annotations
@@ -13,12 +18,18 @@ import textwrap
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 
-from requisite import core
+from requisite import cassettes, core
 from requisite.discovery import labels
+from requisite.evidence.fetched import free_budget
 from requisite.evidence.items import committed as read_items_of
 from requisite.store import Refused, Store
 
 UNSURE, QUIT = "u", "q"
+PROVIDER = "human"
+
+
+class _Stopped(Exception):
+    """The labeller typed QUIT: nothing is recorded for the question asked."""
 
 
 def pending(store: Store, draw: core.SampleDraw, question_ids: Callable[[core.Item], list[str]]) -> list[core.DrawnItem]:
@@ -77,21 +88,32 @@ def label_session(
             if (item.id, q.id) in labelled:
                 continue
             target = q.target.replace(objective.population, "(the population definition shown at the start)")
-            write("\n" + target)
-            for i, a in enumerate(q.answers, 1):
-                write(f"  {i}. {a.meaning}")
-            while True:
-                answer = read("> ").strip().lower()
-                if answer == QUIT:
-                    write(f"Stopped. {committed} labels committed this session.")
-                    return committed
-                if answer == UNSURE:
-                    outcome, label = "unresolved", None
-                    break
-                if answer.isdigit() and 1 <= int(answer) <= len(q.answers):
-                    outcome, label = "labeled", q.answers[int(answer) - 1].value
-                    break
-                write(f"Type 1 to {len(q.answers)}, '{UNSURE}' or '{QUIT}'.")
+
+            def ask(q: core.AtomicQuestion = q, target: str = target) -> tuple[dict[str, str], float]:
+                write("\n" + target)
+                for i, a in enumerate(q.answers, 1):
+                    write(f"  {i}. {a.meaning}")
+                while True:
+                    answer = read("> ").strip().lower()
+                    if answer == QUIT:
+                        raise _Stopped
+                    if answer == UNSURE or (answer.isdigit() and 1 <= int(answer) <= len(q.answers)):
+                        return {"answer": answer, "labeled_at": now().isoformat()}, 0.0
+                    write(f"Type 1 to {len(q.answers)}, '{UNSURE}' or '{QUIT}'.")
+
+            body = {"labeler": labeler, "design": draw.design.model_dump(mode="json"), "item": item.id,
+                    "text": core.sha256(item.text), "question": q.ref.model_dump(mode="json"), "target": q.target,
+                    "answers": [a.value for a in q.answers]}  # fmt: skip
+            try:
+                recorded = cassettes.call(PROVIDER, "gold_label", body, ask, budget=free_budget(), estimate_usd=0.0)
+            except _Stopped:
+                write(f"Stopped. {committed} labels committed this session.")
+                return committed
+            answer = str(recorded.response["answer"])
+            if answer == UNSURE:
+                outcome, label = "unresolved", None
+            else:
+                outcome, label = "labeled", q.answers[int(answer) - 1].value
             store.commit_gold_label(
                 core.GoldLabel(
                     item=item.id,
@@ -102,7 +124,7 @@ def label_session(
                     outcome=outcome,  # type: ignore[arg-type]
                     label=label,
                     labeler=labeler,
-                    labeled_at=now(),
+                    labeled_at=datetime.fromisoformat(str(recorded.response["labeled_at"])),
                     blind=True,
                 )
             )
