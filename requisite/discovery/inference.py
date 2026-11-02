@@ -5,8 +5,8 @@ the frame; every phase-1 item carries a model prediction f in [0, 1], fixed befo
 probabilities, never top answers). Phase 2 is the gold sample: within each phase-1 stratum, the phase-1 items are split
 into phase-2 strata by thresholding a phase-1 value (the stratifier, a model probability), and each phase-2 stratum is
 an SRSWOR of its phase-1 items, of size min(allocation, items) with allocation >= 2, so a phase-2 stratum with no more
-items than its allocation is taken whole. A frame small enough to read whole is a phase-1 census, and then everything
-here is exactly addendum A07's finite-frame form (§8.2, §8.4).
+items than its allocation is taken whole. A frame small enough to read whole is a phase-1 census, and then the estimate,
+its variance and its standard error are exactly addendum A07's finite-frame form (§8.2, §8.4).
 
 Sources, each formula beside the one it rests on:
 - Addendum A07 §8.2: the difference estimator over a fixed finite frame with fixed predictions is design-unbiased, its
@@ -20,6 +20,10 @@ Sources, each formula beside the one it rests on:
   each estimated without bias, the first through an unbiased estimate of the phase-1 sample variance of y built from
   the gold sample. tests/discovery/test_two_phase_exact.py proves every formula by enumerating every phase-1 sample and
   every phase-2 subsample of small frames, the take-whole rule included.
+- The interval is a score interval (Wilson 1927, "Probable inference, the law of succession, and statistical
+  inference", JASA 22: the variance is evaluated at the value tested, not at the estimate), carried to this design by our
+  reasoning: see _score_bounds. Its coverage is measured by simulation (tests/discovery/test_wide_coverage.py), as A07 §8.5
+  asks, and is a regression result for the settings simulated, not a guarantee for every design.
 - Spec §7.4 and PPI++ (Angelopoulos, Duchi and Zrnic, arXiv:2311.01453): the two-sample PPI++ mean, for a design the
   caller declares as two independent samples and only there (A07 §8.2: a gold subset of a frame is another design).
 
@@ -30,10 +34,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from typing import Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy import stats
+from scipy import optimize, stats
 
 FloatArray = NDArray[np.float64]
 
@@ -51,7 +56,6 @@ class _Cells:
     sample_sizes: FloatArray  # n_h
     frame_size: int  # N
     cell_stratum: NDArray[np.intp]  # phase-1 stratum index of each cell
-    cell_bin: NDArray[np.intp]  # stratifier bin of each cell
     m: FloatArray  # phase-1 items in each cell
     r: FloatArray  # gold items in each cell
     unit_cell: NDArray[np.intp]  # cell of each phase-1 item
@@ -67,6 +71,70 @@ class _Cells:
         """W_h * m_k / n_h: the frame share each cell's phase-1 mean of y stands for."""
         h = self.cell_stratum
         return (self.frame_sizes[h] / self.frame_size) * (self.m / self.sample_sizes[h])
+
+    def open_cells(self) -> NDArray[np.bool_]:
+        """Cells whose gold is a sample short of the cell, so that phase 2 adds variance there."""
+        return (self.m > 0) & (self.r < self.m)
+
+    def phase2_factor(self) -> FloatArray:
+        """(1 - r_k / m_k) / r_k: the SRSWOR variance factor of a cell's gold mean; 0 for a cell taken whole."""
+        with np.errstate(invalid="ignore", divide="ignore"):
+            return np.where(self.open_cells(), (1 - self.r / self.m) / self.r, 0.0)
+
+
+@dataclass(frozen=True)
+class _Phase2Strata:
+    """The phase-2 strata of the phase-1 items: each item's phase-1 stratum and cell (phase-1 stratum crossed with the
+    stratifier's bin), and each cell's allocation."""
+
+    stratum: NDArray[np.intp]
+    cell: NDArray[np.intp]
+    bins: int
+    n_cells: int
+    allocation: FloatArray
+
+
+def _phase2_strata(
+    names: tuple[str, ...],
+    phase1_stratum: NDArray[np.str_],
+    stratifier: FloatArray,
+    phase2_cuts: Sequence[float],
+    phase2_allocation: Mapping[tuple[str, int], int],
+) -> _Phase2Strata:
+    """The one definition of a phase-2 stratum, for drawing the gold sample and for estimating from it: bin b of the
+    stratifier holds cuts[b-1] <= value < cuts[b], within each phase-1 stratum; each stratum holding a phase-1 item is
+    allocated at least 2 gold items."""
+    cuts = np.asarray(phase2_cuts, dtype=float)
+    if cuts.ndim != 1 or np.any(~np.isfinite(cuts)) or np.any(np.diff(cuts) <= 0):
+        raise ValueError("phase-2 cuts are finite and strictly increasing")
+    if stratifier.shape != phase1_stratum.shape:
+        raise ValueError("the stratifier has one value per phase-1 item")
+    if np.any(~np.isfinite(stratifier)):
+        raise ValueError("the stratifier is defined for every phase-1 item")
+    declared = np.array(names, dtype=str)
+    order = np.argsort(declared)
+    pos = np.minimum(np.searchsorted(declared[order], phase1_stratum), len(names) - 1)
+    known = declared[order][pos] == phase1_stratum
+    if not np.all(known):
+        raise ValueError(f"phase-1 item in undeclared stratum {phase1_stratum[~known][0]!r}")
+    h = order[pos].astype(np.intp)
+    bins = len(cuts) + 1
+    n_cells = len(names) * bins
+    cell = h * bins + np.searchsorted(cuts, stratifier, side="right").astype(np.intp)
+    index = {name: i for i, name in enumerate(names)}
+    alloc = np.zeros(n_cells)
+    for key, a_k in phase2_allocation.items():
+        name, bin_ = key
+        if name not in index or not 0 <= bin_ < bins:
+            raise ValueError(f"phase-2 allocation for an undeclared stratum {key}")
+        if a_k < 2:
+            raise ValueError(f"phase-2 stratum {key} is allocated {a_k} gold items; the design allocates at least 2")
+        alloc[index[name] * bins + bin_] = a_k
+    missing = (np.bincount(cell, minlength=n_cells) > 0) & (alloc == 0)
+    if np.any(missing):
+        k = int(np.flatnonzero(missing)[0])
+        raise ValueError(f"phase-2 stratum {(names[k // bins], k % bins)} has phase-1 items but no allocation")
+    return _Phase2Strata(stratum=h, cell=cell, bins=bins, n_cells=n_cells, allocation=alloc)
 
 
 def _resolve(
@@ -85,6 +153,8 @@ def _resolve(
     """Check that the data are a sample this design draws, and lay them out by cell. Refuses anything else: the
     estimator is correct only for the design that drew the samples."""
     names = tuple(phase1_frame_sizes)
+    if not names:
+        raise ValueError("the design declares at least one phase-1 stratum")
     if set(phase1_sample_sizes) != set(names):
         raise ValueError("phase-1 strata: frame sizes and sample sizes name different strata")
     N_h = np.array([phase1_frame_sizes[s] for s in names], dtype=float)
@@ -95,56 +165,32 @@ def _resolve(
         raise ValueError("each phase-1 stratum samples at least 1 and at most all of its items")
     if np.any((n_h < 2) & (n_h < N_h)):
         raise ValueError("a phase-1 stratum sampled short of a census needs at least 2 items to estimate its variance")
-    cuts = np.asarray(phase2_cuts, dtype=float)
-    if cuts.ndim != 1 or np.any(~np.isfinite(cuts)) or np.any(np.diff(cuts) <= 0):
-        raise ValueError("phase-2 cuts are finite and strictly increasing")
 
-    strat = np.asarray(phase1_stratum)
+    strat = np.asarray(phase1_stratum).astype(str)
     s = np.asarray(stratifier, dtype=float)
     fv = np.asarray(f, dtype=float)
     g = np.asarray(gold)
     yv = np.asarray(y, dtype=float)
     n = strat.shape[0]
-    for name, a in (("stratifier", s), ("f", fv), ("gold", g), ("y", yv)):
+    for label, a in (("stratifier", s), ("f", fv), ("gold", g), ("y", yv)):
         if a.shape != (n,):
-            raise ValueError(f"{name} has shape {a.shape}; one value per phase-1 item ({n}) is required")
+            raise ValueError(f"{label} has shape {a.shape}; one value per phase-1 item ({n}) is required")
     if g.dtype != np.bool_:
         raise ValueError("gold is a boolean mask over the phase-1 items")
-    if np.any(~np.isfinite(s)):
-        raise ValueError("the stratifier is defined for every phase-1 item")
     if np.any(~np.isfinite(fv)) or np.any((fv < 0) | (fv > 1)):
         raise ValueError("f is a probability in [0, 1] for every phase-1 item (spec §7.4)")
     if np.any((yv[g] != 0) & (yv[g] != 1)):
         raise ValueError("every gold item carries an indicator label, 0 or 1 (an unresolved gold label is not one)")
 
-    index = {name: i for i, name in enumerate(names)}
-    try:
-        h = np.array([index[str(v)] for v in strat], dtype=np.intp)
-    except KeyError as e:
-        raise ValueError(f"phase-1 item in undeclared stratum {e}") from None
-    counts = np.bincount(h, minlength=len(names))
+    p2 = _phase2_strata(names, strat, s, phase2_cuts, phase2_allocation)
+    counts = np.bincount(p2.stratum, minlength=len(names))
     if np.any(counts != n_h):
-        raise ValueError(f"phase-1 items per stratum {counts.tolist()} differ from the declared {n_h.astype(int).tolist()}")
-
-    bins = len(cuts) + 1
-    b = np.searchsorted(cuts, s, side="right").astype(np.intp)
-    unit_cell = h * bins + b
-    n_cells = len(names) * bins
-    m = np.bincount(unit_cell, minlength=n_cells).astype(float)
-    r = np.bincount(unit_cell[g], minlength=n_cells).astype(float)
-
-    alloc = np.zeros(n_cells)
-    for key, a_k in phase2_allocation.items():
-        name, bin_ = key
-        if name not in index or not 0 <= bin_ < bins:
-            raise ValueError(f"phase-2 allocation for an undeclared stratum {key}")
-        if a_k < 2:
-            raise ValueError(f"phase-2 stratum {key} is allocated {a_k} gold items; the design allocates at least 2")
-        alloc[index[name] * bins + bin_] = a_k
-    missing = (m > 0) & (alloc == 0)
-    if np.any(missing):
-        k = int(np.flatnonzero(missing)[0])
-        raise ValueError(f"phase-2 stratum {(names[k // bins], k % bins)} has phase-1 items but no allocation")
+        raise ValueError(
+            f"phase-1 items per stratum {counts.tolist()} differ from the declared {n_h.astype(int).tolist()}"
+        )
+    m = np.bincount(p2.cell, minlength=p2.n_cells).astype(float)
+    r = np.bincount(p2.cell[g], minlength=p2.n_cells).astype(float)
+    alloc, bins, n_cells, unit_cell = p2.allocation, p2.bins, p2.n_cells, p2.cell
     want = np.minimum(alloc, m)
     if np.any(r != want):
         k = int(np.flatnonzero(r != want)[0])
@@ -152,14 +198,12 @@ def _resolve(
             f"phase-2 stratum {(names[k // bins], k % bins)} has {int(r[k])} gold items; its allocation of "
             f"{int(alloc[k])} over {int(m[k])} phase-1 items draws {int(want[k])}"
         )
-    cells = np.arange(n_cells)
     return _Cells(
         names=names,
         frame_sizes=N_h,
         sample_sizes=n_h,
         frame_size=frame_size,
-        cell_stratum=(cells // bins).astype(np.intp),
-        cell_bin=(cells % bins).astype(np.intp),
+        cell_stratum=(np.arange(n_cells) // bins).astype(np.intp),
         m=m,
         r=r,
         unit_cell=unit_cell,
@@ -193,6 +237,110 @@ def _phase1_var(c: _Cells, values: FloatArray) -> FloatArray:
     return np.where(m >= 2, ss / np.maximum(m - 1, 1), 0.0)
 
 
+# -------------------------------------------------------------------------------------------------------------- interval
+
+
+@dataclass(frozen=True)
+class _Score:
+    """The variance of the estimate as a function of the cells' phase-1 prevalences p, for the score interval:
+    sum_k w_k^2 (A_k p_k (1 - p_k) + B_k) on phase 2, plus sum_h K_h P_h (1 - P_h) on phase 1, P_h = sum_k s_k p_k."""
+
+    w: FloatArray
+    mu: FloatArray
+    A: FloatArray
+    B: FloatArray
+    stratum: NDArray[np.intp]
+    share: FloatArray
+    K: FloatArray
+
+    def restricted(self, t: float) -> FloatArray:
+        """The cells' prevalences on the score path: each p_k is the root of p - mu_k = t w_k (A_k p (1 - p) + B_k)
+        reached from mu_k as t moves from 0, in [0, 1]. For t < 0 it is the same problem in 1 - p."""
+        if t < 0:
+            return 1.0 - _Score(self.w, 1.0 - self.mu, self.A, self.B, self.stratum, self.share, self.K)._upper(-t)
+        return self._upper(t)
+
+    def _upper(self, t: float) -> FloatArray:
+        # a p^2 + (1 - a) p - d = 0 with a = t w A >= 0 and d = mu + t w B; the larger root, in the stable form.
+        g = t * self.w
+        a = g * self.A
+        d = self.mu + g * self.B
+        bq = 1.0 - a
+        root = np.sqrt(np.maximum(bq * bq + 4.0 * a * d, 0.0))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            p = np.where(bq >= 0, 2.0 * d / (bq + root), (root - bq) / (2.0 * a))
+        p = np.where(a == 0, d, p)
+        return np.clip(np.nan_to_num(p, nan=0.0), 0.0, 1.0)
+
+    def variance(self, p: FloatArray) -> float:
+        v2 = float(np.sum(self.w * self.w * (self.A * p * (1 - p) + self.B)))
+        P = np.bincount(self.stratum, weights=self.share * p, minlength=len(self.K))
+        return v2 + float(np.sum(self.K * P * (1 - P)))
+
+
+def _score_bounds(sc: _Score, z: float) -> tuple[float, float]:
+    """The score interval: theta_hat -+ z SD, the SD evaluated where the bound is, at the restricted prevalences p(t)
+    with t^2 Var(p(t)) = z^2 (t < 0 for the lower bound, t > 0 for the upper). For one cell this is Wilson's interval
+    exactly: (p - mu)^2 = z^2 V(p). Several cells share the excess as a weighted least-squares fit at the bound would,
+    each in proportion to w_k V_k (Miettinen and Nurminen's restricted estimates for stratified rates, Stat Med 1985,
+    are the same idea; their use here is our reasoning)."""
+    theta = float(np.sum(sc.w * sc.mu))
+
+    def bound(sign: float) -> float:
+        def gap(t: float) -> float:
+            return t * float(np.sqrt(sc.variance(sc.restricted(sign * t)))) - z
+
+        if not (np.any((sc.w > 0) & ((sc.A > 0) | (sc.B != 0))) or np.any(sc.K > 0)):
+            return theta  # nothing is sampled short of the frame: the estimate is the frame value
+        hi = 1.0
+        while gap(hi) < 0:
+            if hi > 1e30:
+                return theta  # the variance vanishes along the whole path: no p but the estimate is possible
+            hi *= 2.0
+        lo = hi / 2.0 if hi > 1.0 else 0.0
+        if gap(lo) >= 0:
+            lo = 0.0
+        t = optimize.brentq(gap, lo, hi, xtol=1e-14, rtol=1e-12)
+        return theta + sign * z * float(np.sqrt(sc.variance(sc.restricted(sign * t))))
+
+    return max(0.0, bound(-1.0)), min(1.0, bound(1.0))
+
+
+def _score_model(c: _Cells, mu: FloatArray, lam: FloatArray) -> _Score:
+    """Each cell's residual variance at prevalence p, S2_e(p) = kappa p (1 - p)(1 - 2 lam delta) + lam^2 S2_f, kappa =
+    m / (m - 1). It is exact for 0/1 labels: S2_y = kappa p(1-p) and S_yf = kappa p(1-p) delta, delta the gap in mean f
+    between the cell's positive and negative phase-1 items. S2_f is known from phase 1. delta is estimated from the
+    cell's own gold, and is 0 where that gold holds only one label: the gold has then shown nothing of how f separates
+    the labels in this cell, so no reduction is claimed for it, and none is borrowed from other cells (a judge's false
+    negatives are exactly where its f does not separate). 1 - 2 lam delta is floored at 0, so the variance never falls
+    below the f term. The phase-1 term evaluates S2_y,h = n_h / (n_h - 1) P_h (1 - P_h) at the same p."""
+    w = c.cell_weight()
+    occupied = c.m > 0
+    kappa = np.where(c.m >= 2, c.m / np.maximum(c.m - 1, 1), 1.0)
+    r1 = np.maximum(c.r, 1)
+    dy = c.y - (_cell_sum(c, c.y, True) / r1)[c.unit_cell]
+    df = c.f - (_cell_sum(c, c.f, True) / r1)[c.unit_cell]
+    syy = _cell_sum(c, dy * dy, True)
+    syf = _cell_sum(c, dy * df, True)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        delta = np.where(syy > 0, syf / np.where(syy > 0, syy, 1.0), 0.0)
+    q = c.phase2_factor()
+    h = c.cell_stratum
+    n_h, N_h = c.sample_sizes, c.frame_sizes
+    W = N_h / c.frame_size
+    with np.errstate(invalid="ignore", divide="ignore"):
+        K = np.where(n_h >= 2, W * W * (1 - n_h / N_h) / (n_h - 1), 0.0)
+    return _Score(
+        w=np.where(occupied, w, 0.0),
+        mu=np.where(occupied, mu, 0.0),
+        A=q * kappa * np.maximum(1 - 2 * lam * delta, 0.0),
+        B=q * lam**2 * _phase1_var(c, c.f),
+        stratum=h,
+        share=c.m / n_h[h],
+        K=K,
+    )
+
+
 # ------------------------------------------------------------------------------------------------------------ estimators
 
 
@@ -207,13 +355,19 @@ class StratumMean:
     interval: tuple[float, float]
 
 
+INTERVAL_METHOD = (
+    "score: theta_hat -+ z SD, the SD evaluated at the cells' prevalences restricted to the bound tested (Wilson's "
+    "interval for one cell); a cell's f is credited with reducing the variance only as far as its own gold shows"
+)
+
+
 @dataclass(frozen=True)
 class FrameMean:
     """The frame share of items whose indicator holds, with its design-based variance and interval.
 
-    ``variance`` estimates the design variance: phase 1 on the target plus phase 2 on the residuals. For a fixed lam it
-    is exactly unbiased. ``interval`` is the construction ``interval_method`` names, whose coverage is measured by
-    simulation (requisite.discovery.coverage).
+    ``variance`` estimates the design variance, phase 1 on the target plus phase 2 on the residuals; for a fixed lam it
+    is exactly unbiased. ``interval`` is the score interval ``interval_method`` names, whose coverage is measured by
+    simulation (tests/discovery/test_wide_coverage.py); it is not estimate -+ z se, since se is evaluated at the estimate.
     """
 
     unit: str
@@ -247,45 +401,6 @@ def _z(level: float) -> float:
     return float(stats.norm.ppf(0.5 + level / 2))
 
 
-def _cell_score_bounds(c: _Cells, est: _CellEstimates, z: float) -> tuple[FloatArray, FloatArray]:
-    """Each cell's score interval for its phase-1 mean of y, p: the p with (mu - p)^2 <= z^2 c S2_e(p), where
-    S2_e(p) = kappa p (1 - p) (1 - 2 lam delta) + lam^2 S2_f is the cell's residual variance at prevalence p.
-
-    That form is exact for 0/1 labels (S2_y = kappa p(1-p) and S_yf = kappa p(1-p) delta, delta the gap in mean f
-    between the cell's positive and negative items; kappa = m / (m - 1)); S2_f is known from phase 1 and delta is
-    estimated from the gold, 0 where the gold holds only one label (no reduction claimed), and 1 - 2 lam delta is
-    floored at 0 so that the variance never falls below the f term alone. Like Wilson's interval (to which it reduces at
-    lam = 0), it keeps a cell whose gold shows no positive from claiming no uncertainty."""
-    m, r = c.m, c.r
-    open_ = (m > 0) & (r < m)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        cc = np.where(open_, (1 - r / m) / r, 0.0)
-        kappa = np.where(m >= 2, m / (m - 1), 1.0)
-    yv, fv = c.y, c.f
-    r1 = np.maximum(r, 1)
-    ybar = _cell_sum(c, yv, True) / r1
-    fbar = _cell_sum(c, fv, True) / r1
-    dy, df = yv - ybar[c.unit_cell], fv - fbar[c.unit_cell]
-    syy = _cell_sum(c, dy * dy, True)
-    syf = _cell_sum(c, dy * df, True)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        delta = np.where(syy > 0, syf / syy, 0.0)
-    a = np.maximum(1 - 2 * est.lam * delta, 0.0)
-    b = est.lam**2 * _phase1_var(c, fv)
-    mu = np.clip(est.mu, 0.0, 1.0)
-    k = z * z * cc
-    A = 1 + k * kappa * a
-    B = 2 * mu + k * kappa * a
-    C = mu * mu - k * b
-    root = np.sqrt(np.maximum(B * B - 4 * A * C, 0.0))
-    lo = np.clip((B - root) / (2 * A), 0.0, 1.0)
-    hi = np.clip((B + root) / (2 * A), 0.0, 1.0)
-    return np.where(open_, lo, est.mu), np.where(open_, hi, est.mu)
-
-
-INTERVAL = "mover"
-
-
 def _assemble(c: _Cells, est: _CellEstimates, *, unit: str, lam: float, lam_rule: str, level: float) -> FrameMean:
     """Combine per-cell estimates into the frame estimate, its variance, and its interval."""
     z = _z(level)
@@ -296,11 +411,10 @@ def _assemble(c: _Cells, est: _CellEstimates, *, unit: str, lam: float, lam_rule
     n_h = c.sample_sizes
     occupied = c.m > 0
     mu = np.where(occupied, est.mu, 0.0)
+    q = c.phase2_factor()
 
     # Phase 2, on the residuals: (W_h m_k / n_h)^2 (1 - r_k / m_k) s2_e,k / r_k over cells; 0 for a cell taken whole.
-    with np.errstate(invalid="ignore", divide="ignore"):
-        fpc2 = np.where(occupied & (c.r < c.m), (1 - c.r / c.m) / c.r, 0.0)
-    v2_cell = w * w * fpc2 * est.s2e
+    v2_h = np.bincount(h, weights=w * w * q * est.s2e, minlength=H)
 
     # Phase 1, on the target: W_h^2 (1 - n_h / N_h) S2_y,h / n_h over strata, with S2_y,h (the phase-1 sample variance
     # of y) estimated without bias from the gold. For 0/1 labels it is [T - (T^2 - V(T)) / n_h] / (n_h - 1), where
@@ -308,55 +422,52 @@ def _assemble(c: _Cells, est: _CellEstimates, *, unit: str, lam: float, lam_rule
     # T^2 - V(T) is unbiased for the squared total. It is >= 0, since 0 <= T <= n_h.
     ybar = np.where(c.r > 0, _cell_sum(c, c.y, True) / np.maximum(c.r, 1), 0.0)
     T = np.bincount(h, weights=c.m * ybar, minlength=H)
-    VT = np.bincount(h, weights=c.m * c.m * fpc2 * _cell_var(c, c.y), minlength=H)
+    VT = np.bincount(h, weights=c.m * c.m * q * _cell_var(c, c.y), minlength=H)
     with np.errstate(invalid="ignore", divide="ignore"):
         s2y = np.where(n_h >= 2, (T - (T * T - VT) / n_h) / (n_h - 1), 0.0)
     v1_h = W * W * (1 - n_h / c.frame_sizes) * s2y / n_h
-    v2_h = np.bincount(h, weights=v2_cell, minlength=H)
     est_h = np.bincount(h, weights=w * mu, minlength=H)
 
-    if INTERVAL == "mover":
-        lo_k, hi_k = _cell_score_bounds(c, est, z)
-        d_lo = np.where(occupied, np.maximum(mu - lo_k, 0.0), 0.0) * w
-        d_hi = np.where(occupied, np.maximum(hi_k - mu, 0.0), 0.0) * w
-        dlo_h = np.bincount(h, weights=d_lo * d_lo, minlength=H)
-        dhi_h = np.bincount(h, weights=d_hi * d_hi, minlength=H)
-    else:
-        dlo_h = dhi_h = z * z * v2_h
+    sc = _score_model(c, mu, est.lam)
 
-    def bounds(estimate: float, dlo2: float, dhi2: float, v1: float) -> tuple[float, float]:
-        # MOVER (Zou and Donner 2008): each independent component's own interval, combined in quadrature on each side.
-        lo = estimate - float(np.sqrt(dlo2 + z * z * v1))
-        hi = estimate + float(np.sqrt(dhi2 + z * z * v1))
-        return (max(0.0, lo), min(1.0, hi))
+    def stratum_bounds(i: int) -> tuple[float, float]:
+        k = h == i
+        lo, hi = _score_bounds(
+            _Score(
+                w=sc.w[k] / W[i],
+                mu=sc.mu[k],
+                A=sc.A[k],
+                B=sc.B[k],
+                stratum=np.zeros(int(k.sum()), dtype=np.intp),
+                share=sc.share[k],
+                K=sc.K[i : i + 1] / W[i] ** 2,
+            ),
+            z,
+        )
+        return (lo, hi)
 
-    estimate = float(est_h.sum())
     v1, v2 = float(v1_h.sum()), float(v2_h.sum())
-    def stratum_interval(i: int) -> tuple[float, float]:
-        lo, hi = bounds(float(est_h[i]), float(dlo_h[i]), float(dhi_h[i]), float(v1_h[i]))
-        return (float(lo / W[i]), float(hi / W[i]))
-
     by_stratum = tuple(
         StratumMean(
             stratum=name,
             frame_size=int(c.frame_sizes[i]),
             estimate=float(est_h[i] / W[i]),
             variance=float((v1_h[i] + v2_h[i]) / W[i] ** 2),
-            interval=stratum_interval(i),
+            interval=stratum_bounds(i),
         )
         for i, name in enumerate(c.names)
     )
     return FrameMean(
         unit=unit,
         frame_size=c.frame_size,
-        estimate=estimate,
+        estimate=float(est_h.sum()),
         variance=v1 + v2,
         variance_phase1=v1,
         variance_phase2=v2,
         se=float(np.sqrt(v1 + v2)),
-        interval=bounds(estimate, float(dlo_h.sum()), float(dhi_h.sum()), v1),
+        interval=_score_bounds(sc, z),
         level=level,
-        interval_method=INTERVAL,
+        interval_method=INTERVAL_METHOD,
         lam=lam,
         lam_rule=lam_rule,
         phase1_items=int(c.m.sum()),
@@ -387,6 +498,13 @@ def two_phase_difference(
 
     Design-unbiased for any fixed lam and any f fixed before the gold is seen, calibrated or not (f changes only the
     variance), with an unbiased variance estimate; both exactly, over every sample the design draws.
+
+    The design, as plain data: ``frame_size`` items of ``unit`` in phase-1 strata of ``phase1_frame_sizes`` items, each
+    sampled to ``phase1_sample_sizes``; phase-2 strata are the bins of the phase-1 ``stratifier`` cut at
+    ``phase2_cuts`` (bin b holds cuts[b-1] <= value < cuts[b]) within each phase-1 stratum, allocated
+    ``phase2_allocation[(stratum, bin)]`` gold items each. The data, one entry per phase-1 item: its ``phase1_stratum``,
+    ``stratifier`` value, ``f`` for the target indicator, whether it is ``gold``, and its gold label ``y`` (read only
+    where gold).
     """
     c = _resolve(
         frame_size=frame_size,
@@ -475,9 +593,7 @@ def two_phase_difference_tuned(
     )
     K = c.n_cells
     w = c.cell_weight()
-    open_ = (c.m > 0) & (c.r < c.m)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        q = np.where(open_, w * w * (1 - c.r / c.m) / c.r, 0.0)
+    q = w * w * c.phase2_factor()
     s2f = _phase1_var(c, c.f)
 
     gi = np.flatnonzero(c.gold)
@@ -504,7 +620,7 @@ def two_phase_difference_tuned(
     den_i = den_full - np.where(usable[kg], q[kg] * s2f[kg], 0.0) + np.where(usable_i, q[kg] * s2f[kg], 0.0)
     fitted = den_i > 0
     with np.errstate(invalid="ignore", divide="ignore"):
-        lam_i = np.where(fitted, np.clip(num_i / den_i, 0.0, 1.0), 1.0)
+        lam_i = np.where(fitted, np.clip(num_i / np.where(fitted, den_i, 1.0), 0.0, 1.0), 1.0)
 
     # Each cell's estimate of its phase-1 mean of y: (1/m)[Y2 + mean(lam_i)(F1 - F2) + (m - r)(ybar2 - mean(lam_i f_i))].
     r1 = np.maximum(r, 1)
@@ -526,3 +642,98 @@ def two_phase_difference_tuned(
         lam_untuned_items=int(np.sum(~fitted)),
         assumptions=LAM_ASSUMPTIONS,
     )
+
+
+# ------------------------------------------------------------------------------------------ two independent samples
+
+
+@dataclass(frozen=True)
+class TwoSampleMean:
+    """The PPI++ mean of two independent samples (spec §7.4), with the lam it used and how that lam was chosen."""
+
+    estimate: float
+    variance: float
+    se: float
+    interval: tuple[float, float]
+    level: float
+    lam: float
+    lam_rule: str
+    labeled: int
+    unlabeled: int
+
+
+PPI_LAM_RULE = (
+    "PPI++ plug-in (arXiv:2311.01453, ppi_py's mean): Cov(y, f) over the labeled sample / ((1 + n / N) Var(f) over both "
+    "samples), clipped to [0, 1]; fitted on the labeled sample it corrects, so it rests on PPI++'s asymptotics"
+)
+
+
+def two_sample_ppi_mean(
+    *,
+    design: Literal["independent_samples"],
+    y_labeled: ArrayLike,
+    f_labeled: ArrayLike,
+    f_unlabeled: ArrayLike,
+    lam: float | None = None,
+    level: float = 0.95,
+) -> TwoSampleMean:
+    """The prediction-powered mean for two independent samples from one distribution: n labeled items (y, f) and N
+    unlabeled items (f), lam f_bar_unlabeled + mean(y - lam f) over the labeled, with variance
+    lam^2 s2_f,unlabeled / N + s2_(y - lam f),labeled / n (spec §7.4; sample variances with ddof 1). A fixed lam (lam = 1
+    is PPI) or, with lam None, the PPI++ plug-in.
+
+    Only for a design the caller declares as two independent samples (``design="independent_samples"``): a gold sample
+    drawn from the frame whose mean is wanted is another design, served by two_phase_difference (addendum A07 §8.2).
+    """
+    if design != "independent_samples":
+        raise ValueError("the two-sample PPI++ mean is for two independent samples only (addendum A07 §8.2)")
+    y = np.asarray(y_labeled, dtype=float)
+    fl = np.asarray(f_labeled, dtype=float)
+    fu = np.asarray(f_unlabeled, dtype=float)
+    if y.ndim != 1 or fl.shape != y.shape or fu.ndim != 1:
+        raise ValueError("one label and one prediction per labeled item, and one prediction per unlabeled item")
+    n, N = len(y), len(fu)
+    if n < 2 or N < 2:
+        raise ValueError("each sample needs at least 2 items to estimate its variance")
+    if np.any(~np.isfinite(y)):
+        raise ValueError("every labeled item carries a label")
+    for a in (fl, fu):
+        if np.any(~np.isfinite(a)) or np.any((a < 0) | (a > 1)):
+            raise ValueError("f is a probability in [0, 1] (spec §7.4)")
+    if lam is None:
+        both = np.concatenate([fl, fu])
+        var_f = float(np.var(both, ddof=1))
+        cov_yf = float(np.mean((y - y.mean()) * (fl - fl.mean())))
+        lam_used = float(np.clip(cov_yf / ((1 + n / N) * var_f), 0.0, 1.0)) if var_f > 0 else 0.0
+        rule = PPI_LAM_RULE
+    else:
+        if not np.isfinite(lam):
+            raise ValueError("lam is a finite number")
+        lam_used, rule = float(lam), "fixed"
+    e = y - lam_used * fl
+    estimate = lam_used * float(fu.mean()) + float(e.mean())
+    variance = lam_used**2 * float(np.var(fu, ddof=1)) / N + float(np.var(e, ddof=1)) / n
+    se = float(np.sqrt(variance))
+    z = _z(level)
+    return TwoSampleMean(
+        estimate=estimate,
+        variance=variance,
+        se=se,
+        interval=(estimate - z * se, estimate + z * se),
+        level=level,
+        lam=lam_used,
+        lam_rule=rule,
+        labeled=n,
+        unlabeled=N,
+    )
+
+
+__all__ = [
+    "FrameMean",
+    "StratumMean",
+    "TunedFrameMean",
+    "TwoSampleMean",
+    "two_phase_difference",
+    "two_phase_difference_tuned",
+    "two_sample_ppi_mean",
+]
