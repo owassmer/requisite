@@ -36,6 +36,11 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   is supposed to find these is not faithfully tested"). This replaces spec §12's "proposes three dockets; Owen picks one"
   and §15's Sun 22:00 docket question, and removes the cut rule "Run F2 from a hand-picked docket comment instead of the
   F4 wide run", which is the hand pick this decision removes.
+- An objective says what its brief means, never what today's adapters reach; the frame records which corpora it reached,
+  and every estimate is a share of the frame's items with that reach stated beside it (Owen, November 1: "is this just
+  one of the discovery flows? Why would we restrict to just federal dockets?"; spec §7.3 lists the corpora in priority
+  order). F4's objective, drafted by the objective agent from spec §12's F2/F4 wording, was approved at G1 as drafted
+  (Owen, November 1: "Approve as drafted").
 - The dockets the coordinator surveyed by hand on November 1 enter nothing: no source identifier is written into code,
   prompts, tasks or fixtures before the flow produces it, and no template, question or structure is shaped to a source
   the flow has not yet chosen.
