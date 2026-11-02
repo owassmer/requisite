@@ -179,6 +179,15 @@ if [ -n "$outside" ]; then
 fi
 if [ -n "$changed" ]; then
   mkdir -p "$ws.tmp" && git -C "$ws" diff --cached --binary "$base" > "$ws.tmp/worker.patch"
+  # The coordinator's uncommitted work in any of the worker's paths is never touched: the worker's changes wait, kept,
+  # since undoing a conflicted apply resets those paths to HEAD (November 2: two landings reset four files of the
+  # coordinator's staged, reviewed change).
+  mine="$(git diff HEAD --name-only | grep -Fx -f <(printf '%s\n' "$changed" | grep .) || true)"
+  if [ -n "$mine" ]; then
+    echo "=== the coordinator has uncommitted changes in the worker's paths; nothing applied (patch kept at $ws.tmp/worker.patch, workspace kept):" >> "$log"
+    printf '%s\n' "$mine" >> "$log"
+    echo "=== finished exit 6" >> "$log"; exit 6
+  fi
   # Workers on one outcome can run at once from the same commit; their changes merge, and a real conflict stops here.
   if ! git apply --index --3way "$ws.tmp/worker.patch" >> "$log" 2>&1; then
     echo "=== conflict applying the worker's changes; nothing committed (patch kept at $ws.tmp/worker.patch, workspace kept)" >> "$log"
