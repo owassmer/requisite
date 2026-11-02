@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from fractions import Fraction
 from typing import Any, Literal
 
 from pydantic import model_validator
 
-from requisite.core.base import Day, Instant, Money, Probability, Record, Ref, exact_sum_is_one
-from requisite.core.judgment import TimeWindow
+from requisite.core.base import Day, Instant, Money, Probability, Rational, Record, Ref, exact_sum_is_one
+from requisite.core.evidence import ArtifactId, ClaimId
+from requisite.core.judgment import Assumption, Diagnosis, TimeWindow
 
 # ---------------------------------------------------------------- proposals and gates (spec §3 I1, §4)
 
@@ -29,6 +31,7 @@ ProposalKind = Literal[
     "frame",  # the wide flow's frame criteria, drawn from the approved objective (decisions, "Discovery finds ...")
     "contract",  # a whole filed contract read into the IR (spec §9.3, WP12)
     "objective",  # a wide run's objective an agent drafts for G1 (spec §2.4 G1; §7.2; decisions, "Discovery finds ...")
+    "entity_model",  # a deep case's driver tree and liquidity profile an agent proposes for G1 (spec §7.1 step 1)
 ]
 ProposalStatus = Literal["proposed", "validated", "active", "promoted", "rejected", "retired"]
 
@@ -91,8 +94,8 @@ class Proposal(Record):
 #   §5 "Supports (with a span)"), proposition and constraint (spec §5: SAT consistency, acyclic conditioning), scenario
 #   (feasible under the world constraints: addendum A09 §10.2), frame (its criteria run and freeze a frame).
 # - relevance for a question: it reaches a decision (spec §2.2; spec §4 AtomicQuestion.reaches).
-# - human where a gate G1-G4 is the human's: decision_spec and objective (G1: "the objective, horizon and loss
-#   definition"; decision_spec is a deep case's, objective a wide run's).
+# - human where a gate G1-G4 is the human's: decision_spec, objective and entity_model (G1: "the objective, horizon and
+#   loss definition"; spec §7.1 step 1: the entity model's parameters "a human confirms at gate G1").
 #   G2 (contested diagnosis), G3 (contract acceptance) and G4 (template promotion) are approvals of committed state, not
 #   of a proposal becoming active, and are recorded as Approvals.
 # Stability is not a gate to become active: it is measured on active questions in the requisite loop (spec §2.3), and a
@@ -112,6 +115,7 @@ REQUIRED_GATES: Mapping[str, tuple[Gate, ...]] = {
     "frame": ("schema", "tests"),
     "contract": ("schema", "tests"),
     "objective": ("schema", "human"),
+    "entity_model": ("schema", "human"),
 }
 # A question proposed to replace a parent (a split) passes stability (spec §2.1: "A proposed split yields stable
 # sub-questions") and relevance (spec §2.2: "A split is admitted only if it raises relevance or is needed for
@@ -517,26 +521,35 @@ class FrameCriteria(Record):
 
 class FrameSearch(Record):
     """One search the frame ran: its request (the API path and parameters, never the key) and how many documents it
-    returned."""
+    returned. artifacts: the responses it returned, every page and every continuation of the listing, in order (spec I2:
+    the frame's evidence is held as content-addressed artifacts, as an item's is; ours: a count recomputes from them)."""
 
     term: str
     request: str
     documents: int
+    artifacts: Sequence[ArtifactId]
 
 
 class FrameDocket(Record):
-    """A docket the searches reached, kept in the frame or dropped, with why (its comment status, its comment count)."""
+    """A docket the searches reached, kept in the frame or dropped, with why (its comment status, its comment count).
+    artifacts: the listings of its documents and of its comments that the decision rests on, in order (spec I2; ours: the
+    status and the count recompute from them)."""
 
     docket: str
     kept: bool
     reason: str
     comments: int
+    artifacts: Sequence[ArtifactId]
 
 
 class FrameItem(Record):
+    """One item of the frame. withdrawn: the source lists it as withdrawn; it stays in the frame, since it was public at
+    as_of (task 002-1, the coordinator's reasoning: a withdrawn comment remains in the public record, marked)."""
+
     id: str
     docket: str
     posted_at: Instant
+    withdrawn: bool
 
 
 class Frame(Record):
@@ -595,3 +608,168 @@ class AgentRun(Record):
     response: str
     proposals: Sequence[str]
     at: Instant
+
+
+# ---------------------------------------------------------------- deep discovery (spec §7.1)
+
+
+class Parameter(Record):
+    """A number in an entity model, sourced or assumed, never neither (spec §7.1 step 1: "Each parameter is either sourced
+    (a claim) or an assumption"). value is exact money or a count; unit says which; claims cite the evidence for a
+    sourced value, and an assumed value carries its Assumption (I5: it enters only as a labelled assumption)."""
+
+    name: str
+    value: Money
+    unit: str
+    claims: Sequence[ClaimId] = ()
+    assumption: Assumption | None = None
+
+    @model_validator(mode="after")
+    def _basis(self) -> Parameter:
+        if bool(self.claims) == (self.assumption is not None):
+            raise ValueError("a parameter is sourced by claims or assumed, exactly one")
+        return self
+
+
+class Driver(Record):
+    """One line of the P&L as quantity times price per period (spec §7.1 step 1: "revenue and cost lines decomposed into
+    quantity x price drivers"). period is the period the quantity and price are stated per, from a closed set so that
+    code converts every driver into the monthly cash flows materiality computes over the horizon (ours: spec §7.1 names
+    no period)."""
+
+    id: str
+    line: Literal["revenue", "cost"]
+    name: str
+    quantity: Parameter
+    price: Parameter
+    period: Literal["month", "quarter", "year"]
+
+
+class LiquidityProfile(Record):
+    """The entity's cash position and its timing (spec §7.1 step 1: "cash, credit, payment terms, seasonality"), each a
+    parameter, sourced or assumed. seasonality is twelve calendar-month factors on the drivers' monthly amounts,
+    January first, averaging exactly one, so that seasonality moves cash between months without changing a driver's
+    annual total as its quantity and price state it (ours: spec §7.1 names seasonality and no form for it)."""
+
+    cash: Parameter
+    credit_line: Parameter
+    receivable_days: Parameter
+    payable_days: Parameter
+    seasonality: Sequence[Parameter]
+
+    @model_validator(mode="after")
+    def _seasonality(self) -> LiquidityProfile:
+        if len(self.seasonality) != 12 or sum((Fraction(p.value) for p in self.seasonality), Fraction(0)) != 12:
+            raise ValueError("seasonality is twelve monthly factors averaging exactly one")
+        return self
+
+
+class EntityModel(Record):
+    """A deep case's model of the business (spec §7.1 step 1), proposed by an agent and confirmed by a human at G1:
+    its driver tree, liquidity profile, planning horizon and the loss definition the client cares about."""
+
+    id: str
+    version: int
+    entity: str
+    drivers: Sequence[Driver]
+    liquidity: LiquidityProfile
+    horizon: TimeWindow
+    loss_definition: str
+    currency: str
+
+    @model_validator(mode="after")
+    def _drivers(self) -> EntityModel:
+        ids = [d.id for d in self.drivers]
+        if not ids or len(set(ids)) != len(ids):
+            raise ValueError("an entity model has drivers with distinct ids")
+        return self
+
+
+class DatedImpact(Record):
+    """One month's cash-flow delta of an exposure, an exact interval (decisions, "Numbers"; A04 §4.1: interval-valued
+    consequences, never a band's midpoint)."""
+
+    month: Day
+    low: Rational
+    high: Rational
+
+    @model_validator(mode="after")
+    def _ordered(self) -> DatedImpact:
+        if self.low > self.high:
+            raise ValueError("a dated impact is an interval [low, high]")
+        return self
+
+
+class QuestionDiagnostic(Record):
+    """A question behind a register row, with its stability and relevance diagnostics (spec §7.5: "stability and
+    relevance diagnostics"; spec §2.1-2.2): its resolved judgment, its scores and primary diagnosis, and its tie-robust
+    regret for the named decision at its tolerance (addendum A03 §3.3), informational where that regret is within the
+    tolerance, for that decision under the tested assumptions (the ids of the assumptions and model it was tested
+    under) and that tolerance only (A02-A03 §3.4: "non-material to the named decision under the tested assumptions and
+    tolerance, not globally irrelevant or removable from the evidence record")."""
+
+    question: Ref
+    resolved: str
+    s_arg: float
+    s_prob: float
+    primary_diagnosis: Diagnosis
+    decision: Ref
+    tolerance: Money
+    assumptions: Sequence[str]
+    regret: Rational
+    informational: bool
+
+    @model_validator(mode="after")
+    def _scoped(self) -> QuestionDiagnostic:
+        if not (0 <= self.s_arg <= 1 and 0 <= self.s_prob <= 1):
+            raise ValueError("stability scores lie in [0, 1] (A01 §2.1)")
+        if self.regret < 0 or self.tolerance < 0:
+            raise ValueError("min-max regret and the tolerance are non-negative (A03 §3.3: a regret is J - inf J)")
+        if self.informational != (self.regret <= Fraction(self.tolerance)):
+            raise ValueError("informational means regret within the decision's tolerance, and only that (A03 §3.3)")
+        return self
+
+
+class RegisterRow(Record):
+    """One driver-event exposure in the register (spec §7.5: "Each row holds the entity, driver, event (a proposition
+    id), mechanism, direction, magnitude band and dated cash impact. It adds the probability source, expected and tail
+    impact, liquidity-breach flag, hedgeability screen and stability and relevance diagnostics, with links to every
+    claim and judgment"; spec §13 WP11a: "Every register row traces to claims, judgments and nodes").
+
+    event is a proposition id; direction, mechanism and magnitude_band are spec §7.1 step 3's typed answers, with
+    not_established kept. cash_impact is computed by code from the magnitude band through the driver tree, month by
+    month, as exact intervals (decisions, "Numbers"), never a band's midpoint (A04 §4.1: "Keep interval-valued
+    consequences, or attach an approved distribution/scenario expansion"). baseline names the counterfactual the impacts
+    are measured against, standalone or marginal to the named exposures, since such impacts are never summed into a
+    portfolio loss without checking overlap and dependence (A06 §6.1). probability names the ProbabilityEstimate of the
+    event. breach is three-valued (I6). The traces name the observed claims (a real case's, never synthetic: spec I4),
+    judgments and computation nodes (vertex ids) every number rests on."""
+
+    entity: str
+    driver: str
+    event: str
+    direction: Literal["increase", "decrease", "none", "not_established"]
+    mechanism: Literal["cost", "revenue", "timing", "capacity", "not_established"]
+    magnitude_band: str
+    cash_impact: Sequence[DatedImpact]
+    baseline: str
+    probability: str
+    expected_impact: tuple[Rational, Rational]
+    tail_impact: tuple[Rational, Rational]
+    breach: Literal["true", "false", "unknown"]
+    hedgeable: Literal["true", "false", "unknown"]
+    diagnostics: Sequence[QuestionDiagnostic]
+    claims: Sequence[ClaimId]
+    judgments: Sequence[str]
+    nodes: Sequence[str]
+
+    @model_validator(mode="after")
+    def _traced(self) -> RegisterRow:
+        for name, (lo, hi) in (("expected", self.expected_impact), ("tail", self.tail_impact)):
+            if lo > hi:
+                raise ValueError(f"the {name} impact is an interval [low, high]")
+        if not self.claims or not self.judgments or not self.nodes:
+            raise ValueError("a register row traces to the claims, judgments and computation nodes its numbers rest on")
+        if not self.diagnostics:
+            raise ValueError("a register row carries the stability and relevance diagnostics of its questions")
+        return self

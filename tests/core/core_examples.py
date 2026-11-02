@@ -104,6 +104,21 @@ SUMMARY = c.CashSummary(
 )
 
 
+PARAM = c.Parameter(name="crew hours", value=D("2000"), unit="hours/month", claims=[CLM])
+PRICE = c.Parameter(name="wage", value=D("22.50"), unit="USD/hour",
+                    assumption=c.Assumption(text="the posted wage", binds={}, reason="not in the filing"))  # fmt: skip
+FLAT = c.Parameter(name="seasonality", value=D("1"), unit="factor",
+                   assumption=c.Assumption(text="no seasonality", binds={}, reason="the filing gives none"))  # fmt: skip
+LIQ = c.LiquidityProfile(cash=PARAM, credit_line=PARAM, receivable_days=PARAM, payable_days=PARAM,
+                         seasonality=[FLAT] * 12)  # fmt: skip
+
+
+IMPACT = c.DatedImpact(month=date(2027, 1, 1), low=F(100), high=F(400))
+DIAG = c.QuestionDiagnostic(question=REF, resolved=H, s_arg=1.0, s_prob=0.93, primary_diagnosis="stable",
+                            decision=c.Ref(id="decision", version=1), tolerance=D("10"), assumptions=["em v1"],
+                            regret=F(50), informational=False)  # fmt: skip
+
+
 def examples() -> list[c.Record]:
     return [
         c.Ref(id="x", version=1),
@@ -353,16 +368,30 @@ def examples() -> list[c.Record]:
             search_terms=["wage"], document_types=["Proposed Rule"], posted_from=date(2026, 1, 1), posted_to=None,
             agencies=[], comment_status="either", min_comments=50,
         ),  # fmt: skip
-        c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3),
-        c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120),
-        c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0),
+        c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART]),
+        c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120, artifacts=[ART]),
+        c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0, withdrawn=False),
         c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0, retrieval_started=T0, retrieval_ended=T0,
                 mode="prospective",
-                searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3)],
-                dockets=[c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120)],
-                items=[c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0)]),  # fmt: skip
+                searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART])],
+                dockets=[c.FrameDocket(docket="DOCKET-1", kept=True, reason="open; 120 comments", comments=120, artifacts=[ART])],
+                items=[c.FrameItem(id="COMMENT-1", docket="DOCKET-1", posted_at=T0, withdrawn=False)]),  # fmt: skip
         c.AgentRun(id="run1", role="objective_drafter", model="claude-opus-5-5", effort="high", input_hash=H,
                    output_hash=H, response=H, proposals=["pr1"], at=T0),  # fmt: skip
+        PARAM,
+        c.Driver(id="labor", line="cost", name="crew wages", quantity=PARAM, price=PRICE, period="month"),
+        LIQ,
+        c.EntityModel(id="em", version=1, entity="A landscaping company", currency="USD", horizon=WINDOW,
+                      loss_definition="incremental cash cost",
+                      drivers=[c.Driver(id="labor", line="cost", name="crew wages", quantity=PARAM, price=PRICE,
+                                        period="month")], liquidity=LIQ),  # fmt: skip
+        IMPACT,
+        DIAG,
+        c.RegisterRow(entity="A landscaping company", driver="labor", event="P.overtime_rule", direction="increase",
+                      mechanism="cost", magnitude_band="5_to_15pct", cash_impact=[IMPACT], baseline="standalone",
+                      probability="pe1", expected_impact=(F(1000), F(5000)), tail_impact=(F(4000), F(9000)),
+                      breach="unknown", hedgeable="true", diagnostics=[DIAG], claims=[CLM], judgments=[H],
+                      nodes=["v:exposure.labor"]),  # fmt: skip
         InputReceipt(name="x", value_hash=H, lineage_hash=H),
         c.DerivationReceipt(node=c.Ref(id="n", version=1), value_hash=H, lineage_hash=H,
                             inputs=[InputReceipt(name="x", value_hash=H, lineage_hash=H)], computed_at=T0),  # fmt: skip

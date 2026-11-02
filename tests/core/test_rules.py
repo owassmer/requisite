@@ -180,3 +180,39 @@ def test_a_frame_is_prospective_only_when_retrieved_by_its_as_of():
     with pytest.raises(ValidationError, match="retrospective reconstruction"):
         c.Frame(**{**frame, "retrieval_ended": late})
     assert c.Frame(**{**frame, "retrieval_ended": late, "mode": "retrospective_reconstruction"})
+
+
+def test_a_parameter_is_sourced_or_assumed_and_a_register_row_is_traced():
+    from core_examples import CLM, H
+
+    with pytest.raises(ValidationError, match="exactly one"):
+        c.Parameter(name="p", value=D("1"), unit="x")
+    with pytest.raises(ValidationError, match="exactly one"):
+        c.Parameter(name="p", value=D("1"), unit="x", claims=[CLM],
+                    assumption=c.Assumption(text="t", binds={}, reason="r"))  # fmt: skip
+    row = one(c.RegisterRow).model_dump()
+    for empty in ("claims", "judgments", "nodes", "diagnostics"):
+        with pytest.raises(ValidationError, match="traces|diagnostics"):
+            c.RegisterRow(**{**row, empty: []})
+    with pytest.raises(ValidationError, match="interval"):
+        c.RegisterRow(**{**row, "expected_impact": (F(5), F(1))})
+    liq = one(c.LiquidityProfile).model_dump()
+    two = {**liq["seasonality"][0], "value": "2"}
+    with pytest.raises(ValidationError, match="averaging exactly one"):
+        c.LiquidityProfile(**{**liq, "seasonality": [*liq["seasonality"][:11], two]})
+    # Exactly: a sum beyond twelve by less than Decimal's default precision is still beyond twelve.
+    hair = {**liq["seasonality"][0], "value": "1.00000000000000000000000000001"}
+    with pytest.raises(ValidationError, match="averaging exactly one"):
+        c.LiquidityProfile(**{**liq, "seasonality": [*liq["seasonality"][:11], hair]})
+    assert H
+
+
+def test_informational_is_scoped_to_its_decision_and_tolerance():
+    d = one(c.QuestionDiagnostic).model_dump()
+    with pytest.raises(ValidationError, match="tolerance"):
+        c.QuestionDiagnostic(**{**d, "informational": True})
+    assert c.QuestionDiagnostic(**{**d, "regret": F(5), "informational": True})
+    with pytest.raises(ValidationError, match=r"\[0, 1\]"):
+        c.QuestionDiagnostic(**{**d, "s_prob": 1.2})
+    with pytest.raises(ValidationError, match="non-negative"):
+        c.QuestionDiagnostic(**{**d, "regret": F(-1), "tolerance": D("0"), "informational": True})
