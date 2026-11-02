@@ -1,0 +1,25 @@
+{
+  "source": "Resolvability fuzzing's two questions (spec §8.6 steps 4 and 5): the rendering check asks each atomic condition of a rendered packet, and resolution asks whether the contract resolves under its rules and that evidence. Ours, November 1, in spec §8.6's words.",
+  "templates": [
+    {
+      "id": "condition_holds", "version": 1, "task": "classify",
+      "slots": ["condition"],
+      "target": "According to the documents under OBSERVED, does the following condition hold?\nCondition: {condition}",
+      "answers": [
+        {"value": "holds", "meaning": "the documents establish that the condition holds", "status": "affirmative"},
+        {"value": "does_not_hold", "meaning": "the documents establish that the condition does not hold", "status": "negative"},
+        {"value": "not_established", "meaning": "the documents do not establish whether the condition holds", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "resolve_contract", "version": 1, "task": "resolve",
+      "slots": ["rules"],
+      "target": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, or do the rules and the evidence leave it ambiguous?\nContract rules:\n{rules}",
+      "answers": [
+        {"value": "resolved_yes", "meaning": "the contract resolves YES", "status": "affirmative"},
+        {"value": "resolved_no", "meaning": "the contract resolves NO", "status": "negative"},
+        {"value": "ambiguous", "meaning": "the rules, applied to this evidence, do not determine whether it resolves YES or NO", "status": "not_established"}
+      ]
+    }
+  ]
+}
