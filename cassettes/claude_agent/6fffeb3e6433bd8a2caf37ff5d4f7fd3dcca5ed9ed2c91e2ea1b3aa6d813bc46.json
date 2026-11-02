@@ -1,0 +1,2146 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "contract_reader",
+ "latency_ms": 49749,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T03:42:59.698924+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "filings": [
+    {
+     "document": "contract terms",
+     "text": "[page 1 of 4: text layer]\nELECTION\nScope:\nThese rules shall apply to this contract.\nUnderlying:\nThe Underlying for this Contract is the official results of <election> as reported by the Source Agencies. The\n\nUnderlying specifically refers to: (i) for direct democratic elections, the candidate/party declared elected by the relevant\n\nelectoral authority; (ii) for parliamentary/legislative elections, the party, coalition, or alliance winning the most seats in the\n\nspecified chamber; (iii) for indirect elections by electoral bodies, the candidate elected through the prescribed process; (iv)\n\nfor religious/ecclesiastical elections, the individual selected through the prescribed religious process and confirmed by\n\nreligious authorities; (v) for traditional/customary leadership selections, the individual recognized through both traditional\n\nprocesses and relevant governmental authorities where applicable; (vi) for judicial elections/retentions, the candidate elected\n\nor retained per the specified system; (vii) for recall elections, whether the official is recalled; (viii) for votes of no\n\nconfidence, whether the motion passes; (ix) for referenda/plebiscites/ballot measures, whether the proposal achieves the\n\nrequired threshold; (x) for constituent assemblies, the party/coalition winning the most seats or the constitutional proposal's\n\napproval; (xi) for professional/corporate governance elections, the individual selected through the prescribed process; (xii)\n\nfor hereditary positions with electoral components, the individual selected through the prescribed succession process; (xiii)\n\nfor rotational/consensual leadership systems, the individual/party designated for the specified period. Revisions to the\n\nUnderlying made after Expiration will not be accounted for in determining the Expiration Value.\nSource Agency:\nThe Source Agencies are, in hierarchical order: (1) Primary Sources: the official electoral commission,\n\nconstitutional court, or equivalent electoral authority of the relevant jurisdiction; the formal proclamation by the head of state\n\nor government when constitutionally required; for religious elections, the official religious authority (e.g., Vatican for papal\n\nelections, relevant Patriarchate for Orthodox elections); for traditional leadership, both the traditional authority and relevant\n\ngovernment recognition body; for professional elections, the governing board or regulatory authority; (2) Secondary Sources:\n\nfor international elections, the United Nations Electoral Assistance Division, Organization of American States, African\n\nUnion, European Union Election Observation Missions, Commonwealth Secretariat, Carter Center, International IDEA,\n\nInternational Foundation for Electoral Systems; (3) Tertiary Sources: major newspapers of record in the relevant jurisdiction\n\nin order of circulation, Reuters, Associated Press, Bloomberg News, Agence France-Presse, The New York Times, Financial\n\nTimes, The Wall Street Journal, BBC, France24, Deutsche Welle, NHK World, Al Jazeera English, The Washington Post,\n\nAxios, Politico, Semafor, The Information, ABC, CBS, CNN, Fox News, MSNBC, NBC.\nType:\nThe type of Contract is an Event Contract.\nIssuance:\nAfter the initial Contract, Contract iterations will be listed on an as-needed basis at the discretion of the Exchange\n\nand corresponding to the risk management needs of Members.\n<candidate/party/option>:\n<candidate/party/option> refers to an individual candidate, political party, electoral\n\ncoalition/alliance (formal pre-election only), religious candidate, traditional candidate, judicial candidate, referendum option\n\n(Yes/No/specific choices), recall target, confidence motion, or other electoral choice specified by the Exchange. For\n\ncoalitions/alliances, only those formally registered with electoral authorities before the nomination deadline count, not post-\nelection governing arrangements. For religious elections, includes all eligible candidates under religious law. For write-in\n\ncandidates, only those meeting legal requirements for ballot access. The Exchange may list iterations for \"Other,\" \"None of\n\nthe Above,\" \"No Valid Election Held,\" \"Election Postponed Beyond Expiration,\" \"Blank/Null/Spoiled Votes,\" or\n\n\"Abstention\" where relevant. In indirect elections, <candidate/party/option> refers to the ultimate officeholder, not\n\nintermediate selectors.\n<election>:\n<election> refers to a specific electoral event specified by the Exchange, including: jurisdiction (international,\n\nnational, regional, state, provincial, municipal, religious, traditional, professional); type (presidential, parliamentary,\n\nlegislative, judicial, constituent assembly, referendum, plebiscite, recall, confidence vote, religious selection, traditional\n\nselection, professional board); electoral system (first-past-the-post, proportional representation, mixed-member, ranked\n\nchoice, single transferable vote, approval, score/range, Condorcet, Borda count, cumulative, limited, single non-transferable\n\nvote, consensual allocation, religious discernment, traditional selection); round (first round, runoff, final ballot); specific\n\n[page 2 of 4: text layer]\nposition (for rotational systems); and date or year. For multi-stage elections, the Exchange will specify which stage. For\n\nelections with multiple simultaneous components, each component constitutes a separate Contract unless specified otherwise.\n<date>:\n<date> refers to a calendar date specified by the Exchange. The Exchange may list iterations of the Contract\n\ncorresponding to variations of <date>. All times are in Eastern Time (ET) unless otherwise specified.\nPayout Criterion:\nThe Payout Criterion for the Contract encompasses the Expiration Values that <candidate/party/option>\n\nhas won <election>. Specifically:\nFor direct democratic elections:\n<candidate/party/option> is declared the winner by the relevant electoral authority and\n\neither (i) is inaugurated/sworn in/takes office, or (ii) the scheduled inauguration date passes without a different candidate\n\ntaking office (delays in inauguration are considered for this purpose).\nFor parliamentary/legislative elections:\n<candidate/party/option> wins the most seats in the specified chamber based on\n\nfinal official results. In bicameral systems, this refers to the lower house unless otherwise specified. Overhang seats, leveling\n\nseats, and appointed seats count only if specified. If two or more parties have the same number of seats, the party with the\n\nhigher share of the total vote will resolve to Yes and all others to No, unless the Exchange specifies at the time of listing that\n\nsuch a tie will instead resolve in favor of the party entering government (in which case, if both or neither tied party enters\n\ngovernment, the party with the higher share of the vote will resolve to Yes and all others to No).\nFor religious elections:\nThe individual selected through the prescribed religious process (e.g., papal conclave reaching two-\nthirds majority, Orthodox synod selection, Buddhist recognition process) and confirmed by the relevant religious authority.\n\nFor papal elections, white smoke and habemus papam announcement; for Orthodox patriarchs, enthronement; for other\n\npositions, the equivalent ceremonial confirmation.\nFor traditional/customary leadership:\nThe individual selected through traditional processes AND formally recognized by\n\nrelevant governmental authorities where such recognition is required by law. If governmental recognition is not required,\n\nselection through traditional processes alone suffices.\nFor judicial elections/retentions:\nIn partisan/nonpartisan elections, the candidate receiving the most votes; in retention\n\nelections, \"Yes\" if the judge receives the required percentage (typically majority) to retain office; in merit selection systems,\n\nthe individual ultimately appointed following the prescribed process.\nFor recall elections:\n\"Yes\" resolves if the official is recalled (typically requiring majority of votes cast); \"No\" resolves if the\n\nrecall fails or if turnout/signature requirements are not met.\nFor votes of no confidence:\nThe motion resolves to \"Yes\" if it receives the required votes under parliamentary rules (simple\n\nmajority unless otherwise specified, or constructive no confidence requiring alternative government proposal).\nFor referenda/plebiscites:\nThe specified option achieves the required threshold per applicable law (simple majority,\n\nsupermajority, dual majority, turnout requirements). If multiple thresholds exist (e.g., majority of votes AND majority of\n\nstates), all must be met. Failure to meet turnout requirements results in \"No\" unless the Exchange specifies a \"Failed to meet\n\nturnout\" option.\nFor indirect elections:\n<candidate/party/option> receives the required votes from the electoral body as certified by that\n\nbody's presiding authority. For multi-stage indirect elections (e.g., China's tiered system), the final stage determines the\n\noutcome.\nFor professional/corporate elections:\nThe individual selected by the prescribed process (shareholder vote, board selection,\n\nmember bank election) and certified by the corporate secretary or equivalent authority.\nFor hereditary positions with electoral components:\nThe individual selected through the prescribed mixture of hereditary\n\nsuccession and electoral confirmation (e.g., Malaysian King, UAE President).\n\n[page 3 of 4: text layer]\nFor rotational/consensual systems:\nThe individual/party designated for the specified term according to the established\n\nrotation or consensual allocation (e.g., Lebanese confessional system, Swiss Federal Council, Bosnian Presidency).\nSpecial provisions:\nAnnulled elections:\nIf results are annulled by a court/authority AFTER announcement but BEFORE the winner takes\n\noffice, the Contract remains open until re-run election or expiration\nPostponed elections:\nContract remains open until the rescheduled election or two years from the original date,\n\nwhichever comes first. Repeated postponements count towards the 2-year deadline.\nExtra-constitutional interruptions:\nMilitary coups, revolutions, or foreign interventions do not affect resolution if\n\nthe electoral process was completed and results announced by Source Agencies\nDeath/incapacitation:\nIf a winning candidate dies/is incapacitated after election but before taking office, that\n\ncandidate still resolves to Yes.\nTies:\nIf multiple candidates/parties tie, the Contract resolves Yes for whoever: (1) wins through the jurisdiction's\n\ntiebreak mechanism, or (2) if no mechanism exists, received the largest share of total votes For\n\nparliamentary/legislative elections, if multiple candidates/parties tie in the number of seats won, the Contract resolves\n\nYes for the candidate/party that received the largest share of total votes, notwithstanding clause (1) and without regard\n\nto any subsequent government formation process, unless the Exchange specifies otherwise at the time of listing.\nInformation opacity:\nFor elections with extreme secrecy (religious conclaves, some traditional selections), resolution\n\ndepends on formal announcement by the designated authority, even if the selection process is not transparent\nDisputed legitimacy:\nIn cases of competing claims (two presidents, disputed succession), the individual recognized by\n\nthe hierarchical majority of Source Agencies prevails\nWrite-in candidates:\nCount only where legally valid and officially tallied\nPartial elections:\nOnly seats/positions actually contested in the specified election count\nPre-selection vetting:\nCandidates eliminated by vetting bodies before the election do not resolve to Yes regardless of\n\npopular support\nExamples that would resolve to Yes:\nCandidate wins election and takes office normally\nParty wins most parliamentary seats even if excluded from government\nCardinal elected Pope and accepts following white smoke\nTraditional chief selected by elders and recognized by government\nJudge retained with 55% approval in retention election\nReferendum passes with required majority and turnout\nOfficial recalled after successful recall petition and vote\nGovernment falls after losing no-confidence vote\nExamples that would NOT resolve to Yes:\nCandidate leads polls but loses election\nParty forms government but has fewer seats than another party\nCardinal reportedly favored in conclave but not elected\nTraditional selection disputed and not recognized by government\nJudge receives 45% in retention election (below majority threshold)\nReferendum majority but fails turnout requirement (unless specified otherwise)\nRecall petition qualifies but recall vote fails\nNo-confidence motion fails to reach required majority\nMinimum Tick:\nThe Minimum Tick size for the Contract shall be $0.01.\nPosition Accountability Level:\nThe Position Accountability Level for the Contract shall be $25,000 per strike, per\n\nMember.\n\n[page 4 of 4: text layer]\nLast Trading Date:\nThe Last Trading Date of the Contract will be the same as the Expiration Date. The Last Trading Time\n\nwill be the same as the Expiration time.\nSettlement Date:\nThe Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the\n\nMarket Outcome is under review pursuant to Rule 7.1.\nExpiration Date:\nThe latest Expiration Date of the Contract shall be one year after the scheduled date of <election>, or for\n\nelections without fixed dates (religious, traditional, professional, confidence votes, recalls), one year after the triggering event\n\n(death, petition qualification, motion filing). If an event described in the Payout Criterion occurs, expiration will be moved to\n\nan earlier date and time in accordance with Rule 7.2.\nFor United States based elections, this Contract may be resolved on an accelerated basis if (A) at least four (4) of the eight\n\n(8) Designated Media Sources have declared a winning candidate, party, or option, and (B) none of the Designated Media\n\nSources have issued a contradictory declaration. \u201cDesignated Media Sources\u201d are: The New York Times (NYT), The\n\nAssociated Press (AP), Decision Desk HQ (DDHQ), CNN, Fox News, NBC News, CBS News, and ABC News. Should one\n\nof the Designated Media Sources cease to provide independent election calls, it may be replaced at the sole discretion of the\n\nExchange. For the purposes of this clause, a source declares a winning candidate, party, or option when it makes either (i) a\n\nformal projection of victory by its centralized decision desk, or (ii) an unambiguous statement in a news article that the\n\ncandidate/party/option has won. For the network sources (Fox, NBC, CBS, ABC), a declaration from a local affiliate may\n\nrepresent the parent network; however, a declaration from the national desk shall always supersede any affiliate\u2019s call. In all\n\ninstances, a parent network and all of its affiliates shall collectively constitute a single source for the purpose of this clause.\nFor international elections, this Contract may be resolved on an accelerated basis if at least two (2) of the six (6) Designated\n\nInternational Media Sources have published an unambiguous statement that a candidate, party, or option has won. A\n\nstatement is considered unambiguous only if it conveys, in substance, that the candidate, party, or option has won or secured\n\nvictory; statements indicating that a candidate is \u201cleading,\u201d \u201con course to win,\u201d \u201clikely to win,\u201d or similar conditional language\n\nshall not qualify. \u201cDesignated International Media Sources\u201d are: Reuters, The Associated Press (AP), Agence France-Presse\n\n(AFP), BBC News, Bloomberg, and The New York Times (NYT). Should one of the Designated International Media Sources\n\ncease independent international election reporting, it may be replaced at the sole discretion of the Exchange.\nExpiration time:\nThe Expiration time of the Contract shall be 10:00 AM ET.\nSettlement Value:\nThe Settlement Value for this Contract is $1.00.\nExpiration Value:\nThe Expiration Value is the value of the Underlying as documented by the Source Agency on the\n\nExpiration Date at the Expiration time.\nContingencies:\nBefore Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant\n\nto Rule 6.3(d) of the Rulebook. If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to\n\ndetermine payouts pursuant to Rule 6.3(b) in the Rulebook.",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/contract_terms/ELECTION.pdf"
+    },
+    {
+     "document": "product certification",
+     "text": "[page 1 of 13: text layer]\nKalshiEX\n\nLLC\n\nJune\n\n11,\n\n2025\n\nSUBMITTED\n\nVIA\n\nCFTC\n\nPORTAL\n\nSecretary\n\nof\n\nthe\n\nCommission\n\nOffice\n\nof\n\nthe\n\nSecretariat\n\nU.S.\n\nCommodity\n\nFutures\n\nTrading\n\nCommission\n\nThree\n\nLafayette\n\nCentre\n\n1155\n\n21st\n\nStreet,\n\nN.W.\n\nWashington,\n\nD.C.\n\n20581\n\nRe:\n\nKalshiEX\n\nLLC\n\n\u2013\n\nCFTC\n\nRegulation\n\n40.2(a)\n\nNotification\n\nRegarding\n\nthe\n\nInitial\n\nListing\n\nof\n\nthe\n\n\u201cWill\n\n<candidate/party>\n\nwin\n\n<election>?\u201d\n\nContract\n\nDear\n\nSir\n\nor\n\nMadam,\n\nPursuant\n\nto\n\nSection\n\n5c(c)\n\nof\n\nthe\n\nCommodity\n\nExchange\n\nAct\n\nand\n\nSection\n\n40.2(a)\n\nof\n\nthe\n\nregulations\n\nof\n\nthe\n\nCommodity\n\nFutures\n\nTrading\n\nCommission,\n\nKalshiEX\n\nLLC\n\n(Kalshi),\n\na\n\nregistered\n\nDCM,\n\nhereby\n\nnotifies\n\nthe\n\nCommission\n\nthat\n\nit\n\nis\n\nself-certifying\n\nthe\n\n\u201cWill\n\n<candidate/party>\n\nwin\n\n<election>?\u201d\n\ncontract\n\n(Contract).\n\nThe\n\nContract\n\nwill\n\ninitially\n\nbe\n\nlisted\n\nafter\n\nclose-of-business\n\non\n\nJune\n\n11,\n\n2025;\n\nit\n\nis\n\nlisted\n\nas\n\nthe\n\nday\n\nafter\n\nbecause\n\nof\n\nlimitations\n\nof\n\nthe\n\nCommission's\n\nonline\n\nsubmission\n\nportal.\n\nThe\n\nExchange\n\nintends\n\nto\n\nlist\n\nthe\n\ncontract\n\non\n\na\n\nbasis.\n\nThe\n\nContract\u2019s\n\nterms\n\nand\n\nconditions\n\n(Appendix\n\nA)\n\nincludes\n\nthe\n\ncustom\nfollowing\n\nstrike\n\nconditions:\n\n\u25cf\n\n<date>\n\n\u25cf\n\n<candidate/party>\n\n\u25cf\n\n<election>\n\n\u25cf\n\n<candidate/party/option>\n\nAlong\n\nwith\n\nthis\n\nletter,\n\nKalshi\n\nsubmits\n\nthe\n\nfollowing\n\ndocuments:\n\n\u25cf\n\nA\n\nconcise\n\nexplanation\n\nand\n\nanalysis\n\nof\n\nthe\n\nContract;\n\n\u25cf\n\nCertification;\n\n\u25cf\n\nAppendix\n\nA\n\nwith\n\nthe\n\nContract\u2019s\n\nTerms\n\nand\n\nConditions;\n\n\u25cf\n\nConfidential\n\nAppendices\n\nwith\n\nfurther\n\ninformation;\n\nand\n\n\u25cf\n\nA\n\nrequest\n\nfor\n\nFOIA\n\nconfidential\n\ntreatment.\n\nIf\n\nyou\n\nhave\n\nany\n\nquestions,\n\nplease\n\ndo\n\nnot\n\nhesitate\n\nto\n\ncontact\n\nme.\n\nSincerely,\n\nXavier\n\nSottile\n\nHead\n\nof\n\nMarkets\n\nKalshiEX\n\nLLC\n\nxsottile@kalshi.com\n\nKalshiEX\n\nLLC\n\n[page 2 of 13: text layer]\nKalshiEX\n\nLLC\n\nKalshiEX\n\nLLC\n\n[page 3 of 13: text layer]\nKalshiEX\n\nLLC\n\nKalshiEX\n\nLLC\n\nOfficial\n\nProduct\n\nName:\n\n\u201cWill\n\n<candidate/party>\n\nwin\n\n<election>?\u201d\n\nRulebook:\n\nELECTION\n\nSummary:\n\nCandidateparty\n\nelection\n\nvictory\n\noutcome\n\nKalshi\n\nContract\n\nCategory:\n\nOther\n\nEvent\n\nKalshi\n\nInternal\n\nCategory:\n\nWorld\n\nJune\n\n11,\n\n2025\n\nCONCISE\n\nEXPLANATION\n\nAND\n\nANALYSIS\n\nOF\n\nTHE\n\nPRODUCT\n\nAND\n\nITS\n\nCOMPLIANCE\n\nWITH\n\nAPPLICABLE\n\nPROVISIONS\n\nOF\n\nTHE\n\nACT,\n\nINCLUDING\n\nCORE\n\nPRINCIPLES\n\nAND\n\nTHE\n\nCOMMISSION'S\n\nREGULATIONS\n\nTHEREUNDER\n\nPursuant\n\nto\n\nCommission\n\nRule\n\n40.2(a)(3)(v),\n\nthe\n\nfollowing\n\nis\n\na\n\nconcise\n\nexplanation\n\nand\n\nanalysis\n\nof\n\nthe\n\nproduct\n\nand\n\nits\n\ncompliance\n\nwith\n\nthe\n\nAct,\n\nincluding\n\nthe\n\nrelevant\n\nCore\n\nPrinciples\n\n(discussed\n\nin\n\nAppendix\n\nD),\n\nand\n\nthe\n\nCommission's\n\nregulations\n\nthereunder.\n\nI.\n\nIntroduction\n\nThe\n\n\u201cWill\n\n<candidate/party>\n\nwin\n\n<election>?\u201d\n\nContract\n\nis\n\na\n\ncontract\n\nrelating\n\nto\n\nWorld.\n\nFurther\n\ninformation\n\nabout\n\nthe\n\nContract,\n\nincluding\n\nan\n\nanalysis\n\nof\n\nits\n\nrisk\n\nmitigation\n\nand\n\nprice\n\nbasing\n\nutility,\n\nas\n\nwell\n\nas\n\nadditional\n\nconsiderations\n\nrelated\n\nto\n\nthe\n\nContract,\n\nis\n\nincluded\n\nin\n\nConfidential\n\nAppendices\n\nB,\n\nC,\n\nand\n\nD.\n\nPursuant\n\nto\n\nSection\n\n5c(c)\n\nof\n\nthe\n\nAct\n\nand\n\nCFTC\n\nRegulations\n\n40.2(a),\n\nthe\n\nExchange\n\nhereby\n\ncertifies\n\nthat\n\nthe\n\nlisting\n\nof\n\nthe\n\nContract\n\ncomplies\n\nwith\n\nthe\n\nAct\n\nand\n\nCommission\n\nregulations\n\nunder\n\nthe\n\nAct.\n\nGeneral\n\nContract\n\nTerms\n\nand\n\nConditions:\n\nThe\n\nContract\n\noperates\n\nsimilar\n\nto\n\nother\n\nevent\n\ncontracts\n\nthat\n\nthe\n\nExchange\n\nlists\n\nfor\n\ntrading.\n\nThe\n\nminimum\n\nprice\n\nfluctuation\n\nis\n\n$0.01\n\n(one\n\ncent).\n\nPrice\n\nbands\n\nwill\n\napply\n\nso\n\nthat\n\nContracts\n\nmay\n\nonly\n\nbe\n\nlisted\n\nat\n\nvalues\n\nof\n\nat\n\nleast\n\n$0.01\n\nand\n\nat\n\nmost\n\n$0.99.\n\nFurther,\n\nthe\n\nContract\n\nis\n\nsized\n\nwith\n\na\n\none-dollar\n\nnotional\n\nvalue\n\nand\n\nhas\n\na\n\nminimum\n\nprice\n\nfluctuation\n\nof\n\n$0.01\n\nto\n\nenable\n\nMembers\n\nto\n\nmatch\n\nthe\n\nsize\n\nof\n\nthe\n\ncontracts\n\npurchased\n\nto\n\ntheir\n\neconomic\n\nrisks.\n\nAs\n\noutlined\n\nin\n\nRule\n\n5.12\n\nof\n\nthe\n\nRulebook,\n\ntrading\n\nshall\n\nbe\n\navailable\n\nat\n\nall\n\ntimes\n\noutside\n\nof\n\nany\n\nmaintenance\n\nwindows,\n\nwhich\n\nwill\n\nbe\n\nannounced\n\nin\n\nadvance\n\nby\n\nthe\n\nExchange.\n\nMembers\n\nwill\n\nbe\n\ncharged\n\nfees\n\nin\n\naccordance\n\nwith\n\nRule\n\n3.6\n\nof\n\nthe\n\nRulebook.\n\nFees,\n\nif\n\nthey\n\nare\n\ncharged,\n\nare\n\ncharged\n\nin\n\nsuch\n\namounts\n\nas\n\nmay\n\nbe\n\nrevised\n\nfrom\n\ntime\n\nto\n\ntime\n\nto\n\nbe\n\nreflected\n\non\n\nthe\n\nExchange\u2019s\n\nWebsite.\n\nA\n\nnew\n\nSource\n\nAgency\n\ncan\n\nbe\n\nadded\n\nvia\n\na\n\nPart\n\n40\n\namendment.\n\nAll\n\ninstructions\n\non\n\nhow\n\nto\n\naccess\n\nthe\n\nUnderlying\n\nare\n\nnon-binding\n\nand\n\nare\n\nprovided\n\nfor\n\nconvenience\n\nonly\n\nand\n\nare\n\nnot\n\npart\n\nof\n\nthe\n\nbinding\n\nTerms\n\nand\n\nConditions\n\nof\n\nthe\n\nContract.\n\nThey\n\nmay\n\nbe\n\nclarified\n\nat\n\nany\n\ntime.\n\nKalshiEX\n\nLLC\n\n[page 4 of 13: text layer]\nKalshiEX\n\nLLC\n\nFurthermore,\n\nthe\n\nContract\u2019s\n\npayout\n\nstructure\n\nis\n\ncharacterized\n\nby\n\nthe\n\npayment\n\nof\n\nan\n\nabsolute\n\namount\n\nto\n\nthe\n\nholder\n\nof\n\none\n\nside\n\nof\n\nthe\n\noption\n\nand\n\nno\n\npayment\n\nto\n\nthe\n\ncounterparty.\n\nDuring\n\nthe\n\ntime\n\nthat\n\ntrading\n\non\n\nthe\n\nContract\n\nis\n\nopen,\n\nMembers\n\nare\n\nable\n\nto\n\nadjust\n\ntheir\n\npositions\n\nand\n\ntrade\n\nfreely.\n\nThe\n\nExpiration\n\nValue\n\nand\n\nMarket\n\nOutcome\n\nare\n\ndetermined\n\nat\n\nor\n\nafter\n\nMarket\n\nClose.\n\nThe\n\nmarket\n\nis\n\nthen\n\nsettled\n\nby\n\nthe\n\nExchange,\n\nand\n\nthe\n\nlong\n\nposition\n\nholders\n\nand\n\nshort\n\nposition\n\nholders\n\nare\n\npaid\n\naccording\n\nto\n\nthe\n\nMarket\n\nOutcome.\n\nIn\n\nthis\n\ncase,\n\n\u201clong\n\nposition\n\nholders\u201d\n\nrefers\n\nto\n\nMembers\n\nwho\n\npurchased\n\nthe\n\n\u201cYes\u201d\n\nside\n\nof\n\nthe\n\nContract\n\nand\n\n\u201cshort\n\nposition\n\nholders\u201d\n\nrefers\n\nto\n\nMembers\n\nwho\n\npurchased\n\nthe\n\n\u201cNo\u201d\n\nside\n\nof\n\nthe\n\nContract.\n\nIf\n\nthe\n\nMarket\n\nOutcome\n\nis\n\n\u201cYes,\u201d\n\nmeaning\n\nthat\n\nan\n\nevent\n\noccurs\n\nthat\n\nis\n\nencompassed\n\nwithin\n\nthe\n\nPayout\n\nCriterion,\n\nthen\n\nthe\n\nlong\n\nposition\n\nholders\n\nare\n\npaid\n\nan\n\nabsolute\n\namount\n\nproportional\n\nto\n\nthe\n\nsize\n\nof\n\ntheir\n\nposition\n\nand\n\nthe\n\nshort\n\nposition\n\nholders\n\nreceive\n\nno\n\npayment.\n\nIf\n\nthe\n\nMarket\n\nOutcome\n\nis\n\n\u201cNo,\u201d\n\nthen\n\nthe\n\nshort\n\nposition\n\nholders\n\nare\n\npaid\n\nan\n\nabsolute\n\namount\n\nproportional\n\nto\n\nthe\n\nsize\n\nof\n\ntheir\n\nposition\n\nand\n\nthe\n\nlong\n\nposition\n\nholders\n\nreceive\n\nno\n\npayment.\n\nSpecification\n\nof\n\nthe\n\ncircumstances\n\nthat\n\nwould\n\ntrigger\n\na\n\nMarket\n\nOutcome\n\nof\n\n\u201cYes\u201d\n\nare\n\nincluded\n\nbelow\n\nin\n\nthe\n\nsection\n\ntitled\n\n\u201cPayout\n\nCriterion\u201d\n\nin\n\nAppendix\n\nA.\n\nKalshiEX\n\nLLC\n\n[page 5 of 13: text layer]\nKalshiEX\n\nLLC\n\nCERTIFICATIONS\n\nPURSUANT\n\nTO\n\nSECTION\n\n5c\n\nOF\n\nTHE\n\nCOMMODITY\n\nEXCHANGE\n\nACT,\n\n7\n\nU.S.C.\n\n\u00a7\n\n7A-2\n\nAND\n\nCOMMODITY\n\nFUTURES\n\nTRADING\n\nCOMMISSION\n\nRULE\n\n40.2,\n\n17\n\nC.F.R.\n\n\u00a7\n\n40.2\n\nBased\n\non\n\nthe\n\nabove\n\nanalysis,\n\nthe\n\nExchange\n\ncertifies\n\nthat:\n\n\u274f\n\nThe\n\nContract\n\ncomplies\n\nwith\n\nthe\n\nAct\n\nand\n\nCommission\n\nregulations\n\nthereunder.\n\n\u274f\n\nThis\n\nsubmission\n\n(other\n\nthan\n\nthose\n\nappendices\n\nfor\n\nwhich\n\nconfidential\n\ntreatment\n\nhas\n\nbeen\n\nrequested)\n\nhas\n\nbeen\n\nconcurrently\n\nposted\n\non\n\nthe\n\nExchange\u2019s\n\nwebsite\n\nat\n\nhttps://kalshi.com/regulatory/filings\n.\n\nShould\n\nyou\n\nhave\n\nany\n\nquestions\n\nconcerning\n\nthe\n\nabove,\n\nplease\n\ncontact\n\nthe\n\nexchange\n\nat\n\nProductFilings@kalshi.com\n.\n\n______________________\n\nBy:\n\nXavier\n\nSottile\n\nTitle:\n\nHead\n\nof\n\nMarkets\n\nDate:\n\nJune\n\n11,\n\n2025\n\nKalshiEX\n\nLLC\n\n[page 6 of 13: text layer]\nKalshiEX\n\nLLC\n\nAttachments:\n\nAppendix\n\nA\n\n-\n\nContract\n\nTerms\n\nand\n\nConditions\n\nAppendix\n\nB\n\n(Confidential)\n\n-\n\nFurther\n\nConsiderations\n\nAppendix\n\nC\n\n(Confidential)\n\n-\n\nSource\n\nAgency\n\nAppendix\n\nD\n\n(Confidential)\n\n-\n\nCompliance\n\nwith\n\nCore\n\nPrinciples\n\nKalshiEX\n\nLLC\n\n[page 7 of 13: text layer]\nKalshiEX\n\nLLC\n\nAPPENDIX\n\nA\n\n\u2013\n\nCONTRACT\n\nTERMS\n\nAND\n\nCONDITIONS\n\nOfficial\n\nProduct\n\nName:\n\n\u201cWill\n\n<candidate/party>\n\nwin\n\n<election>?\u201d\n\nRulebook:\n\nELECTION\n\nKalshiEX\n\nLLC\n\n[page 8 of 13: text layer]\nKalshiEX\n\nLLC\n\nELECTION\n\nScope:\n\nThese\n\nrules\n\nshall\n\napply\n\nto\n\nthis\n\ncontract.\n\nUnderlying:\n\nThe\n\nUnderlying\n\nfor\n\nthis\n\nContract\n\nis\n\nthe\n\nofficial\n\nresults\n\nof\n\n<election>\n\nas\n\nreported\n\nby\n\nthe\n\nSource\n\nAgencies.\n\nThe\n\nUnderlying\n\nspecifically\n\nrefers\n\nto:\n\n(i)\n\nfor\n\ndirect\n\ndemocratic\n\nelections,\n\nthe\n\ncandidate/party\n\ndeclared\n\nelected\n\nby\n\nthe\n\nrelevant\n\nelectoral\n\nauthority;\n\n(ii)\n\nfor\n\nparliamentary/legislative\n\nelections,\n\nthe\n\nparty,\n\ncoalition,\n\nor\n\nalliance\n\nwinning\n\nthe\n\nmost\n\nseats\n\nin\n\nthe\n\nspecified\n\nchamber;\n\n(iii)\n\nfor\n\nindirect\n\nelections\n\nby\n\nelectoral\n\nbodies,\n\nthe\n\ncandidate\n\nelected\n\nthrough\n\nthe\n\nprescribed\n\nprocess;\n\n(iv)\n\nfor\n\nreligious/ecclesiastical\n\nelections,\n\nthe\n\nindividual\n\nselected\n\nthrough\n\nthe\n\nprescribed\n\nreligious\n\nprocess\n\nand\n\nconfirmed\n\nby\n\nreligious\n\nauthorities;\n\n(v)\n\nfor\n\ntraditional/customary\n\nleadership\n\nselections,\n\nthe\n\nindividual\n\nrecognized\n\nthrough\n\nboth\n\ntraditional\n\nprocesses\n\nand\n\nrelevant\n\ngovernmental\n\nauthorities\n\nwhere\n\napplicable;\n\n(vi)\n\nfor\n\njudicial\n\nelections/retentions,\n\nthe\n\ncandidate\n\nelected\n\nor\n\nretained\n\nper\n\nthe\n\nspecified\n\nsystem;\n\n(vii)\n\nfor\n\nrecall\n\nelections,\n\nwhether\n\nthe\n\nofficial\n\nis\n\nrecalled;\n\n(viii)\n\nfor\n\nvotes\n\nof\n\nno\n\nconfidence,\n\nwhether\n\nthe\n\nmotion\n\npasses;\n\n(ix)\n\nfor\n\nreferenda/plebiscites/ballot\n\nmeasures,\n\nwhether\n\nthe\n\nproposal\n\nachieves\n\nthe\n\nrequired\n\nthreshold;\n\n(x)\n\nfor\n\nconstituent\n\nassemblies,\n\nthe\n\nparty/coalition\n\nwinning\n\nthe\n\nmost\n\nseats\n\nor\n\nthe\n\nconstitutional\n\nproposal's\n\napproval;\n\n(xi)\n\nfor\n\nprofessional/corporate\n\ngovernance\n\nelections,\n\nthe\n\nindividual\n\nselected\n\nthrough\n\nthe\n\nprescribed\n\nprocess;\n\n(xii)\n\nfor\n\nhereditary\n\npositions\n\nwith\n\nelectoral\n\ncomponents,\n\nthe\n\nindividual\n\nselected\n\nthrough\n\nthe\n\nprescribed\n\nsuccession\n\nprocess;\n\n(xiii)\n\nfor\n\nrotational/consensual\n\nleadership\n\nsystems,\n\nthe\n\nindividual/party\n\ndesignated\n\nfor\n\nthe\n\nspecified\n\nperiod.\n\nRevisions\n\nto\n\nthe\n\nUnderlying\n\nmade\n\nafter\n\nExpiration\n\nwill\n\nnot\n\nbe\n\naccounted\n\nfor\n\nin\n\ndetermining\n\nthe\n\nExpiration\n\nValue.\n\nSource\n\nAgency:\n\nThe\n\nSource\n\nAgencies\n\nare,\n\nin\n\nhierarchical\n\norder:\n\n(1)\n\nPrimary\n\nSources:\n\nthe\n\nofficial\n\nelectoral\n\ncommission,\n\nconstitutional\n\ncourt,\n\nor\n\nequivalent\n\nelectoral\n\nauthority\n\nof\n\nthe\n\nrelevant\n\njurisdiction;\n\nthe\n\nformal\n\nproclamation\n\nby\n\nthe\n\nhead\n\nof\n\nstate\n\nor\n\ngovernment\n\nwhen\n\nconstitutionally\n\nrequired;\n\nfor\n\nreligious\n\nelections,\n\nthe\n\nofficial\n\nreligious\n\nauthority\n\n(e.g.,\n\nVatican\n\nfor\n\npapal\n\nelections,\n\nrelevant\n\nPatriarchate\n\nfor\n\nOrthodox\n\nelections);\n\nfor\n\ntraditional\n\nleadership,\n\nboth\n\nthe\n\ntraditional\n\nauthority\n\nand\n\nrelevant\n\ngovernment\n\nrecognition\n\nbody;\n\nfor\n\nprofessional\n\nelections,\n\nthe\n\ngoverning\n\nboard\n\nor\n\nregulatory\n\nauthority;\n\n(2)\n\nSecondary\n\nSources:\n\nfor\n\ninternational\n\nelections,\n\nthe\n\nUnited\n\nNations\n\nElectoral\n\nAssistance\n\nDivision,\n\nOrganization\n\nof\n\nAmerican\n\nStates,\n\nAfrican\n\nUnion,\n\nEuropean\n\nUnion\n\nElection\n\nObservation\n\nMissions,\n\nCommonwealth\n\nSecretariat,\n\nCarter\n\nCenter,\n\nInternational\n\nIDEA,\n\nInternational\n\nFoundation\n\nfor\n\nElectoral\n\nSystems;\n\n(3)\n\nTertiary\n\nSources:\n\nmajor\n\nnewspapers\n\nof\n\nrecord\n\nin\n\nthe\n\nrelevant\n\njurisdiction\n\nin\n\norder\n\nof\n\ncirculation,\n\nReuters,\n\nAssociated\n\nPress,\n\nBloomberg\n\nNews,\n\nAgence\n\nFrance-Presse,\n\nThe\n\nNew\n\nYork\n\nTimes,\n\nFinancial\n\nTimes,\n\nThe\n\nWall\n\nStreet\n\nJournal,\n\nBBC,\n\nFrance24,\n\nDeutsche\n\nWelle,\n\nNHK\n\nWorld,\n\nAl\n\nJazeera\n\nEnglish,\n\nThe\n\nWashington\n\nPost,\n\nAxios,\n\nPolitico,\n\nSemafor,\n\nThe\n\nInformation,\n\nABC,\n\nCBS,\n\nCNN,\n\nFox\n\nNews,\n\nMSNBC,\n\nNBC.\n\nType:\n\nThe\n\ntype\n\nof\n\nContract\n\nis\n\nan\n\nEvent\n\nContract.\n\nKalshiEX\n\nLLC\n\n[page 9 of 13: text layer]\nKalshiEX\n\nLLC\n\nIssuance:\n\nAfter\n\nthe\n\ninitial\n\nContract,\n\nContract\n\niterations\n\nwill\n\nbe\n\nlisted\n\non\n\nan\n\nas-needed\n\nbasis\n\nat\n\nthe\n\ndiscretion\n\nof\n\nthe\n\nExchange\n\nand\n\ncorresponding\n\nto\n\nthe\n\nrisk\n\nmanagement\n\nneeds\n\nof\n\nMembers.\n\n<candidate/party/option>:\n\n<candidate/party/option>\n\nrefers\n\nto\n\nan\n\nindividual\n\ncandidate,\n\npolitical\n\nparty,\n\nelectoral\n\ncoalition/alliance\n\n(formal\n\npre-election\n\nonly),\n\nreligious\n\ncandidate,\n\ntraditional\n\ncandidate,\n\njudicial\n\ncandidate,\n\nreferendum\n\noption\n\n(Yes/No/specific\n\nchoices),\n\nrecall\n\ntarget,\n\nconfidence\n\nmotion,\n\nor\n\nother\n\nelectoral\n\nchoice\n\nspecified\n\nby\n\nthe\n\nExchange.\n\nFor\n\ncoalitions/alliances,\n\nonly\n\nthose\n\nformally\n\nregistered\n\nwith\n\nelectoral\n\nauthorities\n\nbefore\n\nthe\n\nnomination\n\ndeadline\n\ncount,\n\nnot\n\npost-election\n\ngoverning\n\narrangements.\n\nFor\n\nreligious\n\nelections,\n\nincludes\n\nall\n\neligible\n\ncandidates\n\nunder\n\nreligious\n\nlaw.\n\nFor\n\nwrite-in\n\ncandidates,\n\nonly\n\nthose\n\nmeeting\n\nlegal\n\nrequirements\n\nfor\n\nballot\n\naccess.\n\nThe\n\nExchange\n\nmay\n\nlist\n\niterations\n\nfor\n\n\"Other,\"\n\n\"None\n\nof\n\nthe\n\nAbove,\"\n\n\"No\n\nValid\n\nElection\n\nHeld,\"\n\n\"Election\n\nPostponed\n\nBeyond\n\nExpiration,\"\n\n\"Blank/Null/Spoiled\n\nVotes,\"\n\nor\n\n\"Abstention\"\n\nwhere\n\nrelevant.\n\nIn\n\nindirect\n\nelections,\n\n<candidate/party/option>\n\nrefers\n\nto\n\nthe\n\nultimate\n\nofficeholder,\n\nnot\n\nintermediate\n\nselectors.\n\n<election>:\n\n<election>\n\nrefers\n\nto\n\na\n\nspecific\n\nelectoral\n\nevent\n\nspecified\n\nby\n\nthe\n\nExchange,\n\nincluding:\n\njurisdiction\n\n(international,\n\nnational,\n\nregional,\n\nstate,\n\nprovincial,\n\nmunicipal,\n\nreligious,\n\ntraditional,\n\nprofessional);\n\ntype\n\n(presidential,\n\nparliamentary,\n\nlegislative,\n\njudicial,\n\nconstituent\n\nassembly,\n\nreferendum,\n\nplebiscite,\n\nrecall,\n\nconfidence\n\nvote,\n\nreligious\n\nselection,\n\ntraditional\n\nselection,\n\nprofessional\n\nboard);\n\nelectoral\n\nsystem\n\n(first-past-the-post,\n\nproportional\n\nrepresentation,\n\nmixed-member,\n\nranked\n\nchoice,\n\nsingle\n\ntransferable\n\nvote,\n\napproval,\n\nscore/range,\n\nCondorcet,\n\nBorda\n\ncount,\n\ncumulative,\n\nlimited,\n\nsingle\n\nnon-transferable\n\nvote,\n\nconsensual\n\nallocation,\n\nreligious\n\ndiscernment,\n\ntraditional\n\nselection);\n\nround\n\n(first\n\nround,\n\nrunoff,\n\nfinal\n\nballot);\n\nspecific\n\nposition\n\n(for\n\nrotational\n\nsystems);\n\nand\n\ndate\n\nor\n\nyear.\n\nFor\n\nmulti-stage\n\nelections,\n\nthe\n\nExchange\n\nwill\n\nspecify\n\nwhich\n\nstage.\n\nFor\n\nelections\n\nwith\n\nmultiple\n\nsimultaneous\n\ncomponents,\n\neach\n\ncomponent\n\nconstitutes\n\na\n\nseparate\n\nContract\n\nunless\n\nspecified\n\notherwise.\n\n<date>:\n\n<date>\n\nrefers\n\nto\n\na\n\ncalendar\n\ndate\n\nspecified\n\nby\n\nthe\n\nExchange.\n\nThe\n\nExchange\n\nmay\n\nlist\n\niterations\n\nof\n\nthe\n\nContract\n\ncorresponding\n\nto\n\nvariations\n\nof\n\n<date>.\n\nAll\n\ntimes\n\nare\n\nin\n\nEastern\n\nTime\n\n(ET)\n\nunless\n\notherwise\n\nspecified.\n\nPayout\n\nCriterion:\n\nThe\n\nPayout\n\nCriterion\n\nfor\n\nthe\n\nContract\n\nencompasses\n\nthe\n\nExpiration\n\nValues\n\nthat\n\n<candidate/party/option>\n\nhas\n\nwon\n\n<election>.\n\nSpecifically:\n\nFor\n\ndirect\n\ndemocratic\n\nelections:\n\n<candidate/party/option>\n\nis\n\ndeclared\n\nthe\n\nwinner\n\nby\n\nthe\n\nrelevant\n\nelectoral\n\nauthority\n\nand\n\neither\n\n(i)\n\nis\n\ninaugurated/sworn\n\nin/takes\n\noffice,\n\nor\n\n(ii)\n\nthe\n\nscheduled\n\ninauguration\n\ndate\n\npasses\n\nwithout\n\na\n\ndifferent\n\ncandidate\n\ntaking\n\noffice\n\n(delays\n\nin\n\ninauguration\n\nare\n\nconsidered\n\nfor\n\nthis\n\npurpose).\n\nFor\n\nparliamentary/legislative\n\nelections:\n\n<candidate/party/option>\n\nwins\n\nthe\n\nmost\n\nseats\n\nin\n\nthe\n\nspecified\n\nchamber\n\nbased\n\non\n\nfinal\n\nofficial\n\nresults.\n\nIn\n\nbicameral\n\nsystems,\n\nthis\n\nrefers\n\nto\n\nthe\n\nlower\n\nhouse\n\nunless\n\notherwise\n\nspecified.\n\nOverhang\n\nseats,\n\nleveling\n\nseats,\n\nand\n\nappointed\n\nseats\n\ncount\n\nonly\n\nKalshiEX\n\nLLC\n\n[page 10 of 13: text layer]\nKalshiEX\n\nLLC\n\nif\n\nspecified.\n\nIf\n\ntwo\n\nparties\n\nhave\n\nthe\n\nsame\n\nnumber\n\nof\n\nseats,\n\nthe\n\none\n\nentering\n\ngovernment\n\nwill\n\nresolve\n\nto\n\nYes\n\nand\n\nall\n\nothers\n\nto\n\nNo.\n\nIf\n\nboth\n\nor\n\nneither\n\nenter\n\ngovernment,\n\nthe\n\none\n\nwith\n\nthe\n\nhigher\n\nshare\n\nof\n\nthe\n\nvote\n\nwill\n\nresolve\n\nto\n\nYes\n\nand\n\nall\n\nothers\n\nto\n\nNo.\n\nFor\n\nreligious\n\nelections:\n\nThe\n\nindividual\n\nselected\n\nthrough\n\nthe\n\nprescribed\n\nreligious\n\nprocess\n\n(e.g.,\n\npapal\n\nconclave\n\nreaching\n\ntwo-thirds\n\nmajority,\n\nOrthodox\n\nsynod\n\nselection,\n\nBuddhist\n\nrecognition\n\nprocess)\n\nand\n\nconfirmed\n\nby\n\nthe\n\nrelevant\n\nreligious\n\nauthority.\n\nFor\n\npapal\n\nelections,\n\nwhite\n\nsmoke\n\nand\n\nhabemus\n\npapam\n\nannouncement;\n\nfor\n\nOrthodox\n\npatriarchs,\n\nenthronement;\n\nfor\n\nother\n\npositions,\n\nthe\n\nequivalent\n\nceremonial\n\nconfirmation.\n\nFor\n\ntraditional/customary\n\nleadership:\n\nThe\n\nindividual\n\nselected\n\nthrough\n\ntraditional\n\nprocesses\n\nAND\n\nformally\n\nrecognized\n\nby\n\nrelevant\n\ngovernmental\n\nauthorities\n\nwhere\n\nsuch\n\nrecognition\n\nis\n\nrequired\n\nby\n\nlaw.\n\nIf\n\ngovernmental\n\nrecognition\n\nis\n\nnot\n\nrequired,\n\nselection\n\nthrough\n\ntraditional\n\nprocesses\n\nalone\n\nsuffices.\n\nFor\n\njudicial\n\nelections/retentions:\n\nIn\n\npartisan/nonpartisan\n\nelections,\n\nthe\n\ncandidate\n\nreceiving\n\nthe\n\nmost\n\nvotes;\n\nin\n\nretention\n\nelections,\n\n\"Yes\"\n\nif\n\nthe\n\njudge\n\nreceives\n\nthe\n\nrequired\n\npercentage\n\n(typically\n\nmajority)\n\nto\n\nretain\n\noffice;\n\nin\n\nmerit\n\nselection\n\nsystems,\n\nthe\n\nindividual\n\nultimately\n\nappointed\n\nfollowing\n\nthe\n\nprescribed\n\nprocess.\n\nFor\n\nrecall\n\nelections:\n\n\"Yes\"\n\nresolves\n\nif\n\nthe\n\nofficial\n\nis\n\nrecalled\n\n(typically\n\nrequiring\n\nmajority\n\nof\n\nvotes\n\ncast);\n\n\"No\"\n\nresolves\n\nif\n\nthe\n\nrecall\n\nfails\n\nor\n\nif\n\nturnout/signature\n\nrequirements\n\nare\n\nnot\n\nmet.\n\nFor\n\nvotes\n\nof\n\nno\n\nconfidence:\n\nThe\n\nmotion\n\nresolves\n\nto\n\n\"Yes\"\n\nif\n\nit\n\nreceives\n\nthe\n\nrequired\n\nvotes\n\nunder\n\nparliamentary\n\nrules\n\n(simple\n\nmajority\n\nunless\n\notherwise\n\nspecified,\n\nor\n\nconstructive\n\nno\n\nconfidence\n\nrequiring\n\nalternative\n\ngovernment\n\nproposal).\n\nFor\n\nreferenda/plebiscites:\n\nThe\n\nspecified\n\noption\n\nachieves\n\nthe\n\nrequired\n\nthreshold\n\nper\n\napplicable\n\nlaw\n\n(simple\n\nmajority,\n\nsupermajority,\n\ndual\n\nmajority,\n\nturnout\n\nrequirements).\n\nIf\n\nmultiple\n\nthresholds\n\nexist\n\n(e.g.,\n\nmajority\n\nof\n\nvotes\n\nAND\n\nmajority\n\nof\n\nstates),\n\nall\n\nmust\n\nbe\n\nmet.\n\nFailure\n\nto\n\nmeet\n\nturnout\n\nrequirements\n\nresults\n\nin\n\n\"No\"\n\nunless\n\nthe\n\nExchange\n\nspecifies\n\na\n\n\"Failed\n\nto\n\nmeet\n\nturnout\"\n\noption.\n\nFor\n\nindirect\n\nelections:\n\n<candidate/party/option>\n\nreceives\n\nthe\n\nrequired\n\nvotes\n\nfrom\n\nthe\n\nelectoral\n\nbody\n\nas\n\ncertified\n\nby\n\nthat\n\nbody's\n\npresiding\n\nauthority.\n\nFor\n\nmulti-stage\n\nindirect\n\nelections\n\n(e.g.,\n\nChina's\n\ntiered\n\nsystem),\n\nthe\n\nfinal\n\nstage\n\ndetermines\n\nthe\n\noutcome.\n\nFor\n\nprofessional/corporate\n\nelections:\n\nThe\n\nindividual\n\nselected\n\nby\n\nthe\n\nprescribed\n\nprocess\n\n(shareholder\n\nvote,\n\nboard\n\nselection,\n\nmember\n\nbank\n\nelection)\n\nand\n\ncertified\n\nby\n\nthe\n\ncorporate\n\nsecretary\n\nor\n\nequivalent\n\nauthority.\n\nFor\n\nhereditary\n\npositions\n\nwith\n\nelectoral\n\ncomponents:\n\nThe\n\nindividual\n\nselected\n\nthrough\n\nthe\n\nprescribed\n\nmixture\n\nof\n\nhereditary\n\nsuccession\n\nand\n\nelectoral\n\nconfirmation\n\n(e.g.,\n\nMalaysian\n\nKing,\n\nUAE\n\nPresident).\n\nKalshiEX\n\nLLC\n\n[page 11 of 13: text layer]\nKalshiEX\n\nLLC\n\nFor\n\nrotational/consensual\n\nsystems:\n\nThe\n\nindividual/party\n\ndesignated\n\nfor\n\nthe\n\nspecified\n\nterm\n\naccording\n\nto\n\nthe\n\nestablished\n\nrotation\n\nor\n\nconsensual\n\nallocation\n\n(e.g.,\n\nLebanese\n\nconfessional\n\nsystem,\n\nSwiss\n\nFederal\n\nCouncil,\n\nBosnian\n\nPresidency).\n\nSpecial\n\nprovisions:\n\n\u25cf\n\nAnnulled\n\nelections:\n\nIf\n\nresults\n\nare\n\nannulled\n\nby\n\na\n\ncourt/authority\n\nAFTER\n\nannouncement\n\nbut\n\nBEFORE\n\nthe\n\nwinner\n\ntakes\n\noffice,\n\nthe\n\nContract\n\nremains\n\nopen\n\nuntil\n\nre-run\n\nelection\n\nor\n\nexpiration\n\n\u25cf\n\nPostponed\n\nelections:\n\nContract\n\nremains\n\nopen\n\nuntil\n\nthe\n\nrescheduled\n\nelection\n\nor\n\ntwo\n\nyears\n\nfrom\n\nthe\n\noriginal\n\ndate,\n\nwhichever\n\ncomes\n\nfirst.\n\nRepeated\n\npostponements\n\ncount\n\ntowards\n\nthe\n\n2-year\n\ndeadline.\n\n\u25cf\n\nExtra-constitutional\n\ninterruptions:\n\nMilitary\n\ncoups,\n\nrevolutions,\n\nor\n\nforeign\n\ninterventions\n\ndo\n\nnot\n\naffect\n\nresolution\n\nif\n\nthe\n\nelectoral\n\nprocess\n\nwas\n\ncompleted\n\nand\n\nresults\n\nannounced\n\nby\n\nSource\n\nAgencies\n\n\u25cf\n\nDeath/incapacitation:\n\nIf\n\na\n\nwinning\n\ncandidate\n\ndies/is\n\nincapacitated\n\nafter\n\nelection\n\nbut\n\nbefore\n\ntaking\n\noffice,\n\nthat\n\ncandidate\n\nstill\n\nresolves\n\nto\n\nYes.\n\n\u25cf\n\nTies:\n\nIf\n\nmultiple\n\ncandidates/parties\n\ntie,\n\nthe\n\nContract\n\nresolves\n\nYes\n\nfor\n\nwhoever:\n\n(1)\n\nwins\n\nthrough\n\nthe\n\njurisdiction's\n\ntiebreak\n\nmechanism,\n\nor\n\n(2)\n\nif\n\nno\n\nmechanism\n\nexists,\n\nreceived\n\nthe\n\nlargest\n\nshare\n\nof\n\ntotal\n\nvotes\n\n\u25cf\n\nInformation\n\nopacity:\n\nFor\n\nelections\n\nwith\n\nextreme\n\nsecrecy\n\n(religious\n\nconclaves,\n\nsome\n\ntraditional\n\nselections),\n\nresolution\n\ndepends\n\non\n\nformal\n\nannouncement\n\nby\n\nthe\n\ndesignated\n\nauthority,\n\neven\n\nif\n\nthe\n\nselection\n\nprocess\n\nis\n\nnot\n\ntransparent\n\n\u25cf\n\nDisputed\n\nlegitimacy:\n\nIn\n\ncases\n\nof\n\ncompeting\n\nclaims\n\n(two\n\npresidents,\n\ndisputed\n\nsuccession),\n\nthe\n\nindividual\n\nrecognized\n\nby\n\nthe\n\nhierarchical\n\nmajority\n\nof\n\nSource\n\nAgencies\n\nprevails\n\n\u25cf\n\nWrite-in\n\ncandidates:\n\nCount\n\nonly\n\nwhere\n\nlegally\n\nvalid\n\nand\n\nofficially\n\ntallied\n\n\u25cf\n\nPartial\n\nelections:\n\nOnly\n\nseats/positions\n\nactually\n\ncontested\n\nin\n\nthe\n\nspecified\n\nelection\n\ncount\n\n\u25cf\n\nPre-selection\n\nvetting:\n\nCandidates\n\neliminated\n\nby\n\nvetting\n\nbodies\n\nbefore\n\nthe\n\nelection\n\ndo\n\nnot\n\nresolve\n\nto\n\nYes\n\nregardless\n\nof\n\npopular\n\nsupport\n\nExamples\n\nthat\n\nwould\n\nresolve\n\nto\n\nYes:\n\n\u25cf\n\nCandidate\n\nwins\n\nelection\n\nand\n\ntakes\n\noffice\n\nnormally\n\n\u25cf\n\nParty\n\nwins\n\nmost\n\nparliamentary\n\nseats\n\neven\n\nif\n\nexcluded\n\nfrom\n\ngovernment\n\n\u25cf\n\nCardinal\n\nelected\n\nPope\n\nand\n\naccepts\n\nfollowing\n\nwhite\n\nsmoke\n\n\u25cf\n\nTraditional\n\nchief\n\nselected\n\nby\n\nelders\n\nand\n\nrecognized\n\nby\n\ngovernment\n\n\u25cf\n\nJudge\n\nretained\n\nwith\n\n55%\n\napproval\n\nin\n\nretention\n\nelection\n\n\u25cf\n\nReferendum\n\npasses\n\nwith\n\nrequired\n\nmajority\n\nand\n\nturnout\n\n\u25cf\n\nOfficial\n\nrecalled\n\nafter\n\nsuccessful\n\nrecall\n\npetition\n\nand\n\nvote\n\n\u25cf\n\nGovernment\n\nfalls\n\nafter\n\nlosing\n\nno-confidence\n\nvote\n\nKalshiEX\n\nLLC\n\n[page 12 of 13: text layer]\nKalshiEX\n\nLLC\n\nExamples\n\nthat\n\nwould\n\nNOT\n\nresolve\n\nto\n\nYes:\n\n\u25cf\n\nCandidate\n\nleads\n\npolls\n\nbut\n\nloses\n\nelection\n\n\u25cf\n\nParty\n\nforms\n\ngovernment\n\nbut\n\nhas\n\nfewer\n\nseats\n\nthan\n\nanother\n\nparty\n\n\u25cf\n\nCardinal\n\nreportedly\n\nfavored\n\nin\n\nconclave\n\nbut\n\nnot\n\nelected\n\n\u25cf\n\nTraditional\n\nselection\n\ndisputed\n\nand\n\nnot\n\nrecognized\n\nby\n\ngovernment\n\n\u25cf\n\nJudge\n\nreceives\n\n45%\n\nin\n\nretention\n\nelection\n\n(below\n\nmajority\n\nthreshold)\n\n\u25cf\n\nReferendum\n\nmajority\n\nbut\n\nfails\n\nturnout\n\nrequirement\n\n(unless\n\nspecified\n\notherwise)\n\n\u25cf\n\nRecall\n\npetition\n\nqualifies\n\nbut\n\nrecall\n\nvote\n\nfails\n\n\u25cf\n\nNo-confidence\n\nmotion\n\nfails\n\nto\n\nreach\n\nrequired\n\nmajority\n\nMinimum\n\nTick:\n\nThe\n\nMinimum\n\nTick\n\nsize\n\nfor\n\nthe\n\nContract\n\nshall\n\nbe\n\n$0.01.\n\nPosition\n\nAccountability\n\nLevel:\n\nThe\n\nPosition\n\nAccountability\n\nLevel\n\nfor\n\nthe\n\nContract\n\nshall\n\nbe\n\n$25,000\n\nper\n\nstrike,\n\nper\n\nMember.\n\nLast\n\nTrading\n\nDate:\n\nThe\n\nLast\n\nTrading\n\nDate\n\nof\n\nthe\n\nContract\n\nwill\n\nbe\n\nthe\n\nsame\n\nas\n\nthe\n\nExpiration\n\nDate.\n\nThe\n\nLast\n\nTrading\n\nTime\n\nwill\n\nbe\n\nthe\n\nsame\n\nas\n\nthe\n\nExpiration\n\ntime.\n\nSettlement\n\nDate:\n\nThe\n\nSettlement\n\nDate\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\nno\n\nlater\n\nthan\n\nthe\n\nday\n\nafter\n\nthe\n\nExpiration\n\nDate,\n\nunless\n\nthe\n\nMarket\n\nOutcome\n\nis\n\nunder\n\nreview\n\npursuant\n\nto\n\nRule\n\n7.1.\n\nExpiration\n\nDate:\n\nThe\n\nlatest\n\nExpiration\n\nDate\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\none\n\nyear\n\nafter\n\nthe\n\nscheduled\n\ndate\n\nof\n\n<election>,\n\nor\n\nfor\n\nelections\n\nwithout\n\nfixed\n\ndates\n\n(religious,\n\ntraditional,\n\nprofessional,\n\nconfidence\n\nvotes,\n\nrecalls),\n\none\n\nyear\n\nafter\n\nthe\n\ntriggering\n\nevent\n\n(death,\n\npetition\n\nqualification,\n\nmotion\n\nfiling).\n\nIf\n\nan\n\nevent\n\ndescribed\n\nin\n\nthe\n\nPayout\n\nCriterion\n\noccurs,\n\nexpiration\n\nwill\n\nbe\n\nmoved\n\nto\n\nan\n\nearlier\n\ndate\n\nand\n\ntime\n\nin\n\naccordance\n\nwith\n\nRule\n\n7.2.\n\nExpiration\n\ntime:\n\nThe\n\nExpiration\n\ntime\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\n10:00\n\nAM\n\nET.\n\nSettlement\n\nValue:\n\nThe\n\nSettlement\n\nValue\n\nfor\n\nthis\n\nContract\n\nis\n\n$1.00.\n\nExpiration\n\nValue:\n\nThe\n\nExpiration\n\nValue\n\nis\n\nthe\n\nvalue\n\nof\n\nthe\n\nUnderlying\n\nas\n\ndocumented\n\nby\n\nthe\n\nSource\n\nAgency\n\non\n\nthe\n\nExpiration\n\nDate\n\nat\n\nthe\n\nExpiration\n\ntime.\n\nContingencies:\n\nBefore\n\nSettlement,\n\nKalshi\n\nmay,\n\nat\n\nits\n\nsole\n\ndiscretion,\n\ninitiate\n\nthe\n\nMarket\n\nOutcome\n\nReview\n\nProcess\n\npursuant\n\nto\n\nRule\n\n6.3(d)\n\nof\n\nthe\n\nRulebook.\n\nIf\n\nan\n\nExpiration\n\nValue\n\ncannot\n\nbe\n\ndetermined\n\non\n\nthe\n\nExpiration\n\nDate,\n\nKalshi\n\nhas\n\nthe\n\nright\n\nto\n\ndetermine\n\npayouts\n\npursuant\n\nto\n\nRule\n\n6.3(b)\n\nin\n\nthe\n\nRulebook.\n\nKalshiEX\n\nLLC\n\n[page 13 of 13: text layer]\nKalshiEX\n\nLLC\n\n`\n\nKalshiEX\n\nLLC",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/regulatory/product-certifications/ELECTION.pdf"
+    }
+   ],
+   "listing_fields": [
+    "ticker",
+    "event_ticker",
+    "market_type",
+    "title",
+    "subtitle",
+    "yes_sub_title",
+    "no_sub_title",
+    "rules_primary",
+    "rules_secondary",
+    "early_close_condition",
+    "can_close_early",
+    "strike_type",
+    "floor_strike",
+    "cap_strike",
+    "functional_strike",
+    "custom_strike",
+    "notional_value_dollars",
+    "open_time",
+    "close_time",
+    "expiration_time",
+    "expected_expiration_time",
+    "latest_expiration_time",
+    "occurrence_datetime",
+    "settlement_timer_seconds"
+   ],
+   "markets": {
+    "count": 19,
+    "tickers": [
+     "KXBRDEP-26OCT04-AVAN",
+     "KXBRDEP-26OCT04-FEB",
+     "KXBRDEP-26OCT04-MDB",
+     "KXBRDEP-26OCT04-MISS",
+     "KXBRDEP-26OCT04-NOVO",
+     "KXBRDEP-26OCT04-PDT",
+     "KXBRDEP-26OCT04-PL",
+     "KXBRDEP-26OCT04-PODE",
+     "KXBRDEP-26OCT04-PP",
+     "KXBRDEP-26OCT04-PRD",
+     "KXBRDEP-26OCT04-PSB",
+     "KXBRDEP-26OCT04-PSD",
+     "KXBRDEP-26OCT04-PSDB",
+     "KXBRDEP-26OCT04-PSOL",
+     "KXBRDEP-26OCT04-REP",
+     "KXBRDEP-26OCT04-RSOL",
+     "KXBRDEP-26OCT04-SOLI",
+     "KXBRDEP-26OCT04-UNI",
+     "KXBRDEP-26OCT04-UPRO"
+    ],
+    "varying_fields": {
+     "custom_strike": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": {
+        "Option": "Avante"
+       },
+       "KXBRDEP-26OCT04-NOVO": {
+        "Option": "NOVO"
+       },
+       "KXBRDEP-26OCT04-PRD": {
+        "Option": "PRD"
+       },
+       "KXBRDEP-26OCT04-REP": {
+        "Option": "Republicanos"
+       },
+       "KXBRDEP-26OCT04-UPRO": {
+        "Option": "Uni\u00e3o Progressista"
+       }
+      }
+     },
+     "no_sub_title": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "Avante",
+       "KXBRDEP-26OCT04-NOVO": "NOVO",
+       "KXBRDEP-26OCT04-PRD": "PRD",
+       "KXBRDEP-26OCT04-REP": "Republicanos",
+       "KXBRDEP-26OCT04-UPRO": "Uni\u00e3o Progressista"
+      }
+     },
+     "open_time": {
+      "distinct": 2,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "2026-04-23T04:00:00Z",
+       "KXBRDEP-26OCT04-NOVO": "2026-04-23T04:00:00Z",
+       "KXBRDEP-26OCT04-PRD": "2026-04-23T04:00:00Z",
+       "KXBRDEP-26OCT04-REP": "2026-04-23T04:00:00Z",
+       "KXBRDEP-26OCT04-UPRO": "2026-04-23T17:00:00Z"
+      }
+     },
+     "rules_primary": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "If Avante wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.",
+       "KXBRDEP-26OCT04-NOVO": "If NOVO wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.",
+       "KXBRDEP-26OCT04-PRD": "If PRD wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.",
+       "KXBRDEP-26OCT04-REP": "If Republicanos wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.",
+       "KXBRDEP-26OCT04-UPRO": "If Uni\u00e3o Progressista wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes."
+      }
+     },
+     "subtitle": {
+      "distinct": 3,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "::",
+       "KXBRDEP-26OCT04-NOVO": "::",
+       "KXBRDEP-26OCT04-PRD": "::",
+       "KXBRDEP-26OCT04-REP": "::",
+       "KXBRDEP-26OCT04-UPRO": null
+      }
+     },
+     "ticker": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "KXBRDEP-26OCT04-AVAN",
+       "KXBRDEP-26OCT04-NOVO": "KXBRDEP-26OCT04-NOVO",
+       "KXBRDEP-26OCT04-PRD": "KXBRDEP-26OCT04-PRD",
+       "KXBRDEP-26OCT04-REP": "KXBRDEP-26OCT04-REP",
+       "KXBRDEP-26OCT04-UPRO": "KXBRDEP-26OCT04-UPRO"
+      }
+     },
+     "title": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "Will Avante win the 2026 Brazilian Chamber of Deputies elections?",
+       "KXBRDEP-26OCT04-NOVO": "Will NOVO win the 2026 Brazilian Chamber of Deputies elections?",
+       "KXBRDEP-26OCT04-PRD": "Will PRD win the 2026 Brazilian Chamber of Deputies elections?",
+       "KXBRDEP-26OCT04-REP": "Will Republicanos win the 2026 Brazilian Chamber of Deputies elections?",
+       "KXBRDEP-26OCT04-UPRO": "Will Uni\u00e3o Progressista win the 2026 Brazilian Chamber of Deputies elections?"
+      }
+     },
+     "yes_sub_title": {
+      "distinct": 19,
+      "examples": {
+       "KXBRDEP-26OCT04-AVAN": "Avante",
+       "KXBRDEP-26OCT04-NOVO": "NOVO",
+       "KXBRDEP-26OCT04-PRD": "PRD",
+       "KXBRDEP-26OCT04-REP": "Republicanos",
+       "KXBRDEP-26OCT04-UPRO": "Uni\u00e3o Progressista"
+      }
+     }
+    }
+   },
+   "representative_market": {
+    "can_close_early": true,
+    "close_time": "2026-10-05T15:55:45Z",
+    "custom_strike": {
+     "Option": "Avante"
+    },
+    "early_close_condition": "This market will close and expire early if the election winner is officially declared or certified.",
+    "event_ticker": "KXBRDEP-26OCT04",
+    "expected_expiration_time": "2027-01-01T05:00:00Z",
+    "expiration_time": "2027-10-04T14:00:00Z",
+    "latest_expiration_time": "2027-10-04T14:00:00Z",
+    "market_type": "binary",
+    "no_sub_title": "Avante",
+    "notional_value_dollars": "1.0000",
+    "occurrence_datetime": "2026-10-05T15:41:45Z",
+    "open_time": "2026-04-23T04:00:00Z",
+    "rules_primary": "If Avante wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.",
+    "rules_secondary": "For parliamentary/legislative elections, the winner is the party, coalition, or alliance winning the most seats in the specified chamber. If two parties have the same number of seats, the one entering government will resolve to Yes and all others to No; if both or neither enter government, the one with the higher share of the vote will resolve to Yes and all others to No.\n\nThis market may resolve early once a consensus of designated media sources has declared a winner. See full rules for details.",
+    "settlement_timer_seconds": 1800,
+    "strike_type": "custom",
+    "subtitle": "::",
+    "ticker": "KXBRDEP-26OCT04-AVAN",
+    "title": "Will Avante win the 2026 Brazilian Chamber of Deputies elections?",
+    "yes_sub_title": "Avante"
+   },
+   "series": {
+    "additional_prohibitions": [
+     "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+     "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract.",
+     "Any candidate currently listed as a market within this event"
+    ],
+    "categories": [
+     "Elections"
+    ],
+    "category": "Elections",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/ELECTION.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/ELECTION.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "one_off",
+    "last_updated_ts": "2026-10-27T16:12:14.377687Z",
+    "settlement_sources": [
+     {
+      "name": "the official electoral commission, constitutional court, or equivalent electoral authority of the relevant jurisdiction",
+      "url": "https://kalshi.com/"
+     }
+    ],
+    "tags": [
+     "International elections",
+     "Brazil"
+    ],
+    "ticker": "KXBRDEP",
+    "title": "Brazil Chamber of Deputies Election: Most Seats Won"
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "contract_reader",
+  "schema": {
+   "$defs": {
+    "And": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "and",
+       "default": "and",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "And",
+     "type": "object"
+    },
+    "At": {
+     "additionalProperties": false,
+     "description": "The condition holds at the instant `at` (spec \u00a74).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "at",
+       "default": "at",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "at"
+     ],
+     "title": "At",
+     "type": "object"
+    },
+    "By": {
+     "additionalProperties": false,
+     "description": "The condition holds at some observation up to the deadline, which is included or not as `closed` says (spec \u00a74\n\"By(expr, t)\"; A05 \u00a75.4 endpoint inclusion). `since` is the earliest observation that counts, with its own\ninclusion, or None where every earlier observation counts: the sources give By no lower bound, so the contract\nstates it (ours).",
+     "properties": {
+      "closed": {
+       "title": "Closed",
+       "type": "boolean"
+      },
+      "deadline": {
+       "format": "date-time",
+       "title": "Deadline",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "by",
+       "default": "by",
+       "title": "Kind",
+       "type": "string"
+      },
+      "since": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      },
+      "since_closed": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since Closed"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "since",
+      "since_closed",
+      "deadline",
+      "closed"
+     ],
+     "title": "By",
+     "type": "object"
+    },
+    "Category": {
+     "additionalProperties": false,
+     "description": "A category or text value, compared as given.",
+     "properties": {
+      "kind": {
+       "const": "text",
+       "default": "text",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Category",
+     "type": "object"
+    },
+    "Cmp": {
+     "additionalProperties": false,
+     "description": "observable op value, at the instant or day its enclosing temporal operator gives (spec \u00a74). The value's type is\nthe observable's (`VALUE_KIND`); a numeric value is compared at the observable's declared precision (A09 \u00a710.3).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "cmp",
+       "default": "cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Number"
+        },
+        {
+         "$ref": "#/$defs/Category"
+        },
+        {
+         "$ref": "#/$defs/Flag"
+        },
+        {
+         "$ref": "#/$defs/OnDay"
+        }
+       ],
+       "title": "Value"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "op",
+      "value"
+     ],
+     "title": "Cmp",
+     "type": "object"
+    },
+    "Computed": {
+     "additionalProperties": false,
+     "description": "A number computed by a registered consequence node from numeric sub-expressions (spec \u00a75: \"The contract IR\ncompiles into the computation layer, so the settlement function and the hedge payoff are the same code\"; I7: code\nowns consequences). The node is pure and registered (spec \u00a74 @node), so the same arithmetic settles, prices and\nfuzzes; over interval inputs its value is the interval of its outputs.",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "inputs": {
+       "additionalProperties": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/CountTrue"
+         },
+         {
+          "$ref": "#/$defs/DurationIn"
+         },
+         {
+          "$ref": "#/$defs/ReadValue"
+         },
+         {
+          "$ref": "#/$defs/ValueAt"
+         },
+         {
+          "$ref": "#/$defs/Computed"
+         }
+        ]
+       },
+       "title": "Inputs",
+       "type": "object"
+      },
+      "kind": {
+       "const": "computed",
+       "default": "computed",
+       "title": "Kind",
+       "type": "string"
+      },
+      "node": {
+       "$ref": "#/$defs/Ref"
+      }
+     },
+     "required": [
+      "id",
+      "node",
+      "inputs"
+     ],
+     "title": "Computed",
+     "type": "object"
+    },
+    "ConflictPolicy": {
+     "additionalProperties": false,
+     "description": "How disagreeing sources are reconciled: a registered procedure and its parameters (A05 \u00a75.4: \"Use a registered\nprocedure ID plus parameters, or an explicit typed policy\"). The two procedures registered so far are ours, the\ntwo readings of spec \u00a74's precedence list that an evaluator can apply deterministically: precedence_first_available,\nthe highest-ranked source in the procedure's precedence that has published settles; require_agreement, the sources\nnamed in `sources` must agree, or the result is disputed. A contract whose rule is neither is not supported exactly\n(A05 \u00a75.5) until its procedure is registered here.",
+     "properties": {
+      "procedure": {
+       "enum": [
+        "precedence_first_available",
+        "require_agreement"
+       ],
+       "title": "Procedure",
+       "type": "string"
+      },
+      "sources": {
+       "default": [],
+       "items": {
+        "type": "string"
+       },
+       "title": "Sources",
+       "type": "array"
+      }
+     },
+     "required": [
+      "procedure"
+     ],
+     "title": "ConflictPolicy",
+     "type": "object"
+    },
+    "ContractIR": {
+     "additionalProperties": false,
+     "description": "A contract in the IR (spec \u00a74). Every observable the trigger or payout references is declared.",
+     "properties": {
+      "examples": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/ScenarioExample"
+       },
+       "title": "Examples",
+       "type": "array"
+      },
+      "exclusions": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/Exclusion"
+       },
+       "title": "Exclusions",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "observables": {
+       "items": {
+        "$ref": "#/$defs/Observable"
+       },
+       "title": "Observables",
+       "type": "array"
+      },
+      "payout": {
+       "$ref": "#/$defs/Payout"
+      },
+      "resolution": {
+       "$ref": "#/$defs/ResolutionProcedure"
+      },
+      "timing": {
+       "$ref": "#/$defs/Timing"
+      },
+      "trigger": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Trigger"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version",
+      "observables",
+      "trigger",
+      "payout",
+      "timing",
+      "resolution"
+     ],
+     "title": "ContractIR",
+     "type": "object"
+    },
+    "CountTrue": {
+     "additionalProperties": false,
+     "description": "The number of calendar days of `days` on which the condition holds, counted in the window's time zone (spec \u00a74).\nIts value over three-valued days is an interval [k, k + u] (A05 \u00a75.3).",
+     "properties": {
+      "days": {
+       "$ref": "#/$defs/TimeWindow"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "count_true",
+       "default": "count_true",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "days"
+     ],
+     "title": "CountTrue",
+     "type": "object"
+    },
+    "DurationIn": {
+     "additionalProperties": false,
+     "description": "The time within the window during which the condition holds, in `unit` (spec \u00a74); an interval over unknowns, as\nCountTrue's is. calendar_day counts calendar days of the window's time zone; elapsed_day counts 24-hour periods, so\na daylight-saving change does not change it (A05 \u00a75.4: \"Define ... day-count conventions\").",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "duration_in",
+       "default": "duration_in",
+       "title": "Kind",
+       "type": "string"
+      },
+      "unit": {
+       "enum": [
+        "calendar_day",
+        "elapsed_day",
+        "hour"
+       ],
+       "title": "Unit",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window",
+      "unit"
+     ],
+     "title": "DurationIn",
+     "type": "object"
+    },
+    "Exclusion": {
+     "additionalProperties": false,
+     "description": "An exclusion clause. One that changes settlement is operative and names the IR or interpretive node that carries\nit; a disclosure note is marked non-operative (A05 \u00a75.4).",
+     "properties": {
+      "ir_node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Ir Node"
+      },
+      "operative": {
+       "title": "Operative",
+       "type": "boolean"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      }
+     },
+     "required": [
+      "text",
+      "operative"
+     ],
+     "title": "Exclusion",
+     "type": "object"
+    },
+    "Flag": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "bool",
+       "default": "bool",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Flag",
+     "type": "object"
+    },
+    "Interpretive": {
+     "additionalProperties": false,
+     "description": "A condition a resolver must judge from text (spec \u00a74): a question template and its bindings, answered by decision\nmodels and mapped to a truth by its answer's status (spec \u00a76.3).",
+     "properties": {
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "interpretive",
+       "default": "interpretive",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings"
+     ],
+     "title": "Interpretive",
+     "type": "object"
+    },
+    "ListingBinding": {
+     "additionalProperties": false,
+     "description": "One per-market listing field of a series and the IR value it fills (ours; spec \u00a79.3's per-market fields). `field`\nis the market record's field, a dotted path into its objects where the value is nested (custom_strike.Option).\n`node` and `slot` name the value it fills: a node's threshold (Cmp, NumCmp), the instant it reads (At, ValueAt), a\nBy's bounds (since, deadline), or a window's ends (Throughout, CountTrue, DurationIn); or, with no node, one of the\ntiming's dates (open, close, expiration, observation_cutoff). The field's value enters as it is, in the slot's type:\na threshold takes the number, text or date its comparison's value is, an instant slot an instant.",
+     "properties": {
+      "field": {
+       "title": "Field",
+       "type": "string"
+      },
+      "node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Node"
+      },
+      "slot": {
+       "enum": [
+        "threshold",
+        "at",
+        "since",
+        "deadline",
+        "window_start",
+        "window_end",
+        "open",
+        "close",
+        "expiration",
+        "observation_cutoff"
+       ],
+       "title": "Slot",
+       "type": "string"
+      }
+     },
+     "required": [
+      "field",
+      "node",
+      "slot"
+     ],
+     "title": "ListingBinding",
+     "type": "object"
+    },
+    "Not": {
+     "additionalProperties": false,
+     "properties": {
+      "arg": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Arg"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "not",
+       "default": "not",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "arg"
+     ],
+     "title": "Not",
+     "type": "object"
+    },
+    "NumCmp": {
+     "additionalProperties": false,
+     "description": "A count or duration compared with a threshold, e.g. CountTrue(...) >= 20 (ours: spec \u00a74 puts CountTrue and\nDurationIn in the Expr union, and a trigger on them, such as spec \u00a72.5's \"how many days ... will station S record at\nleast X inches\", compares their value).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/CountTrue"
+        },
+        {
+         "$ref": "#/$defs/DurationIn"
+        },
+        {
+         "$ref": "#/$defs/ReadValue"
+        },
+        {
+         "$ref": "#/$defs/ValueAt"
+        },
+        {
+         "$ref": "#/$defs/Computed"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "num_cmp",
+       "default": "num_cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "op",
+      "value"
+     ],
+     "title": "NumCmp",
+     "type": "object"
+    },
+    "Number": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "number",
+       "default": "number",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Number",
+     "type": "object"
+    },
+    "Observable": {
+     "additionalProperties": false,
+     "description": "A quantity a contract settles on (spec \u00a74).\n\nrevision_policy: which vintage settles (spec \u00a74). \"final\" is a finite rule only with a declared resolution deadline\nor a fallback (addendum A05 \u00a75.4: \"An unlimited `final` vintage is not a finite settlement rule unless 'final' has a\ndeclared resolution deadline or fallback\"): `final_deadline` is the instant by which the value must be final, and\n`final_fallback` the vintage that settles if no final value is published by the settlement determination. unit and precision: what a numeric value is measured in and the precision at which it is published\n(A05 \u00a75.4 unit conversions; A09 \u00a710.3 thresholds at declared precision).",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "final_deadline": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Deadline"
+      },
+      "final_fallback": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_print",
+          "as_of_expiry"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Fallback"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "precision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Precision"
+      },
+      "revision_policy": {
+       "enum": [
+        "first_print",
+        "as_of_expiry",
+        "final"
+       ],
+       "title": "Revision Policy",
+       "type": "string"
+      },
+      "schedule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Schedule"
+      },
+      "sources": {
+       "items": {
+        "$ref": "#/$defs/Source"
+       },
+       "title": "Sources",
+       "type": "array"
+      },
+      "unit": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Unit"
+      },
+      "value_type": {
+       "enum": [
+        "bool",
+        "number",
+        "date",
+        "category",
+        "text"
+       ],
+       "title": "Value Type",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "description",
+      "value_type",
+      "sources",
+      "revision_policy"
+     ],
+     "title": "Observable",
+     "type": "object"
+    },
+    "OnDay": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "date",
+       "default": "date",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "format": "date",
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "OnDay",
+     "type": "object"
+    },
+    "Or": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "or",
+       "default": "or",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "Or",
+     "type": "object"
+    },
+    "Payout": {
+     "additionalProperties": false,
+     "description": "Per unit (spec \u00a74). currency, and rounding to `rounding_quantum` by `rounding_mode`, are explicit (A05 \u00a75.1,\n\u00a75.4: \"Define ... rounding\"). payment: paid once at settlement, or per\nperiod of `periods`, each period's amount paid after its end (A05 \u00a75.3: \"A count paid once at expiry and a strip paid\nperiodically can have identical terminal amounts and very different liquidity consequences\").",
+     "properties": {
+      "cap": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Cap"
+      },
+      "currency": {
+       "title": "Currency",
+       "type": "string"
+      },
+      "kind": {
+       "enum": [
+        "binary",
+        "per_unit",
+        "capped_linear"
+       ],
+       "title": "Kind",
+       "type": "string"
+      },
+      "payment": {
+       "enum": [
+        "at_settlement",
+        "per_period"
+       ],
+       "title": "Payment",
+       "type": "string"
+      },
+      "periods": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/TimeWindow"
+       },
+       "title": "Periods",
+       "type": "array"
+      },
+      "quantity": {
+       "anyOf": [
+        {
+         "oneOf": [
+          {
+           "$ref": "#/$defs/CountTrue"
+          },
+          {
+           "$ref": "#/$defs/DurationIn"
+          },
+          {
+           "$ref": "#/$defs/ReadValue"
+          },
+          {
+           "$ref": "#/$defs/ValueAt"
+          },
+          {
+           "$ref": "#/$defs/Computed"
+          }
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Quantity"
+      },
+      "rounding_mode": {
+       "enum": [
+        "half_even",
+        "half_up",
+        "down",
+        "up"
+       ],
+       "title": "Rounding Mode",
+       "type": "string"
+      },
+      "rounding_quantum": {
+       "title": "Rounding Quantum",
+       "type": "string"
+      },
+      "unit_value": {
+       "title": "Unit Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind",
+      "unit_value",
+      "currency",
+      "rounding_quantum",
+      "rounding_mode",
+      "payment"
+     ],
+     "title": "Payout",
+     "type": "object"
+    },
+    "ReadValue": {
+     "additionalProperties": false,
+     "description": "A number a resolver reads from text, with its unit: a term an instrument sets (an alternative monthly wage, a\nmodified overtime threshold). Decision models answer it as a closed set of bands (spec \u00a74: a question answered by a\ndistribution over a closed set), so its value is the interval of the band the resolved answer names, and unknown is\nthe whole range (A05 \u00a75.3: a number left open by unknowns is an interval, never a guess). Each band is [low, high),\nthe last [low, high], so a value on a shared endpoint belongs to the band above it (A05 \u00a75.4: \"Define open/closed\ninterval endpoints\"). Ours: spec \u00a79.3's specimen tests a cost computed from such terms, and spec \u00a74's Interpretive\nyields only a truth.",
+     "properties": {
+      "bands": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "type": "array"
+       },
+       "title": "Bands",
+       "type": "array"
+      },
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "read_value",
+       "default": "read_value",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      },
+      "unit": {
+       "title": "Unit",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings",
+      "unit",
+      "bands"
+     ],
+     "title": "ReadValue",
+     "type": "object"
+    },
+    "Ref": {
+     "additionalProperties": false,
+     "description": "A versioned reference to another record or policy (addendum \u00a75.1 VersionedRef).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version"
+     ],
+     "title": "Ref",
+     "type": "object"
+    },
+    "ResolutionProcedure": {
+     "additionalProperties": false,
+     "description": "How the contract resolves (spec \u00a74, amended by A05 \u00a75.2 and \u00a75.4). on_unknown_at_expiry says what an unknown\ntrigger means at settlement without changing the trigger's truth (A05 \u00a75.2). early_expiration: \"when_true\" when the\ncontract expires early once its trigger is true (spec \u00a79.3: \"early_close_condition\"; the Western Grazers terms: \"If\nan event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance\nwith Rule 7.2\"). Its timing is what the contract states: \"first_true\" where the contract itself fixes the instant at\nwhich the trigger is first true on the observations then published; \"per_exchange_rule\" where it defers to a rule\noutside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is\ntrue while the early date stays unresolved, named, until that rule is supplied (A05 \u00a75.2: \"Unsupported procedure\ndetails must be reported, not guessed\"). An extension names its length and what happens if the trigger is still\nunknown after it.",
+     "properties": {
+      "after_extension": {
+       "anyOf": [
+        {
+         "enum": [
+          "no",
+          "yes",
+          "void"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "After Extension"
+      },
+      "conflict_policy": {
+       "$ref": "#/$defs/ConflictPolicy"
+      },
+      "early_expiration": {
+       "enum": [
+        "none",
+        "when_true"
+       ],
+       "title": "Early Expiration",
+       "type": "string"
+      },
+      "early_expiration_at": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_true",
+          "per_exchange_rule"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration At"
+      },
+      "early_expiration_rule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration Rule"
+      },
+      "extension_days": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Extension Days"
+      },
+      "on_unknown_at_expiry": {
+       "enum": [
+        "no",
+        "yes",
+        "extend",
+        "void"
+       ],
+       "title": "On Unknown At Expiry",
+       "type": "string"
+      },
+      "precedence": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Precedence",
+       "type": "array"
+      },
+      "void_transfer": {
+       "$ref": "#/$defs/VoidTransfer"
+      }
+     },
+     "required": [
+      "precedence",
+      "conflict_policy",
+      "on_unknown_at_expiry",
+      "early_expiration",
+      "void_transfer"
+     ],
+     "title": "ResolutionProcedure",
+     "type": "object"
+    },
+    "ScenarioExample": {
+     "additionalProperties": false,
+     "description": "A published example: a scenario that passed fuzzing, with the evaluator's outcome (spec \u00a78.5, I8). `evaluation`\nis the content hash of the ResolutionEvaluation that produced `expected`.",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "evaluation": {
+       "title": "Evaluation",
+       "type": "string"
+      },
+      "expected": {
+       "enum": [
+        "resolved_yes",
+        "resolved_no",
+        "pending",
+        "extended",
+        "void",
+        "disputed"
+       ],
+       "title": "Expected",
+       "type": "string"
+      },
+      "scenario_id": {
+       "title": "Scenario Id",
+       "type": "string"
+      }
+     },
+     "required": [
+      "scenario_id",
+      "description",
+      "expected",
+      "evaluation"
+     ],
+     "title": "ScenarioExample",
+     "type": "object"
+    },
+    "SettlementBinding": {
+     "additionalProperties": false,
+     "description": "What a market record's settlement value reports (ours; spec \u00a79.3: \"settled markets supplying known outcomes\"):\nthe observable whose value the exchange settled on, and the market field (`at_field`) giving the instant that value\nis for.",
+     "properties": {
+      "at_field": {
+       "title": "At Field",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "observable",
+      "at_field"
+     ],
+     "title": "SettlementBinding",
+     "type": "object"
+    },
+    "Source": {
+     "additionalProperties": false,
+     "description": "A source of an observable's values, ranked by authority (spec \u00a74: rank 1 is highest).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "rank": {
+       "title": "Rank",
+       "type": "integer"
+      },
+      "role": {
+       "title": "Role",
+       "type": "string"
+      },
+      "url": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Url"
+      }
+     },
+     "required": [
+      "id",
+      "name",
+      "rank",
+      "role"
+     ],
+     "title": "Source",
+     "type": "object"
+    },
+    "Throughout": {
+     "additionalProperties": false,
+     "description": "The condition holds at every observation in the window (spec \u00a74).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "throughout",
+       "default": "throughout",
+       "title": "Kind",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window"
+     ],
+     "title": "Throughout",
+     "type": "object"
+    },
+    "TimeWindow": {
+     "additionalProperties": false,
+     "description": "A window of time (spec \u00a74), with each endpoint's inclusion stated (addendum A05 \u00a75.4: \"Define open/closed interval\nendpoints, timezone\"). `tz` is the IANA zone in which calendar days of the window are counted.",
+     "properties": {
+      "end": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      },
+      "end_closed": {
+       "title": "End Closed",
+       "type": "boolean"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      },
+      "start_closed": {
+       "title": "Start Closed",
+       "type": "boolean"
+      },
+      "tz": {
+       "default": "UTC",
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end",
+      "start_closed",
+      "end_closed"
+     ],
+     "title": "TimeWindow",
+     "type": "object"
+    },
+    "Timing": {
+     "additionalProperties": false,
+     "description": "The contract's dates (spec \u00a74), with the cutoff for observations and the payment lag distinguished from the\nsettlement determination (A05 \u00a75.3: event, publication, observation cutoff, settlement determination and payment\ndates are different dates). Lags count calendar days or business days, in the time zone `tz` (A05 \u00a75.4: \"Define ...\ntimezone, day-count conventions\"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose\none registered calendar is the United States federal holidays of 5 U.S.C. \u00a76103 (ours: the calendar the contracts\nwe build settle against; another is registered here before a contract can use it, A05 \u00a75.4 \"Mechanical policies\nmust be executable\").",
+     "properties": {
+      "close": {
+       "format": "date-time",
+       "title": "Close",
+       "type": "string"
+      },
+      "expiration": {
+       "format": "date-time",
+       "title": "Expiration",
+       "type": "string"
+      },
+      "holiday_calendar": {
+       "anyOf": [
+        {
+         "const": "us_federal",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Holiday Calendar"
+      },
+      "lag_days": {
+       "enum": [
+        "calendar",
+        "business"
+       ],
+       "title": "Lag Days",
+       "type": "string"
+      },
+      "observation_cutoff": {
+       "format": "date-time",
+       "title": "Observation Cutoff",
+       "type": "string"
+      },
+      "open": {
+       "format": "date-time",
+       "title": "Open",
+       "type": "string"
+      },
+      "payment_lag_days": {
+       "title": "Payment Lag Days",
+       "type": "integer"
+      },
+      "settlement_lag_days": {
+       "title": "Settlement Lag Days",
+       "type": "integer"
+      },
+      "tz": {
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "open",
+      "close",
+      "expiration",
+      "observation_cutoff",
+      "settlement_lag_days",
+      "payment_lag_days",
+      "lag_days",
+      "holiday_calendar",
+      "tz"
+     ],
+     "title": "Timing",
+     "type": "object"
+    },
+    "ValueAt": {
+     "additionalProperties": false,
+     "description": "A numeric observable's value at an instant, selected by the contract's revision and conflict policies (spec \u00a74\nObservable; ours: a computed test reads published rates, such as a minimum wage in effect on a day).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "value_at",
+       "default": "value_at",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "at"
+     ],
+     "title": "ValueAt",
+     "type": "object"
+    },
+    "VoidTransfer": {
+     "additionalProperties": false,
+     "description": "What a void returns per unit (A05 \u00a75.2: \"A void result does not imply a particular refund\").",
+     "properties": {
+      "amount": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Amount"
+      },
+      "returns": {
+       "enum": [
+        "premium",
+        "nothing",
+        "fixed_amount"
+       ],
+       "title": "Returns",
+       "type": "string"
+      }
+     },
+     "required": [
+      "returns"
+     ],
+     "title": "VoidTransfer",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "contract_reader: a filed series read into the IR as an instrument family (core.ContractFamily's fields that are\nthe reader's): the support classification with its assumptions and unsupported terms (core.HarvestedContract), the\nrepresentative market's IR (its id and version are code's), the bindings that say which IR value each per-market\nlisting field fills (core.ListingBinding), and what a market record's settlement value reports\n(core.SettlementBinding). Validated as the core family it drafts, so an answer the definition refuses is refused\nhere, with the definition's reasons.",
+   "properties": {
+    "assumptions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Assumptions",
+     "type": "array"
+    },
+    "bindings": {
+     "items": {
+      "$ref": "#/$defs/ListingBinding"
+     },
+     "title": "Bindings",
+     "type": "array"
+    },
+    "ir": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ContractIR"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "settlement": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/SettlementBinding"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "support": {
+     "enum": [
+      "supported_exact",
+      "supported_with_explicit_assumptions",
+      "unsupported"
+     ],
+     "title": "Support",
+     "type": "string"
+    },
+    "unsupported_terms": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Unsupported Terms",
+     "type": "array"
+    }
+   },
+   "required": [
+    "support",
+    "assumptions",
+    "unsupported_terms",
+    "ir",
+    "bindings",
+    "settlement"
+   ],
+   "title": "HarvestDraft",
+   "type": "object"
+  },
+  "system": "You read a listed event contract series' filed terms into Requisite's contract IR, a formal representation that one evaluator settles in three-valued logic. A series is one set of filed terms listed as many markets that differ only in their listing fields (a strike, their times, the event). You read it as an instrument family: one representative market's IR, and bindings that say which IR value each per-market listing field fills, from which code gives every market its IR. Code validates and tests what you propose; you only propose.\n\nYou are given:\n- series: the exchange's series record.\n- filings: the filed documents' text as extracted from their PDFs (the contract terms, and the product certification where there is one), with anything that could not be read.\n- representative_market: the listing fields of the market whose IR you write.\n- markets: how many markets the series has, their tickers, and each listing field whose value varies across them, with its number of distinct values and its values at a few markets.\n- listing_fields: the market fields a binding may read.\nYou are not shown how any market settled, nor any price. Your IRs are checked afterwards against how the settled markets settled.\n\nProduce:\n- support: \"supported_exact\" when the IR carries every operative term as filed; \"supported_with_explicit_assumptions\" when it carries them only under assumptions you list; \"unsupported\" when a term that decides settlement cannot be expressed, which you name in unsupported_terms. Never simplify a term silently: a term you could not carry exactly is an assumption or an unsupported term, stated in the filing's own words.\n- ir: the representative market's contract in the IR, or null when unsupported. Code sets its id and version.\n- bindings: for each listing field that varies across the markets and that the IR depends on, the IR value it fills: field, node, slot. A slot is a node's \"threshold\" (Cmp, NumCmp), the instant a node reads (\"at\": At, ValueAt), a By's \"since\" or \"deadline\", a window's \"window_start\" or \"window_end\" (Throughout, CountTrue, DurationIn), or, with node null, one of the timing's dates (\"open\", \"close\", \"expiration\", \"observation_cutoff\"). field is one of listing_fields, a dotted path where the value is nested (custom_strike.<key>). The field's value fills the slot exactly as listed, in the slot's type: a number fills a number threshold, a text a text threshold, a timestamp an instant. Write the representative IR with the representative market's own values in every bound slot; code checks that the bindings reproduce it from that market's record. No bindings when unsupported.\n- settlement: what a market's settlement value reports. The exchange's record of a settled market states \"the value that was considered for the settlement\"; name the IR observable whose value that is, and the listing field giving the instant that value is for, the instant the IR reads it at. null where the settlement value is no observable of the IR (for instance, the outcome of a criterion a resolver judges from text), or when unsupported.\n\nHow to read the terms into the IR:\n- Observables are the quantities the terms settle on (a published value, a status, a date), each with the sources the terms name, ranked as the terms rank them, its revision policy as the terms state it, and for a number its unit and published precision.\n- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs.\n- The comparison, and whether its bound is included, come from the filed terms and the market's rules text, never from a field's name; a strike field supplies only the value.\n- An observable's values are what its source publishes, in the form the source publishes them: a team or a candidate by the name the organizer reports, an outcome as the source words it, never an identifier the exchange uses internally. Bind a threshold to the listing field that states the value in that form, and where none does, say so as an assumption.\n- Every node has an id, unique in the contract, short and descriptive.\n- Timing, the resolution procedure (source precedence, conflict rule, what an unknown at expiry means, early expiration and its timing, extensions, voids) and the payout follow the terms exactly. Where the terms defer to an exchange rule outside the filing, name the rule (early_expiration_rule) rather than inventing its content. Where a date depends on events (an expiration that is the sooner of when data is available and a latest date), state the date the IR takes as an assumption, quoting the term.\n- Exclusions that change settlement are operative and name the node that carries them; disclosure notes are not.\n\nRead the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR: list it as an assumption with both readings.\n\nWhere carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as\nan assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no\nfaithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:\n- a condition quantified over documents (\"any instrument that ...\", \"a qualifying action\"), where the IR can only\n  read one named instrument;\n- a reading whose answer is a single value other than the top of its range (bands are [low, high));\n- a date read from text and compared;\n- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;\n- an unknown-at-expiry outcome left to the exchange's discretion;\n- a settlement or payment date stated as a deadline (\"no later than\");\n- a known payment whose date is left to an exchange rule;\n- a missing-data rule for a payout quantity;\n- what a binary or capped payout pays per period;\n- an early expiration when the outcome is decided either way (the IR expires early only when its trigger is true).\nWhere the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the\nneutral value and list it as an assumption that the terms state no such rule.\n"
+ },
+ "response": {
+  "duration_ms": 48941,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 29023,
+    "cacheReadInputTokens": 14602,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.3499124,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 5740,
+    "provider": "firstParty",
+    "thinkingTokens": 2034,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "assumptions": [
+    "Tie rule (ambiguous, both readings kept): The contract terms say \"If two or more parties have the same number of seats, the party with the higher share of the total vote will resolve to Yes and all others to No, unless the Exchange specifies at the time of listing that such a tie will instead resolve in favor of the party entering government\". The Ties provision adds \"notwithstanding clause (1) and without regard to any subsequent government formation process, unless the Exchange specifies otherwise at the time of listing\". The product certification's Appendix A and this market's rules_secondary instead say \"If two parties have the same number of seats, the one entering government will resolve to Yes and all others to No; if both or neither enter government, the one with the higher share of the vote will resolve to Yes\". Since rules_secondary was published at listing, it may count as the Exchange's listing-time specification. The IR does not settle the conflict. It treats the tie-break as part of the observable 'most_seats_party': the party the Source Agencies report as winning the most seats, with any tie broken under whichever reading governs. The comparison and the tie-break are not modelled as separate nodes.",
+    "Party or federation (ambiguous): the terms say the winner is \"the party, coalition, or alliance winning the most seats in the specified chamber\", counting only coalitions \"formally registered with electoral authorities before the nomination deadline\". The series lists both a federation (Uni\u00e3o Progressista) and its member party (PP) as separate markets. So it is unclear whether seats are counted per party or per registered federation. The IR compares the reported winner's name with the market's custom_strike.Option and does not decide this.",
+    "Names: we assume the Source Agencies report the winning party or federation under the name in custom_strike.Option (e.g. 'Avante', 'Uni\u00e3o Progressista'). TSE publishes names in its own style (e.g. 'AVANTE'). No listing field gives the TSE's exact form, so names are matched with case and form normalised.",
+    "Seat basis: \"based on final official results\"; for the Chamber of Deputies (the lower house), \"Overhang seats, leveling seats, and appointed seats count only if specified\" and \"Only seats/positions actually contested in the specified election count\". These terms are carried in the observable's description, not as separate nodes.",
+    "Early expiration: \"If an event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance with Rule 7.2\". The IR carries this as when_true, per_exchange_rule 'Kalshi Rulebook Rule 7.2', without stating the rule's content. The market's early_close_condition (\"will close and expire early if the election winner is officially declared or certified\") also expires the market early when a different party wins, i.e. when the outcome is No. The IR cannot express that: it expires early only when its trigger is true.",
+    "Accelerated resolution: \"this Contract may be resolved on an accelerated basis if at least two (2) of the six (6) Designated International Media Sources [Reuters, AP, AFP, BBC News, Bloomberg, NYT] have published an unambiguous statement that a candidate, party, or option has won\". This is optional for the Exchange (\"may\") and works as an alternative evidence threshold. The IR does not carry it; it settles on the ranked Source Agencies.",
+    "Sources and conflicts: the terms rank the Source Agencies \"in hierarchical order\" (primary, secondary, tertiary). The IR uses precedence_first_available. The terms also say \"In cases of competing claims ... the individual recognized by the hierarchical majority of Source Agencies prevails\", a majority rule that is not a registered procedure. Within each tier, the IR treats the named bodies as one source.",
+    "Revisions: \"Revisions to the Underlying made after Expiration will not be accounted for\" is carried as revision_policy as_of_expiry. The trigger reads the observable at the Expiration time (\"value of the Underlying as documented by the Source Agency on the Expiration Date at the Expiration time\"). The IR takes the latest Expiration Date, 2027-10-04 10:00 ET (\"one year after the scheduled date of <election>\"), from the market's expiration_time.",
+    "Unknown at expiry: \"If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to determine payouts pursuant to Rule 6.3(b)\". This leaves the outcome to the Exchange's discretion, which the IR cannot express. on_unknown_at_expiry is set to 'no' as a neutral value. The terms give no void path, so void_transfer is 'nothing' as a neutral value.",
+    "Postponed and annulled elections: \"Contract remains open until the rescheduled election or two years from the original date, whichever comes first\" and \"the Contract remains open until re-run election or expiration\". The two-year term conflicts with the one-year latest Expiration Date. The IR keeps the one-year expiration from the market record and does not extend it.",
+    "Settlement date: \"no later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1\". The IR has no 'no later than' construct, so this is carried as a fixed lag: settlement_lag_days 1, in calendar days. The terms state no payment lag, so payment_lag_days is 0.",
+    "Close: \"The Last Trading Date of the Contract will be the same as the Expiration Date\", so timing.close is set equal to expiration. The record's close_time (2026-10-05T15:55:45Z) shows the market already closed early.",
+    "Rounding: the terms state no rounding rule for the $1.00 Settlement Value, so the IR uses a quantum of 0.01 with half_even as a neutral value."
+   ],
+   "bindings": [
+    {
+     "field": "custom_strike.Option",
+     "node": "winner_is_option",
+     "slot": "threshold"
+    },
+    {
+     "field": "open_time",
+     "node": null,
+     "slot": "open"
+    }
+   ],
+   "ir": {
+    "exclusions": [
+     {
+      "ir_node": "winner_is_option",
+      "operative": true,
+      "text": "If two or more parties have the same number of seats, the party with the higher share of the total vote will resolve to Yes and all others to No, unless the Exchange specifies at the time of listing that such a tie will instead resolve in favor of the party entering government (rules_secondary: the one entering government resolves Yes; if both or neither, the higher vote share)."
+     },
+     {
+      "ir_node": "winner_is_option",
+      "operative": true,
+      "text": "Overhang seats, leveling seats, and appointed seats count only if specified. Partial elections: only seats/positions actually contested in the specified election count."
+     },
+     {
+      "ir_node": "winner_is_option",
+      "operative": true,
+      "text": "For coalitions/alliances, only those formally registered with electoral authorities before the nomination deadline count, not post-election governing arrangements."
+     },
+     {
+      "operative": false,
+      "text": "Party wins most parliamentary seats even if excluded from government (Yes); party forms government but has fewer seats than another party (No)."
+     },
+     {
+      "operative": false,
+      "text": "Extra-constitutional interruptions: Military coups, revolutions, or foreign interventions do not affect resolution if the electoral process was completed and results announced by Source Agencies."
+     },
+     {
+      "ir_node": "at_expiry",
+      "operative": true,
+      "text": "Revisions to the Underlying made after Expiration will not be accounted for in determining the Expiration Value."
+     }
+    ],
+    "id": "KXBRDEP-26OCT04-AVAN",
+    "observables": [
+     {
+      "description": "The party, coalition, or alliance (formally registered with electoral authorities before the nomination deadline) winning the most seats in the Brazilian Chamber of Deputies in the 2026 election (scheduled 2026-10-04), based on final official results as reported by the Source Agencies, counting only seats actually contested, with overhang/leveling/appointed seats counted only if specified, and with ties broken per the contract's tie rule.",
+      "id": "most_seats_party",
+      "revision_policy": "as_of_expiry",
+      "sources": [
+       {
+        "id": "tse",
+        "name": "Tribunal Superior Eleitoral (official electoral commission, constitutional court, or equivalent electoral authority of Brazil)",
+        "rank": 1,
+        "role": "primary Source Agency",
+        "url": "https://www.tse.jus.br/"
+       },
+       {
+        "id": "intl_observers",
+        "name": "UN Electoral Assistance Division, OAS, African Union, EU Election Observation Missions, Commonwealth Secretariat, Carter Center, International IDEA, IFES",
+        "rank": 2,
+        "role": "secondary Source Agency"
+       },
+       {
+        "id": "media",
+        "name": "Major newspapers of record in Brazil in order of circulation, Reuters, AP, Bloomberg News, AFP, NYT, FT, WSJ, BBC, France24, DW, NHK World, Al Jazeera English, Washington Post, Axios, Politico, Semafor, The Information, ABC, CBS, CNN, Fox News, MSNBC, NBC",
+        "rank": 3,
+        "role": "tertiary Source Agency"
+       }
+      ],
+      "value_type": "category"
+     }
+    ],
+    "payout": {
+     "currency": "USD",
+     "kind": "binary",
+     "payment": "at_settlement",
+     "rounding_mode": "half_even",
+     "rounding_quantum": "0.01",
+     "unit_value": "1.00"
+    },
+    "resolution": {
+     "conflict_policy": {
+      "procedure": "precedence_first_available",
+      "sources": []
+     },
+     "early_expiration": "when_true",
+     "early_expiration_at": "per_exchange_rule",
+     "early_expiration_rule": "Kalshi Rulebook Rule 7.2",
+     "on_unknown_at_expiry": "no",
+     "precedence": [
+      "tse",
+      "intl_observers",
+      "media"
+     ],
+     "void_transfer": {
+      "returns": "nothing"
+     }
+    },
+    "timing": {
+     "close": "2027-10-04T14:00:00Z",
+     "expiration": "2027-10-04T14:00:00Z",
+     "holiday_calendar": null,
+     "lag_days": "calendar",
+     "observation_cutoff": "2027-10-04T14:00:00Z",
+     "open": "2026-04-23T04:00:00Z",
+     "payment_lag_days": 0,
+     "settlement_lag_days": 1,
+     "tz": "America/New_York"
+    },
+    "trigger": {
+     "at": "2027-10-04T14:00:00Z",
+     "expr": {
+      "id": "winner_is_option",
+      "kind": "cmp",
+      "observable": "most_seats_party",
+      "op": "==",
+      "value": {
+       "kind": "text",
+       "value": "Avante"
+      }
+     },
+     "id": "at_expiry",
+     "kind": "at"
+    },
+    "version": 1
+   },
+   "settlement": {
+    "at_field": "expiration_time",
+    "observable": "most_seats_party"
+   },
+   "support": "supported_with_explicit_assumptions",
+   "unsupported_terms": []
+  },
+  "total_cost_usd": 0.3499124,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 29023,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 29023,
+   "cache_read_input_tokens": 14602,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 29023,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 29023,
+     "cache_read_input_tokens": 14602,
+     "input_tokens": 2,
+     "output_tokens": 5740,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 5740,
+   "output_tokens_details": {
+    "thinking_tokens": 2034
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}
