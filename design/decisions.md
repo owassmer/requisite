@@ -158,6 +158,13 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   market at that instant its outcome, and markets whose outcomes are all alike stay not checkable, since then no value
   is excluded. The prompt and the check are general; every series is re-read under them, the passing ones too, and the
   new readings stand whatever they show. The earlier proposals stay as the record.
+- The verifier (scripts/verify; Owen approved its skill on November 1, on the condition that it gives the verifier
+  enough of the analyst's context that a finding is never the verifier's own flaw). It checks each outcome from a clean
+  copy of the committed code (git archive HEAD, no case stores), replaying recorded responses only, so every
+  verification is also the cold start. It reaches the product only through tools/verify/bridge.py: the `requisite` CLI
+  and the files the product writes under var/, never the code, tests or cassettes. Its skill tells it what the analyst's
+  work is for, to learn each step from the product's own help and messages, and to rule out its own use before it
+  calls anything BROKEN.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
