@@ -98,7 +98,10 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   are filed PDFs; found November 1 through the read-only Kalshi API). The others: among Kalshi series with filed contract
   terms (contract_terms_url) and at least one market that has settled, as of a pinned instant, one series per strike
   type present among those settled markets, the one whose ticker has the smallest sha256("requisite-F1|" + ticker);
-  where more than four strike types are present, the four with the most settled markets. The hash makes the choice
+  where more than four strike types are present, the four with the most settled markets. A series's strike types are
+  those of its markets settled by the instant (strike_type is a market field); a series is eligible under each. The
+  named series is apart from the draw: it counts toward neither the cap nor any type, and the draw passes over it to
+  the next in hash order. The hash makes the choice
   independent of anyone's view of which contracts are interesting; spec §12 asks for 2–5 contracts and spec §9.3 for
   every strike type over the harvest as a whole. The IR grammar comes from spec §8.1 and the definition, never fitted to
   a drawn contract: a filed construct the IR cannot express is a finding about the grammar, fixed there when the
