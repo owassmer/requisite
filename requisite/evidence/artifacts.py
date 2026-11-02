@@ -6,9 +6,9 @@ retrieved twice are the same artifact, recorded once with its first retrieval, a
 to the one it replaces (coordinator's decision for task 002-1). What derives from an artifact's text compares by value,
 so an unchanged comment changes nothing downstream but its lineage (addendum A11 §11.2).
 
-published_at is what the source states (a comment's postedDate), with its basis named; observed_at is the retrieval, as
-the cassette recorded it, so a replay commits the same artifact; availability is "retrieved": only the retrieval
-evidences the text (addendum A11 §11.3).
+published_at is what the source states (a comment's postedDate, a market's settlement time), with its basis named;
+observed_at is the retrieval, as the cassette recorded it, so a replay commits the same artifact; availability is
+"retrieved": only the retrieval evidences the text (addendum A11 §11.3). The source is the one the response came from.
 """
 
 from __future__ import annotations
@@ -17,11 +17,27 @@ from datetime import datetime
 
 from requisite.core import Artifact
 from requisite.core.evidence import artifact_id
-from requisite.evidence.regulations_gov import Fetched
+from requisite.evidence.fetched import Fetched
 from requisite.store import Store
 
-SOURCE = "regulations.gov"
 LISTING_BASIS = "none stated: a listing response has no publication date of its own; its retrieval evidences it"
+
+
+def describe(fetched: Fetched, *, published_at: datetime | None, basis: str, predecessor: str | None = None) -> Artifact:
+    """The artifact these bytes are, as a record (not committed): what `commit` commits, and what a reading that has not
+    committed its responses (a draw printed, not kept) judges with core.observable_at."""
+    return Artifact(
+        id=artifact_id(fetched.content),
+        locator=fetched.locator,
+        source=fetched.source,
+        media_type=fetched.media_type,
+        size=len(fetched.content),
+        published_at=published_at,
+        published_at_basis=basis,
+        observed_at=fetched.retrieved_at,
+        availability="retrieved",
+        predecessor=predecessor,
+    )
 
 
 def commit(store: Store, fetched: Fetched, *, published_at: datetime | None, basis: str) -> Artifact:
@@ -32,25 +48,13 @@ def commit(store: Store, fetched: Fetched, *, published_at: datetime | None, bas
     if known is not None:
         return known
     before = [a for a in store.artifacts_at(fetched.locator) if a.id != aid]
-    artifact = Artifact(
-        id=aid,
-        locator=fetched.locator,
-        source=SOURCE,
-        media_type=fetched.media_type,
-        size=len(fetched.content),
-        published_at=published_at,
-        published_at_basis=basis,
-        observed_at=fetched.retrieved_at,
-        availability="retrieved",
-        predecessor=before[-1].id if before else None,
-    )
+    artifact = describe(fetched, published_at=published_at, basis=basis, predecessor=before[-1].id if before else None)
     store.commit_artifact(artifact, fetched.content)
     return artifact
 
 
-def listed(listing_page: Artifact, posted: datetime) -> Artifact:
-    """One entry of a listing as evidence: the listing page's retrieval, with the entry's own postedDate as its
-    publication, so whether the entry was posted by an instant is decided by core.observable_at like any artifact's."""
-    return Artifact.model_validate(
-        {**listing_page.model_dump(), "published_at": posted, "published_at_basis": "the entry's postedDate in the listing"}
-    )
+def listed(listing_page: Artifact, posted: datetime, basis: str) -> Artifact:
+    """One entry of a listing as evidence: the listing page's retrieval, with the entry's own date (a comment's
+    postedDate, a market's settlement time) as its publication, so whether the entry was public by an instant is decided
+    by core.observable_at like any artifact's."""
+    return Artifact.model_validate({**listing_page.model_dump(), "published_at": posted, "published_at_basis": basis})

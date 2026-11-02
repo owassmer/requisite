@@ -26,10 +26,6 @@ API's documentation gives for large result sets, dropping the entries the seam r
 
 from __future__ import annotations
 
-import base64
-import json
-import math
-import sys
 import threading
 import time
 from collections import deque
@@ -44,12 +40,12 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from requisite import cassettes
+from requisite.evidence.fetched import USER_AGENT, Fetched, fetched, free_budget, kept
 from requisite.secrets import secret
 
 PROVIDER = "regulations_gov"
+SOURCE = "regulations.gov"
 API = "https://api.regulations.gov/v4/"
-# decisions, "Public sources are reached through their official APIs": the conventional self-identifying crawler form.
-USER_AGENT = "Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)"
 PAGE_SIZE = 250  # the API's largest page (OpenAPI: page[size] "between, and including, 5 and 250")
 MAX_PAGES = 20  # the API's last page of a query (OpenAPI: page[number] "between, and including, 1 and 20")
 EASTERN = ZoneInfo("America/New_York")  # the API reads a lastModifiedDate filter in Eastern time (its documentation)
@@ -67,21 +63,6 @@ KEPT_HEADERS = ("content-type", "content-length", "last-modified", "etag", "x-ra
 class RegulationsGovError(RuntimeError):
     """A request the API (or its file host) did not answer after its retries, or answered with an error that is ours to
     look at (a malformed request, a refused key). Nothing is skipped: the run stops here."""
-
-
-@dataclass(frozen=True)
-class Fetched:
-    """One response as the source returned it: its locator (the URL without the key), status, media type, bytes, and
-    when it was retrieved, as its cassette recorded it (so a replay reproduces the same artifact)."""
-
-    locator: str
-    status: int
-    media_type: str
-    content: bytes
-    retrieved_at: datetime
-
-    def json(self) -> Any:
-        return json.loads(self.content)
 
 
 @dataclass(frozen=True)
@@ -222,33 +203,8 @@ def _backoff(attempt: int) -> float:
     return float(min(2**attempt, 60))
 
 
-def _kept(response: httpx.Response) -> dict[str, Any]:
-    """A response as a cassette keeps it: status, the headers that describe it, and its bytes exactly."""
-    content = response.content
-    try:
-        body: dict[str, Any] = {"text": content.decode("utf-8")}
-    except UnicodeDecodeError:
-        body = {"base64": base64.b64encode(content).decode("ascii")}
-    headers = {k: response.headers[k] for k in KEPT_HEADERS if k in response.headers}
-    return {"status": response.status_code, "headers": headers, **body}
-
-
 def _fetched(where: str, recorded: cassettes.Recorded) -> Fetched:
-    kept = recorded.response
-    content = kept["text"].encode("utf-8") if "text" in kept else base64.b64decode(kept["base64"])
-    return Fetched(
-        locator=where,
-        status=int(kept["status"]),
-        media_type=str(kept["headers"].get("content-type", "application/octet-stream")),
-        content=content,
-        retrieved_at=datetime.fromisoformat(recorded.recorded_at),
-    )
-
-
-def free_budget() -> cassettes.Budget:
-    """The budget of a run's regulations.gov requests and local extractions: they cost nothing, so no dollar cap can bind
-    them, and each is still logged as a call (spec §6.6); the API's own limit is the Pacer's."""
-    return cassettes.Budget(run_usd=0.0, run_calls=sys.maxsize, day_usd=math.inf)
+    return fetched(SOURCE, where, recorded)
 
 
 @dataclass
@@ -293,7 +249,7 @@ class RegulationsGov:
                 self.pacer.settle(_remaining(response))
             status = response.status_code
             if status == 200 or status in keep:
-                return _kept(response)
+                return kept(response, KEPT_HEADERS)
             if status == 429:
                 now = self.pacer.clock()
                 first_refusal = now if first_refusal is None else first_refusal

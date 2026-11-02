@@ -103,6 +103,43 @@ def _evidence_read(args: argparse.Namespace) -> int:
     return 0
 
 
+def _instant(value: str) -> datetime:
+    """An instant given on the command line: ISO 8601 with its zone (spec §14: explicit time zones)."""
+    at = datetime.fromisoformat(value)
+    if at.utcoffset() is None:
+        raise argparse.ArgumentTypeError(f"{value!r} names no time zone; give the instant with its offset or Z")
+    return at
+
+
+def _f1_draw(args: argparse.Namespace) -> int:
+    from requisite.market import f1
+    from requisite.market.kalshi import Kalshi
+
+    client = Kalshi(snapshot=args.as_of)
+    try:
+        print(f1.render(f1.draw(client, args.as_of)))
+    finally:
+        client.close()
+    return 0
+
+
+def _f1_retrieve(args: argparse.Namespace) -> int:
+    from requisite.market import f1
+    from requisite.market.kalshi import Kalshi
+
+    store = _store(args)
+    client = Kalshi(snapshot=args.as_of)
+    try:
+        d = f1.draw(client, args.as_of)
+        harvest = f1.retrieve(client, store, d)
+    finally:
+        client.close()
+    print(f1.render(d))
+    print()
+    print(f1.render_harvest(harvest, store))
+    return 0
+
+
 def _approve(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
@@ -156,6 +193,15 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--sample", required=True, help="comment ids of this case's frame: a JSON array, or one per line")
     e.add_argument("--workers", type=int, default=8, help="requests in flight at once (default 8)")
     e.set_defaults(run=_evidence_read)
+    mk = sub.add_parser("market", help="the market lens, read-only (spec §10): Kalshi's filed record, F1's contracts")
+    msub = mk.add_subparsers(dest="step", required=True)
+    m = msub.add_parser("f1-draw", help="draw F1's filed contracts at an instant and print the rule's evidence")
+    m.add_argument("--as-of", required=True, type=_instant, help="the instant the draw is pinned at, with its zone")
+    m.set_defaults(run=_f1_draw)
+    m = msub.add_parser("f1-retrieve", help="draw, then commit the drawn series' filings, rules and settled outcomes")
+    case_args(m)
+    m.add_argument("--as-of", required=True, type=_instant, help="the instant the draw is pinned at, with its zone")
+    m.set_defaults(run=_f1_retrieve)
     a = sub.add_parser("approve", help="a human decides at a gate (G1-G4) on one proposal, as it stands")
     case_args(a)
     a.add_argument("proposal")

@@ -49,6 +49,7 @@ from requisite.evidence.regulations_gov import Entry, Listing, RegulationsGov, i
 from requisite.store import Store
 
 WORKERS = 8
+POSTED = "the entry's postedDate in the listing"
 
 
 @dataclass(frozen=True)
@@ -105,7 +106,7 @@ class _Evidence:
         """The entries of a listing posted by as_of, decided by core.observable_at (spec I3)."""
         pages = self.pages(listing)
         return [e for e in listing.entries
-                if observable_at(listed(pages[e.page], instant(str(e.attributes["postedDate"]))), as_of, evaluated, mode)]  # fmt: skip
+                if observable_at(listed(pages[e.page], instant(str(e.attributes["postedDate"])), POSTED), as_of, evaluated, mode)]  # fmt: skip
 
 
 def _when(value: Any) -> datetime | None:

@@ -25,8 +25,8 @@ from urllib.parse import urlsplit
 from requisite.core import FrameItem, Item
 from requisite.core.evidence import artifact_id
 from requisite.evidence import extract
-from requisite.evidence.artifacts import SOURCE, commit
-from requisite.evidence.regulations_gov import Fetched, RegulationsGov, instant
+from requisite.evidence.artifacts import commit
+from requisite.evidence.regulations_gov import SOURCE, Fetched, RegulationsGov, instant
 from requisite.store import Store
 
 WORKERS = 8
