@@ -213,6 +213,12 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     stated annual cost impact in one currency (larger first; none stated last), then item id. Reason: a business that
     states what the rule would cost it and asks for certainty is the one for whom protection is both sizable and
     wanted, which is what construction needs; the order is fixed before any lead is seen.
+- The static dossier (007-1, accepted by the coordinator, November 2): it renders from a case's store alone, in key
+  order, never commit order. It leaves out the fields a build fills from its own clock (AgentRun.at,
+  SyntheticArtifact.created_at, DerivationReceipt.computed_at) until they are fixed at their source, so identical stores
+  render identical bytes. It copies every text it links and shows other artifacts by metadata. Every link stays inside
+  the dossier, with source URLs shown as text. Thresholds are shown as the rule they are, with the spec section and the
+  product constant that holds them. The review queue's gate per kind is pinned by a test to core.REQUIRED_GATES.
 - Public sources are reached through their official APIs and the files those APIs link to, identified honestly (spec
   §14). Requisite's User-Agent is `Mozilla/5.0 (compatible; RequisiteResearch/1.0; +https://github.com/owassmer/requisite)`,
   the conventional self-identifying crawler form: regulations.gov's file CDN refuses agents without the Mozilla/5.0
