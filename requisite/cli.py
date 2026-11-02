@@ -79,8 +79,9 @@ def _wide_sample(args: argparse.Namespace) -> int:
 
 def _wide_read(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
+    from requisite.evidence.mirrulations import Mirrulations
 
-    items = wide.read_sample(_store(args), workers=args.workers)
+    items = wide.read_sample(_store(args), workers=args.workers, mirror=Mirrulations)
     for item in items:
         _print_item(item)
     print(f"{len(items)} items read")

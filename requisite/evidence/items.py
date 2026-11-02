@@ -27,11 +27,18 @@ from requisite.core import FrameItem, Item, ItemPart
 from requisite.core.evidence import artifact_id
 from requisite.evidence import extract
 from requisite.evidence.artifacts import commit
+from requisite.evidence.mirrulations import Mirrulations
 from requisite.evidence.regulations_gov import SOURCE, Fetched, RegulationsGov, instant
 from requisite.store import Store
 
 WORKERS = 8
 RECORD_BASIS = "the comment's postedDate (regulations.gov)"
+MIRROR_BASIS = "the comment's postedDate, as its record states it (mirrored from regulations.gov)"
+# What a copy of a comment's record must carry, equal to the frame's official listing entry, to be taken as the current
+# record (with every other field the two share): each record field and the listing field it answers to. A record's
+# modifyDate is its listing's lastModifiedDate (checked November 2 on the fixture's three comments and six of November 1,
+# 2026); its docket is the frame entry's.
+CURRENT = {"postedDate": "postedDate", "withdrawn": "withdrawn", "modifyDate": "lastModifiedDate"}
 FILE_BASIS = "the postedDate of the comment it is filed with (regulations.gov)"
 GONE_BASIS = "none stated: the source's answer that it no longer serves the record"
 
@@ -119,9 +126,36 @@ def _file(client: RegulationsGov, once: _Once, label: str, attributes: Mapping[s
     return _File(label, fetched, extraction, None)
 
 
-def _fetch(client: RegulationsGov, once: _Once, entry: FrameItem) -> _Read:
+def current(record: Fetched, entry: FrameItem, listed: Mapping[str, Any]) -> bool:
+    """Whether a copy of a comment's record is the current one: its id and docket are the frame entry's, it carries
+    every field of CURRENT equal to the official listing's, and every field it shares with the listing entry is equal."""
+    try:
+        data = record.json()["data"]
+    except (ValueError, KeyError, TypeError):
+        return False
+    attributes = data.get("attributes") or {}
+    if data.get("id") != entry.id or attributes.get("docketId") != entry.docket:
+        return False
+    if any(r not in attributes or f not in listed or attributes[r] != listed[f] for r, f in CURRENT.items()):
+        return False
+    return all(attributes[k] == v for k, v in listed.items() if k in attributes)
+
+
+def _record(client: RegulationsGov, mirror: Mirrulations | None, listed: Mapping[str, Mapping[str, Any]],
+            entry: FrameItem) -> Fetched:  # fmt: skip
+    """A comment's record: the mirror's copy where it is current against the official listing (`current`), else the
+    API's."""
+    if mirror is not None and entry.id in listed:
+        copy = mirror.comment(entry.id)
+        if copy is not None and current(copy, entry, listed[entry.id]):
+            return copy
+    return client.comment(entry.id)
+
+
+def _fetch(client: RegulationsGov, once: _Once, entry: FrameItem, mirror: Mirrulations | None = None,
+           official: Mapping[str, Mapping[str, Any]] | None = None) -> _Read:  # fmt: skip
     """One comment's record, files and texts (run in a worker thread; nothing here touches the store)."""
-    record = client.comment(entry.id)
+    record = _record(client, mirror, official or {}, entry)
     if record.status == 404:
         return _Read(entry, record, None, ())
     body = record.json()
@@ -182,7 +216,8 @@ def _item(store: Store, read: _Read) -> Item:
     data = read.record.json()["data"]
     attributes = data.get("attributes") or {}
     posted = instant(str(attributes["postedDate"]))
-    record = commit(store, read.record, published_at=posted, basis=RECORD_BASIS)
+    basis = MIRROR_BASIS if read.record.source != SOURCE else RECORD_BASIS
+    record = commit(store, read.record, published_at=posted, basis=basis)
     if read.comment.id is None or read.comment.text is None:
         raise ValueError(f"comment {entry.id}: the comment reader returned no text for its record")
     store.commit_extraction(record.id, read.comment.id, read.comment.text)
@@ -238,12 +273,15 @@ def _item(store: Store, read: _Read) -> Item:
     return item
 
 
-def read_items(client: RegulationsGov, store: Store, entries: Sequence[FrameItem], *,
-               workers: int = WORKERS) -> list[Item]:  # fmt: skip
-    """The full items of these frame entries, in their order: fetched in parallel within the rate limit, committed here."""
+def read_items(client: RegulationsGov, store: Store, entries: Sequence[FrameItem], *, workers: int = WORKERS,
+               mirror: Mirrulations | None = None, official: Mapping[str, Mapping[str, Any]] | None = None
+               ) -> list[Item]:  # fmt: skip
+    """The full items of these frame entries, in their order: fetched in parallel within the rate limit, committed here.
+    With a mirror, each record is the mirror's copy where it is current against `official`, the frame's official listing
+    entries (frame.listed_comments), and the API's otherwise."""
     once = _Once()
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        reads = list(pool.map(lambda e: _fetch(client, once, e), entries))
+        reads = list(pool.map(lambda e: _fetch(client, once, e, mirror, official), entries))
     return [_item(store, r) for r in reads]
 
 

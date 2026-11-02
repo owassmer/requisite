@@ -9,12 +9,14 @@ import httpx
 import pytest
 from fake_api import DOCKET, FakeAPI, comment_entry, fixture_world
 from test_frame import criteria, register
+from test_mirrulations import FakeMirror
 
 from requisite import cassettes, cli, core
 from requisite.core import Artifact, Item
 from requisite.evidence import extract
-from requisite.evidence.frame import frame_gate, measures, take_frame
+from requisite.evidence.frame import frame_gate, listed_comments, measures, take_frame
 from requisite.evidence.items import read_items
+from requisite.evidence.mirrulations import Mirrulations
 from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.store import Store
 
@@ -28,7 +30,10 @@ def record(live, make_client, make_fr, scan):
     fr = make_fr(register(), live / "cassettes", live)
     store = Store(live / "recorded", case="wide")
     frame = take_frame(CRITERIA, client, store, federal_register=fr)
-    items = read_items(client, store, frame.items)
+    # The read asks the mirror first, as `wide read` does (requisite/evidence/mirrulations.py); this bucket holds none of
+    # these comments, so each is read from the API, and the mirror's answers are recorded beside the API's.
+    mirror = Mirrulations(transport=FakeMirror().transport(), root=live / "cassettes")
+    items = read_items(client, store, frame.items, mirror=mirror, official=listed_comments(store, frame, frame.items))
     measures(store, frame, items, regulations_gov=lambda: client, federal_register=lambda: fr)  # recorded, as `wide read`
     return frame, items, store
 

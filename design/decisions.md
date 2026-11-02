@@ -291,6 +291,16 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   prefix (measured November 1: 403 for curl, httpx and a bare product token; 200 for this form), and the form names the
   runtime and where to learn about it, so nothing is impersonated. The regulations.gov key goes in the X-Api-Key header,
   never in a URL, so it never reaches a cassette key or a log.
+  Amended November 2 at Owen's question ("can we not get the sources another way than the API?"): the rule's reason is
+  authoritative evidence, which a verified mirror keeps, so a public mirror is a source where its copy is checked against
+  the official one. Mirrulations (Moravian University; AWS Open Data, s3://mirrulations) stores each regulations.gov
+  comment record as the API's detail response (checked: equal in every attribute and its included attachments, lacking
+  only the API's "links" block; current through November 1, 2026). The reading step takes a comment's record from it
+  where the copy is current against the frame's official listing: same id and docket, the record's modifyDate equal to
+  the listing's lastModifiedDate, and every field the two share equal; it reads the API otherwise
+  (requisite/evidence/mirrulations.py, items.current). The artifact names the mirror as its source. The key's hourly
+  limit is then spent only where the mirror is not current. The frame's listing stays on the API: the mirror keeps one
+  file per comment and no listing with posting dates, so listing a docket from it would mean fetching every record.
 - An item's text is everything its submitter filed: the comment and the text of each attachment. A PDF page without a
   text layer is read by OCR (tesseract, installed on this machine; CI installs it), each page's method recorded in the
   extraction, so a scanned business letter is read rather than counted as silent (coordinator's reasoning: an item the

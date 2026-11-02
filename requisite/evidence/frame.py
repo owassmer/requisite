@@ -509,6 +509,24 @@ def frames(store: Store) -> list[Frame]:
     return store.all("frame", Frame)
 
 
+def listed_comments(store: Store, frame: Frame, entries: Sequence[FrameItem]) -> dict[str, Mapping[str, Any]]:
+    """Each entry's attributes as the frame's official listing of its docket's comments gives them (the listing pages
+    the frame names as its artifacts): what a copy of the comment's record from elsewhere must agree with to be taken
+    as current (requisite/evidence/mirrulations.py)."""
+    dockets = {d.docket: d for d in frame.dockets}
+    wanted = {e.id for e in entries}
+    out: dict[str, Mapping[str, Any]] = {}
+    for docket in sorted({e.docket for e in entries}):
+        for art_id in dockets[docket].artifacts:
+            artifact = store.get("artifact", art_id, Artifact)
+            if artifact is None or artifact.source != "regulations.gov":
+                continue
+            for e in json.loads(store.content(art_id)).get("data") or []:
+                if e.get("type") == "comments" and e.get("id") in wanted:
+                    out[str(e["id"])] = e.get("attributes") or {}
+    return out
+
+
 def entries(store: Store, ids: Sequence[str]) -> list[FrameItem]:
     """The frame entries of these comment ids, from the case's frames (the latest frame that lists each), in the order
     given: a sample is drawn from a frozen frame."""

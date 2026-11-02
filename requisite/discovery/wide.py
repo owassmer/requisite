@@ -34,6 +34,7 @@ from requisite.evidence.fetched import free_budget
 from requisite.evidence.frame import entries, frame_gate
 from requisite.evidence.frame import frames as evidence_frames
 from requisite.evidence.items import committed, read_items
+from requisite.evidence.mirrulations import Mirrulations
 from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.judgment import providers
 from requisite.library import templates as library
@@ -352,18 +353,25 @@ def draw_sample(store: Store) -> core.SampleDraw:
 def read_sample(
     store: Store, client: Callable[[], RegulationsGov] = RegulationsGov, *, workers: int = 8,
     federal_register: Callable[[], FederalRegister] = FederalRegister,
+    mirror: Callable[[], Mirrulations] | None = None,
 ) -> list[core.Item]:
     """Step 5: every phase-1 item read whole and committed, with the measure it addresses (core.ItemMeasure; items and
-    measures already committed are not read again)."""
+    measures already committed are not read again). With a mirror, each comment's record is the mirror's copy where it
+    is current against the frame's official listing, and the API's otherwise (requisite/evidence/mirrulations.py)."""
     ids = [d.item for d in drawn(store, 1).items]
     have = committed(store, ids)
     todo = [i for i in ids if i not in have]
     if todo:
         regulations_gov = client()
+        copies = mirror() if mirror is not None else None
+        sample = entries(store, todo)
         try:
-            read_items(regulations_gov, store, entries(store, todo), workers=workers)
+            read_items(regulations_gov, store, sample, workers=workers, mirror=copies,
+                       official=framing.listed_comments(store, the_frame(store), sample) if copies else None)  # fmt: skip
         finally:
             regulations_gov.close()
+            if copies is not None:
+                copies.close()
         have = committed(store, ids)
     read = [have[i] for i in ids if i in have]
     unmeasured = [i for i in read if store.get("item_measure", i.id, core.ItemMeasure) is None]
