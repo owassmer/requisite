@@ -413,6 +413,20 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   a claim within another held claim of the same extraction (a lead's quote, within its part) stays a claim of the case
   and is not shown to them again (deep._evidence). Only `wide objective`, `market f1-retrieve` and `contract read` begin a case; every other
   command opens the case committed at --case-dir or is refused, so a mistyped path is never a new empty case.
+- A criterion over an open class: core.Exists (coordinator, November 2, the grammar batch's first piece; Owen decided
+  the batch is the coordinator's own work). A filed contract that pays where "a Qualifying Action has been taken", any
+  instrument of named kinds with a named effect, read as unsupported: the IR could read one named instrument only. An
+  Exists states what a member is and the class, in the contract's words, and the condition each member meets. Each check
+  is of its own kind: which records are members is the sources' record, read (a list, not a judgment); whether one
+  qualifies is judged, asked of each member in turn under the binding MEMBER, so a question names the member it is about;
+  whether the list is complete is a fact of the retrieval (every source the Exists names, at least one, read through
+  the observation cutoff), never a judgment of the text; with no source named no list could be complete, so the
+  definition requires one (definition review, November 2). TRUE where some member's condition is TRUE; FALSE only where the
+  list is complete, the cutoff has passed and every member's condition is FALSE (an empty complete list included);
+  UNKNOWN otherwise (I6: a member not yet listed is not one that fails). A body holds a judged condition and no Exists.
+  A fuzz run refuses an Exists by name, since its scenarios set no member lists, rather than testing the contract's other
+  conditions alone; the settled-market check reads it as not checkable from market records (its conditions are judged).
+  The contract reader's prompt no longer lists constructs the IR lacks: the schema it is given says what it expresses.
 
 ## No escape routes, loud or quiet
 

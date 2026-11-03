@@ -131,6 +131,10 @@ class IRView:
             return f"{self.obs(n.observable)}'s value at {esc(iso(n.at))}"
         if isinstance(n, core.Computed):
             return f"computed by the registered node {code(f'{n.node.id} v{n.node.version}')} from its inputs below"
+        if isinstance(n, core.Exists):
+            named = ", ".join(esc(s.name) for s in sorted(n.sources, key=lambda s: s.rank))
+            return (f"some {esc(n.member)} of {esc(n.domain)}, as recorded by {named}, meets this, each judged for "
+                    "itself; none does only once each of them has been read through the observation cutoff")  # fmt: skip
         raise TypeError(f"no wording for an IR node of kind {type(n).__name__}")
 
     def children(self, n: Any) -> list[tuple[str, Any]]:
@@ -140,6 +144,8 @@ class IRView:
             return [("", n.arg)]
         if isinstance(n, core.By | core.At | core.Throughout | core.CountTrue | core.DurationIn | core.NumCmp):
             return [("", n.expr)]
+        if isinstance(n, core.Exists):
+            return [("for each member: ", n.expr)]
         if isinstance(n, core.Computed):
             return [(f"input {name}: ", sub) for name, sub in n.inputs.items()]
         return []

@@ -98,6 +98,7 @@ from requisite.core import (
     ContractIR,
     CountTrue,
     DurationIn,
+    Exists,
     Flag,
     Interpretive,
     Not,
@@ -126,7 +127,20 @@ from requisite.fuzz import coverage as cov
 EVALUATOR = Ref(id="requisite.contract.evaluate", version=1)  # this module's semantics, recorded in every evaluation
 
 Reading = tuple[Decimal, Decimal]  # a ReadValue's resolved band, or a run of bands, as (low, high)
-Interpretation = Kleene | Reading
+
+
+@dataclass(frozen=True)
+class Members:
+    """An Exists node's members, an input of evaluation like the interpretations (core.Exists): each member the sources
+    document, by its identity (the MEMBER binding its conditions were asked under), with each judged condition of the
+    node's body resolved for it; and `complete`, TRUE where every one of the node's sources was read through the
+    observation cutoff (a fact of the retrieval), so the list is every member the class holds."""
+
+    members: Mapping[str, Mapping[str, Kleene | Reading]]
+    complete: Kleene
+
+
+Interpretation = Kleene | Reading | Members
 Observations = Sequence[Observation] | Sequence[SyntheticObservation]
 
 
@@ -328,6 +342,8 @@ def _check_ir(ir: ContractIR) -> None:
             number(e.expr)
         elif isinstance(e, Interpretive):
             pass
+        elif isinstance(e, Exists):
+            expr(e.expr, timed)
         else:
             raise IRError(f"{getattr(e, 'id', e)!r} is not a trigger condition")
 
@@ -472,7 +488,9 @@ class _Inputs:
 
     def _interpretations(self, given: Mapping[str, Interpretation]) -> None:
         roots = [self.ir.trigger] + ([self.ir.payout.quantity] if self.ir.payout.quantity is not None else [])
-        nodes = {n.id: n for r in roots for n in walk(r) if isinstance(n, Interpretive | ReadValue)}
+        every = [n for r in roots for n in walk(r)]
+        within = {m.id for e in every if isinstance(e, Exists) for m in walk(e.expr)}  # judged per member, not here
+        nodes = {n.id: n for n in every if isinstance(n, Interpretive | ReadValue | Exists) and n.id not in within}
         missing, extra = sorted(set(nodes) - set(given)), sorted(set(given) - set(nodes))
         if missing:
             raise ValueError(
@@ -483,8 +501,30 @@ class _Inputs:
             raise ValueError(f"interpretations given for {extra}, which are not interpretive conditions or readings here")
         self.interps: dict[str, Kleene] = {}
         self.readings: dict[str, tuple[Interval, bool]] = {}
+        self.members: dict[str, tuple[dict[str, tuple[dict[str, Kleene], dict[str, tuple[Interval, bool]]]], Kleene]] = {}
         for nid, n in nodes.items():
             v = given[nid]
+            if isinstance(n, Exists):
+                if not isinstance(v, Members) or not isinstance(v.complete, Kleene):
+                    raise TypeError(f"{nid} is an Exists: its value is its Members, not {v!r}")
+                judged = {m.id: m for m in walk(n.expr) if isinstance(m, Interpretive | ReadValue)}
+                per: dict[str, tuple[dict[str, Kleene], dict[str, tuple[Interval, bool]]]] = {}
+                for member, given_for in v.members.items():
+                    if set(given_for) != set(judged):
+                        raise ValueError(f"{nid}'s member {member}: give each judged condition of its body "
+                                         f"({sorted(judged)}), not {sorted(given_for)}")  # fmt: skip
+                    truths, bands = {}, {}
+                    for jid, j in judged.items():
+                        x = given_for[jid]
+                        if isinstance(j, Interpretive):
+                            if not isinstance(x, Kleene):
+                                raise TypeError(f"{nid}'s member {member}: {jid} is interpretive, its value a Kleene truth")
+                            truths[jid] = x
+                        else:
+                            bands[jid] = _band(j, x)
+                    per[member] = (truths, bands)
+                self.members[nid] = (per, v.complete)
+                continue
             if isinstance(n, Interpretive):
                 if not isinstance(v, Kleene):
                     raise TypeError(f"{nid} is interpretive: its value is a Kleene truth, not {v!r}")
@@ -498,7 +538,10 @@ class _Inputs:
     def state_hash(self, at: datetime) -> str:
         """The evaluation's inputs: its observations, its interpretations and its instant."""
 
-        def show(v: Interpretation) -> str:
+        def show(v: Any) -> Any:
+            if isinstance(v, Members):
+                return {"complete": v.complete.value,
+                        "members": {m: {k: show(x) for k, x in sorted(g.items())} for m, g in sorted(v.members.items())}}  # fmt: skip
             return v.value if isinstance(v, Kleene) else f"[{v[0]}, {v[1]}]"
 
         return sha256(
@@ -514,7 +557,7 @@ class _Inputs:
 
     @cached_property
     def has_hidden(self) -> bool:
-        return any(isinstance(n, Interpretive | ReadValue) for n in walk(self.ir.trigger))
+        return any(isinstance(n, Interpretive | ReadValue | Exists) for n in walk(self.ir.trigger))
 
 
 def _band(n: ReadValue, v: object) -> tuple[Interval, bool]:
@@ -584,6 +627,7 @@ class _View:
         self.closed = self.tau >= _utc(clock.cutoff)
         self.interpretations = interpretations
         self.restrict = restrict
+        self.member: tuple[dict[str, Kleene], dict[str, tuple[Interval, bool]]] | None = None  # within an Exists' body
         self._instants: dict[str, tuple[datetime, ...]] = {}
 
     # ---- values
@@ -673,9 +717,11 @@ class _View:
         if isinstance(e, Interpretive):
             if not self.interpretations:
                 return _T(Kleene.UNKNOWN, (_Why(f"{e.id}: its interpretation is given only as of the evaluation"),))
-            v = self.inp.interps[e.id]
+            v = self.member[0][e.id] if self.member is not None else self.inp.interps[e.id]
             why = (_Why(f"{e.id} ({e.question_template}): not established or contested"),)
             return _T(v, why if v is Kleene.UNKNOWN else ())
+        if isinstance(e, Exists):
+            return self._exists(e, at)
         if isinstance(e, NumCmp):
             n = self.number(e.expr, at)
             v = n.interval.compare(e.op, Fraction(e.value))
@@ -693,6 +739,34 @@ class _View:
             insts = [t for t in self.level_instants(e.expr) if _in(t, w.start, w.start_closed, w.end, w.end_closed)]
             return self._every(e.id, [self.truth(e.expr, t) for t in insts])
         raise IRError(f"{e!r} is not a trigger condition")
+
+    def _exists(self, e: Exists, at: datetime | None) -> _T:
+        """Kleene over the members (core.Exists): TRUE where some member's body is TRUE; FALSE where the list is complete,
+        the cutoff has passed and every member's body is FALSE; UNKNOWN otherwise, with why."""
+        if not self.interpretations:
+            return _T(Kleene.UNKNOWN, (_Why(f"{e.id}: its members are given only as of the evaluation"),))
+        per, complete = self.inp.members[e.id]
+        outer = self.member
+        vals: list[tuple[str, _T]] = []
+        try:
+            for member in sorted(per):
+                self.member = per[member]
+                vals.append((member, self.truth(e.expr, at)))
+        finally:
+            self.member = outer
+        if any(v.value is Kleene.TRUE for _, v in vals):
+            return _T(Kleene.TRUE)
+        unknown = _union(v.why for _, v in vals if v.value is Kleene.UNKNOWN)
+        if unknown:
+            return _T(Kleene.UNKNOWN, unknown)
+        if complete is not Kleene.TRUE:
+            named = ", ".join(src.name for src in sorted(e.sources, key=lambda src: src.rank))
+            return _T(Kleene.UNKNOWN, (_Why(f"{e.id}: no documented {e.member} satisfies it, and {named} not all read "
+                                            "through the observation cutoff, so the documented ones may not be all"),))  # fmt: skip
+        if not self.closed:
+            return _T(Kleene.UNKNOWN, (_Why(f"{e.id}: no {e.member} documented yet satisfies it; more may be documented "
+                                            f"until {_iso(self.clock.cutoff)}"),))  # fmt: skip
+        return _T(Kleene.FALSE)
 
     def _some(self, nid: str, vals: list[_T], where: str) -> _T:
         if any(v.value is Kleene.TRUE for v in vals):
@@ -741,7 +815,7 @@ class _View:
             if not self.interpretations:
                 interval = _band(e, (e.bands[0][0], e.bands[-1][1]))[0]
                 return _N(interval, (_Why(f"{e.id}: its reading is given only as of the evaluation"),))
-            interval, whole = self.inp.readings[e.id]
+            interval, whole = self.member[1][e.id] if self.member is not None else self.inp.readings[e.id]
             return _N(interval, (_Why(f"{e.id} ({e.question_template}): not established; its whole range"),) if whole else ())
         if isinstance(e, CountTrue):
             return self._count(e)
@@ -1072,7 +1146,7 @@ def _early(inp: _Inputs, early: _Early) -> _Outcome:
         when = (f"the early expiration, whose date {proc.early_expiration_rule} sets (the trigger is true on the "
                 f"information of {early.upper.isoformat()})")  # fmt: skip
     else:
-        hidden = sorted(n.id for n in walk(ir.trigger) if isinstance(n, Interpretive | ReadValue))
+        hidden = sorted(n.id for n in walk(ir.trigger) if isinstance(n, Interpretive | ReadValue | Exists))
         when = (f"the early expiration, at the instant the trigger was first true: between {early.lower.isoformat()} "
                 f"and {early.upper.isoformat()}, since the instants at which {hidden} were established are not among "
                 "the inputs")  # fmt: skip
@@ -1290,7 +1364,9 @@ def _payout(inp: _Inputs, view: _View, resolution_at: datetime | None, when: str
 
 def _period(inp: _Inputs, view: _View, period: TimeWindow) -> _View:
     """The view's information, with counts and durations restricted to one payment period."""
-    return _View(inp, view.tau, view.clock, interpretations=view.interpretations, restrict=period)
+    out = _View(inp, view.tau, view.clock, interpretations=view.interpretations, restrict=period)
+    out.member = view.member
+    return out
 
 
 def _open_amount(ir: ContractIR, what: str, n: _N, amount: tuple[Decimal, Decimal] | None) -> str:

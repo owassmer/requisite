@@ -235,6 +235,12 @@ def sources(ir: core.ContractIR) -> tuple[dict[str, tuple[str, ...]], dict[str, 
 
 def plan(ir: core.ContractIR, *, reference: Sequence[core.Observation] = (), stress: bool = True) -> Plan:
     """Every scenario of a fuzz run of `ir`, made concrete, with the coverage account its scenarios meet."""
+    over = [n.id for r in (ir.trigger, ir.payout.quantity) if r is not None for n in core.walk(r) if isinstance(n, core.Exists)]
+    if over:
+        # A scenario of an Exists is a list of members, each with its conditions, and whether the list is complete; the
+        # builder makes none, so such a contract is refused here rather than tested on its other conditions alone.
+        raise FuzzError(f"{ir.id}: its condition {over} ranges over an open class of members, and a scenario here sets "
+                        "no list of members: its wording is not tested by this run")  # fmt: skip
     lowered = evaluate.lower(ir)
     rounds = lowered.rounds()
     account = cov.coverage(lowered.trigger, lowered.constraints, rounds[0] if rounds else ())
@@ -1507,6 +1513,8 @@ def _interval(e: core.ReadValue, i: int) -> evaluate.Interval:
 
 
 def _shown(v: Interpretation) -> str:
+    if isinstance(v, evaluate.Members):
+        raise TypeError("a scenario sets no members (plan refuses an Exists)")
     return v.value if isinstance(v, Kleene) else f"[{v[0]}, {v[1]}]"
 
 

@@ -222,6 +222,63 @@ class Interpretive(Record):
     bindings: Mapping[str, Any]
 
 
+# The binding under which a judged condition of an Exists body is given the member it is asked about (core.Exists).
+MEMBER = "member"
+
+
+class Exists(Record):
+    """Some member of an open class satisfies the condition: a criterion over every instrument, action or filing of a
+    kind, each judged for itself (grammar findings, decisions: as in a filed contract's "a Qualifying Action has been
+    taken", where a qualifying action is any instrument of the named kinds with one of the named effects, each
+    instrument's own terms governing it).
+
+    member: what one member is, in the contract's words. domain: the class `expr` ranges over, in the contract's words.
+    sources: where the class's members are recorded, ranked as the contract ranks them (rank 1 highest), at least one:
+    a member is a record one of them documents by the observation cutoff. expr: the condition each member is tested on. Each judged
+    condition of `expr` (an Interpretive or a ReadValue) is asked about one member at a time: its bindings are the
+    contract's, and the member is given under the binding MEMBER, as its evidence identifies it (the record, its
+    publisher and date), so the question names the member it is about; a judged node of `expr` binds no MEMBER itself.
+    Every other node of `expr` is the contract's own, the same for each member. `expr` holds a judged condition (one
+    with none says nothing of any member) and no further Exists (a member of a member has no meaning here).
+
+    Evaluated over its members, an input of evaluation like the interpretations (requisite/contract/evaluate.py,
+    Members): the members the sources document, each with its judged conditions resolved for it, and whether that list
+    is complete. Which records are members is the sources' record, read; whether one qualifies is judged, per member;
+    complete is TRUE where every one of `sources` was read through the observation cutoff, a fact of the retrieval,
+    never a judgment of the text (with no source named, no list could be complete, so one is required) (decisions: each check is of the kind of thing it checks). Kleene (spec
+    §6.3): TRUE where some member's condition is TRUE; FALSE where the list is complete, the observation cutoff has passed
+    (a member may be documented until then) and every member's condition is FALSE, an empty complete list included;
+    UNKNOWN otherwise (I6: a member not yet listed is not a member that fails)."""
+
+    kind: Literal["exists"] = "exists"
+    id: str
+    member: str
+    domain: str
+    sources: Sequence[Source]
+    expr: Expr
+
+    @model_validator(mode="after")
+    def _members(self) -> Exists:
+        if not self.member.strip() or not self.domain.strip():
+            raise ValueError(f"{self.id}: an Exists states what a member is and the class it ranges over")
+        if not self.sources:
+            raise ValueError(f"{self.id}: an Exists names where its members are recorded: with no source, no list of "
+                             "members could be complete, and none could be read as absent (I6)")  # fmt: skip
+        if len({s.id for s in self.sources}) != len(self.sources):
+            raise ValueError(f"{self.id}: an Exists' source ids are distinct")
+        nodes = list(walk(self.expr))
+        if any(isinstance(n, Exists) for n in nodes):
+            raise ValueError(f"{self.id}: an Exists holds no further Exists (a member of a member has no meaning here)")
+        judged = [n for n in nodes if isinstance(n, Interpretive | ReadValue)]
+        if not judged:
+            raise ValueError(f"{self.id}: an Exists body judges something of each member; one with no judged condition "
+                             "says nothing of any member")  # fmt: skip
+        bound = [n.id for n in judged if MEMBER in n.bindings]
+        if bound:
+            raise ValueError(f"{self.id}: {bound} bind {MEMBER!r}, which is given per member, as each is asked about")
+        return self
+
+
 class CountTrue(Record):
     """The number of calendar days of `days` on which the condition holds, counted in the window's time zone (spec §4).
     Its value over three-valued days is an interval [k, k + u] (A05 §5.3)."""
@@ -307,11 +364,11 @@ class NumCmp(Record):
 
 
 Expr = Annotated[
-    Cmp | And | Or | Not | By | At | Throughout | Interpretive | NumCmp,
+    Cmp | And | Or | Not | By | At | Throughout | Interpretive | NumCmp | Exists,
     Field(discriminator="kind"),
 ]
 
-for _m in (And, Or, Not, By, At, Throughout, CountTrue, DurationIn, ReadValue, ValueAt, Computed, NumCmp):
+for _m in (And, Or, Not, By, At, Throughout, CountTrue, DurationIn, ReadValue, ValueAt, Computed, NumCmp, Exists):
     _m.model_rebuild()
 
 
@@ -323,7 +380,7 @@ def walk(expr: Any) -> Iterator[Any]:
             yield from walk(a)
     elif isinstance(expr, Not):
         yield from walk(expr.arg)
-    elif isinstance(expr, By | At | Throughout | CountTrue | DurationIn):
+    elif isinstance(expr, By | At | Throughout | CountTrue | DurationIn | Exists):
         yield from walk(expr.expr)
     elif isinstance(expr, NumCmp):
         yield from walk(expr.expr)

@@ -16,7 +16,7 @@ Produce:
 
 How to read the terms into the IR:
 - Observables are the quantities the terms settle on (a published value, a status, a date), each with the sources the terms name, ranked as the terms rank them, its revision policy as the terms state it, and for a number its unit and published precision.
-- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs.
+- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs. A criterion over any member of a class the terms define ("any instrument that ...", "a qualifying action has been taken") is an Exists: what one member is and the class, in the filing's words, the sources that record the class's members, ranked as the terms rank them, and the condition each member must meet, whose judged conditions are asked of each member in turn.
 - The comparison, and whether its bound is included, come from the filed terms and the market's rules text, never from a field's name; a strike field supplies only the value.
 - An observable's values are what its source publishes, in the form the source publishes them: a team or a candidate by the name the organizer reports, an outcome as the source words it, never an identifier the exchange uses internally. Bind a threshold to the listing field that states the value in that form, and where none does, say so as an assumption.
 - Every node has an id, unique in the contract, short and descriptive.
@@ -25,19 +25,8 @@ How to read the terms into the IR:
 
 Read the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR: list it as an assumption with both readings.
 
-Where carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as
-an assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no
-faithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:
-- a condition quantified over documents ("any instrument that ...", "a qualifying action"), where the IR can only
-  read one named instrument;
-- a reading whose answer is a single value other than the top of its range (bands are [low, high));
-- a date read from text and compared;
-- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;
-- an unknown-at-expiry outcome left to the exchange's discretion;
-- a settlement or payment date stated as a deadline ("no later than");
-- a known payment whose date is left to an exchange rule;
-- a missing-data rule for a payout quantity;
-- what a binary or capped payout pays per period;
-- an early expiration when the outcome is decided either way (the IR expires early only when its trigger is true).
+What the IR can express is its schema, which you are given. Where carrying a term exactly needs a construct the schema
+does not have, never approximate it silently. Either list it as an assumption, giving the filing's words and how the IR
+carries them instead, or, when it decides settlement and no faithful carriage exists, name it as an unsupported term.
 Where the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the
 neutral value and list it as an assumption that the terms state no such rule.

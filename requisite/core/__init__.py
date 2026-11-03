@@ -3,6 +3,7 @@ hashing. Every package imports these; nothing defines a competing schema (addend
 
 from requisite.core.base import Day, Instant, Money, Probability, Rational, Record, Ref, canonical_json, sha256
 from requisite.core.contract import (
+    MEMBER,
     SECTION_ORDER,
     And,
     At,
@@ -18,6 +19,7 @@ from requisite.core.contract import (
     CountTrue,
     DurationIn,
     Exclusion,
+    Exists,
     Expr,
     FiledSeries,
     Flag,
@@ -206,6 +208,8 @@ __all__ = [
     "HarvestedContract",
     "Instant",
     "Interpretive",
+    "Exists",
+    "MEMBER",
     "Item",
     "ItemPart",
     "JudgeConfig",
