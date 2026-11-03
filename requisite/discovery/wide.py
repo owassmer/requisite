@@ -328,10 +328,22 @@ def design(frame: core.Frame) -> core.Ref:
     return core.Ref(id=f"two_phase.{frame.id}", version=1)
 
 
+def phase1_questions() -> str:
+    """The phase-1 questions the gold draw's probabilities come from, each template at its version (the gold sample is
+    drawn from the judge's answers to these: a draw from another version's answers is another draw)."""
+    return "+".join(f"{t}.v{library.template(t).version}" for t in labels.OBJECTIVE_TEMPLATES)
+
+
+def _draw_key(design_id: str, phase: int) -> str:
+    """Where a phase's draw is committed: phase 1 by its design; phase 2 also by the phase-1 questions it is drawn from
+    (committed state is never overwritten: a draw from earlier questions stays committed under its own key)."""
+    return f"{design_id}.phase1" if phase == 1 else f"{design_id}.phase2.{phase1_questions()}"
+
+
 def drawn(store: Store, phase: int) -> core.SampleDraw:
-    """The case's committed draw of a phase."""
+    """The case's committed draw of a phase (phase 2: the one drawn from the current phase-1 questions)."""
     frame = the_frame(store)
-    d = store.get("sample_draw", f"{design(frame).id}.phase{phase}", core.SampleDraw)
+    d = store.get("sample_draw", _draw_key(design(frame).id, phase), core.SampleDraw)
     if d is None:
         raise Refused(f"no phase-{phase} sample is drawn in this case: run `wide {'sample' if phase == 1 else 'gold-draw'}`")
     return d
@@ -348,7 +360,7 @@ def draw_sample(store: Store) -> core.SampleDraw:
     items = [core.DrawnItem(item=strata[k][int(i)].id, stratum=k, inclusion_prob=Fraction(n[k], sizes[k]))
              for k in strata for i in picks[k]]  # fmt: skip
     draw = core.SampleDraw(design=design(frame), phase=1, seed=s, items=items)
-    store.commit("sample_draw", f"{draw.design.id}.phase1", draw)
+    store.commit("sample_draw", _draw_key(draw.design.id, 1), draw)
     return draw
 
 
@@ -649,9 +661,10 @@ def draw_gold(store: Store) -> core.SampleDraw:
                             inclusion_prob=Fraction(min(allocation[c], held[c]), held[c]))
              for d, c, chosen in zip(readable, cell, mask, strict=True) if chosen]  # fmt: skip
     gold = core.SampleDraw(design=draw.design, phase=2, seed=s, items=items)
-    store.commit("sample_draw", f"{gold.design.id}.phase2", gold)
+    store.commit("sample_draw", _draw_key(gold.design.id, 2), gold)
     unread = [d for d in draw.items if d.item not in f]
-    store.commit("sampling_design", draw.design.id, sampling_design(store, draw, held, allocation, unread))
+    store.commit("sampling_design", f"{draw.design.id}.{phase1_questions()}",
+                 sampling_design(store, draw, held, allocation, unread))  # fmt: skip
     return gold
 
 

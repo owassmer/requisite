@@ -444,6 +444,10 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   of v2 answer another question and are not read for v3 (wide._phase1, gold.pending, results._gold); Owen's three
   labels so far, two of the population question (unchanged, v1) and one of v2, stand as recorded. The phase-1 labels
   are asked again, the gold sample redrawn by its recorded rule, and Owen labels from what the measures state.
+  The gold draw is named by the phase-1 questions its probabilities come from (wide.phase1_questions): committed state
+  is never overwritten, so the draw from v2's answers stays committed under its own key and the redraw from v3's is
+  another record; its sampling design likewise. A gold label is a fact about an item under a question at its version,
+  so a label carries to any draw that holds the item; its weight is always the current draw's (results._gold).
 
 ## No escape routes, loud or quiet
 

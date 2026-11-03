@@ -136,7 +136,7 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     assert gold.phase == 2 and [(d.stratum, d.inclusion_prob) for d in gold.items] == [("under_100.bin1", Fraction(1))] * n
     assert gold.seed == wide.seed(draw.content_hash(), "phase2")
     # The design both draws name is committed whole: the frame it drew from, its strata, the cells and their gold.
-    design = store.get("sampling_design", draw.design.id, core.SamplingDesign)
+    design = store.get("sampling_design", f"{draw.design.id}.{wide.phase1_questions()}", core.SamplingDesign)
     assert design is not None and design.frame_hash == frame.content_hash() and design.seed == draw.seed
     assert [(s.name, s.phase1_count, s.sample_size) for s in design.phase2] == [("under_100.bin1", n, n)]
 
