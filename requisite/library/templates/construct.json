@@ -1,0 +1,25 @@
+{
+  "source": "Construction's hedgeability questions (spec §8.1: \"Hedgeability judgments cover client_can_influence, source_authoritative and timely\"; a candidate observable \"must be determinable from an authoritative source with a known publication schedule and revision policy ... lie beyond the client's material influence; resolve within the useful window\"). client_can_influence is deep discovery's (deep.json), asked of the observable as the contract defines it. Ours, task 004-1, November 2, in spec §8.1's words: each binds the observable as the candidate states it (its definition, its sources ranked, its schedule and revision policy), since whether a source is the authority for a value and how soon it publishes it are facts about the source the case's evidence may not state; the judges answer not_established where neither the definition nor the evidence settles it.",
+  "templates": [
+    {
+      "id": "source_authoritative", "version": 1, "task": "interpret",
+      "slots": ["observable", "sources"],
+      "target": "Is the highest-ranked source below the authority for the observable below: does its official record establish the observable's value for a day, published on a known schedule and revised under a stated policy, so that a contract could settle on that record alone?\nObservable: {observable}\nSources, highest authority first: {sources}",
+      "answers": [
+        {"value": "authoritative", "meaning": "yes: its official record establishes the value, on a known schedule and revision policy", "status": "affirmative"},
+        {"value": "not_authoritative", "meaning": "no: its record does not by itself establish the value, or it publishes on no known schedule or revision policy", "status": "negative"},
+        {"value": "not_established", "meaning": "neither the definition nor the evidence establishes whether it is", "status": "not_established"}
+      ]
+    },
+    {
+      "id": "timely", "version": 1, "task": "interpret",
+      "slots": ["observable", "event", "window"],
+      "target": "Would the observable below show that the event below has happened soon enough after it happens that a payment settled on it could reach the business within the useful window below?\nObservable: {observable}\nEvent: {event}\nUseful window: {window}",
+      "answers": [
+        {"value": "timely", "meaning": "yes: its published value would show the event soon enough to settle a payment within the window", "status": "affirmative"},
+        {"value": "not_timely", "meaning": "no: it would show the event too late, or not at all, for a payment within the window", "status": "negative"},
+        {"value": "not_established", "meaning": "neither the definition nor the evidence establishes how soon it would show it", "status": "not_established"}
+      ]
+    }
+  ]
+}

@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import date, datetime
+from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 
 from requisite import registry
@@ -441,6 +443,53 @@ def _deep_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _construct_observables(args: argparse.Namespace) -> int:
+    from requisite.construct import steps
+
+    store = _store(args)
+    print(steps.render_screening(steps.observables(store, args.k), store))
+    return 0
+
+
+def _construct_candidates(args: argparse.Namespace) -> int:
+    from requisite.construct import steps
+
+    print(steps.render_candidates(steps.candidates(_store(args), args.k)))
+    return 0
+
+
+def _construct_solve(args: argparse.Namespace) -> int:
+    from requisite.construct import steps
+
+    record = steps.solve(_store(args), k=args.k, budget=args.budget, loading=args.loading,
+                         loading_range=(args.loading_range[0], args.loading_range[1]), discount_rate=args.discount_rate,
+                         eligibility=args.eligibility, **({"epsilon": args.epsilon} if args.epsilon is not None else {}))  # fmt: skip
+    print(steps.render_record(record))
+    return 0
+
+
+def _construct_report(args: argparse.Namespace) -> int:
+    from requisite.construct import steps
+
+    print(steps.render_record(steps.latest(_store(args), args.k)))
+    return 0
+
+
+def _exact(value: str) -> Fraction:
+    """An exact number given on the command line ("0.2", "1/5"); a float's binary value is never what was meant."""
+    try:
+        return Fraction(value)
+    except (ValueError, ZeroDivisionError) as e:
+        raise argparse.ArgumentTypeError(f"not an exact number: {value!r}") from e
+
+
+def _decimal(value: str) -> Decimal:
+    try:
+        return Decimal(value)
+    except ArithmeticError as e:
+        raise argparse.ArgumentTypeError(f"not a decimal amount: {value!r}") from e
+
+
 def _show(args: argparse.Namespace) -> int:
     p = _store(args).proposal(args.proposal)
     if p is None:
@@ -569,6 +618,37 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--from", dest="before", type=int, required=True, help="the earlier entity model version")
     d.add_argument("--to", dest="after", type=int, required=True, help="the later entity model version")
     d.set_defaults(run=_deep_diff)
+    cn = sub.add_parser("construct", help="construction (spec §8.1-8.3): from a deep case's top-k exposures to the "
+                        "contract that best protects the business's cash")  # fmt: skip
+    csub_ = cn.add_subparsers(dest="step", required=True)
+    c = csub_.add_parser("observables", help="an agent proposes candidate observables for each event of the top k; the "
+                         "judges screen each (client_can_influence, source_authoritative, timely)")  # fmt: skip
+    case_args(c)
+    c.add_argument("--k", type=int, required=True, help="the register's top k (the deep case's requisite run)")
+    c.set_defaults(run=_construct_observables)
+    c = csub_.add_parser("candidates", help="the contracts the structure templates give over the observables that passed")
+    case_args(c)
+    c.add_argument("--k", type=int, required=True, help="the register's top k")
+    c.set_defaults(run=_construct_candidates)
+    c = csub_.add_parser("solve", help="payoffs from the evaluator, prices, the liquidity program under both endpoint "
+                         "models, repricing over the loading range and robustness to each forecast; committed")  # fmt: skip
+    case_args(c)
+    c.add_argument("--k", type=int, required=True, help="the register's top k")
+    c.add_argument("--budget", type=_decimal, required=True, help="the most premium the portfolio may cost")
+    c.add_argument("--loading", type=_exact, required=True, help="the indicative price's loading, e.g. 0.2")
+    c.add_argument("--loading-range", type=_exact, nargs=2, required=True, metavar=("LOW", "HIGH"),
+                   help="the loadings every design is repriced over before one is said to beat another")
+    c.add_argument("--discount-rate", type=_exact, required=True, help="the annual rate of the indicative price's "
+                   "discount (simple interest, actual/365, to the premium day), e.g. 0.05")  # fmt: skip
+    c.add_argument("--eligibility", required=True, choices=["listed", "bilateral"],
+                   help="listed contracts only, or also bilateral ones (spec §8)")
+    c.add_argument("--epsilon", type=_decimal, default=None, help="the solver tolerance on the scaled objective "
+                   "(default the oracle's, 1e-9)")  # fmt: skip
+    c.set_defaults(run=_construct_solve)
+    c = csub_.add_parser("report", help="the latest construction record")
+    case_args(c)
+    c.add_argument("--k", type=int, help="the top k (default: the latest construction)")
+    c.set_defaults(run=_construct_report)
     ph = sub.add_parser("paraphrases", help="an agent writes a library template's frozen paraphrase set (spec §2.1)")
     case_args(ph)
     ph.add_argument("--template", required=True, help="the library template's id")

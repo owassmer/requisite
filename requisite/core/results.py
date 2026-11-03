@@ -11,7 +11,7 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from requisite.core.base import Day, Money, Probability, Rational, Record, Ref
+from requisite.core.base import Day, Money, Probability, Rational, Record, Ref, canonical_json, sha256
 from requisite.core.contract import CashTransfer, Equivalence, ProcedureStatus, ProseSectionName
 from requisite.core.judgment import SUM_TOLERANCE, JudgeConfig, top_answers
 
@@ -68,18 +68,31 @@ class ReducedCost(Record):
     measured_improvement: Rational
 
 
+def probabilities_hash(probabilities: Sequence[Fraction]) -> str:
+    """The hash of a solve's scenario probabilities, in their order, each exact as numerator/denominator (addendum §12:
+    "Candidate/price/probability hashes")."""
+    return sha256(canonical_json([f"{p.numerator}/{p.denominator}" for p in probabilities]))
+
+
 class OptimizationResult(Record):
     """A solve for one decision (addendum §12: "Candidate/price/probability hashes, exact objective, quantities,
     independently recomputed cash paths, solver tolerances, duals and pricing status"; A06 §6.4: "Store solver status,
     primary objective, secondary objective, constraint residuals, monetary scaling and tolerance"). objective is the
     decision's risk functional (spec §8.3 and its variants); recomputed_objective is that functional evaluated exactly on
     the chosen portfolio's recomputed cash, never read from the solver; the residuals are each constraint family's
-    largest violation at the solver's point, in its scaled units."""
+    largest violation at the solver's point, in its scaled units. business_hash and receipts_hash: the business on its
+    grid and the candidates' receipts the cash was computed from, so the cash names its inputs as the scenarios and
+    probabilities do (A06 §6.4: cash recomputed from the inputs; ours: hashed, so a record whose inputs changed under its
+    results is refused). alpha: the tail level the program was solved at (A06 §6.3: CVaR_α; zero for expected
+    liquidity shortfall, whose CVaR at zero is E[D]), so the solve names the objective it computed."""
 
     decision: Ref
     objective: Literal["liquidity_cvar", "expected_liquidity_shortfall", "terminal_residual"]
+    alpha: Probability
     scenarios_hash: str
     probabilities_hash: str
+    business_hash: str
+    receipts_hash: str
     candidates: Sequence[PricedCandidate]
     dates: Sequence[Day]
     solver: str
@@ -100,6 +113,11 @@ class OptimizationResult(Record):
 
     @model_validator(mode="after")
     def _consistent(self) -> OptimizationResult:
+        # CVaR_α divides by 1 - α (A06 §6.3), so α is below 1; expected shortfall is CVaR at α = 0 (D >= 0).
+        if self.objective == "liquidity_cvar" and not self.alpha < 1:
+            raise ValueError("a liquidity CVaR is taken at alpha below 1 (A06 §6.3: it divides by 1 - alpha)")
+        if self.objective == "expected_liquidity_shortfall" and self.alpha != 0:
+            raise ValueError("expected liquidity shortfall is the CVaR at alpha 0 (A06 §6.3)")
         refs = [c.ref for c in self.candidates]
         if len(set(refs)) != len(refs):
             raise ValueError("candidate refs are distinct")

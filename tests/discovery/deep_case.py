@@ -122,16 +122,22 @@ def decision_spec(tolerance: str = "1000") -> core.DecisionSpec:
     )  # fmt: skip
 
 
+EVENT = core.Proposition(id="E1", text="The overtime rule takes effect", window=WINDOW, domain="bool")
+
+
 def make_case(tmp_path: Path, *, drivers: Sequence[DriverSpec] = DRIVERS, tolerance: str = "1000",
-              cash: str = "200000", evidence: str = EVIDENCE) -> Store:  # fmt: skip
+              cash: str = "200000", credit: str = "50000", evidence: str = EVIDENCE,
+              events: Sequence[core.Proposition] = (EVENT,), templates: Sequence[str] = ()) -> Store:  # fmt: skip
+    """A deep case past G1: the entity model and decision spec approved, the pending events proposed, and the paraphrase
+    sets of deep's templates (and of `templates`) active."""
     store = Store(tmp_path / "case", case="deep", clock=lambda: NOW)
     claim = claimed(store, evidence, "https://example.org/comment/1")
-    for t in TEMPLATES:
+    for t in (*TEMPLATES, *templates):
         paraphrases(store, t)
-    approve(store, submit(store, "entity_model", entity_model(claim, drivers, cash=cash)))
+    approve(store, submit(store, "entity_model", entity_model(claim, drivers, cash=cash, credit=credit)))
     approve(store, submit(store, "decision_spec", decision_spec(tolerance)))
-    event = core.Proposition(id="E1", text="The overtime rule takes effect", window=WINDOW, domain="bool")
-    assert deep.propose_event(store, event, author="a test", rationale="the fixture's").status == "active"
+    for event in events:
+        assert deep.propose_event(store, event, author="a test", rationale="the fixture's").status == "active"
     return store
 
 

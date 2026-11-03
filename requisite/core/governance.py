@@ -34,6 +34,7 @@ ProposalKind = Literal[
     "entity_model",  # a deep case's driver tree and liquidity profile an agent proposes for G1 (spec §7.1 step 1)
     "event_families",  # a wide run's event families an agent proposes (the approved objective: "defined by the run")
     "lead",  # a lead promoted into a deep case at G1 (spec §7.2 step 6: "Promote top leads into deep cases at gate G1")
+    "observable",  # a candidate observable for construction (spec §8.1: "Each candidate becomes an Observable")
 ]
 ProposalStatus = Literal["proposed", "validated", "active", "promoted", "rejected", "retired"]
 
@@ -94,7 +95,9 @@ class Proposal(Record):
 #   contract (spec §5: the contract layer's validator is the IR type check and the three-valued evaluator), template
 #   (spec §9 QuestionTemplate, ClauseTemplate with an example generator), claim (its text is its artifact's span: spec
 #   §5 "Supports (with a span)"), proposition and constraint (spec §5: SAT consistency, acyclic conditioning), scenario
-#   (feasible under the world constraints: addendum A09 §10.2), frame (its criteria run and freeze a frame).
+#   (feasible under the world constraints: addendum A09 §10.2), frame (its criteria run and freeze a frame), observable
+#   (its event is the case's and construction's structure templates give an IR over it the evaluator accepts: task 004-1,
+#   "Each candidate is a ContractIR the evaluator accepts"; spec §8.2 names the families).
 # - relevance for a question: it reaches a decision (spec §2.2; spec §4 AtomicQuestion.reaches).
 # - human where a gate G1-G4 is the human's: decision_spec, objective and entity_model (G1: "the objective, horizon and
 #   loss definition"; spec §7.1 step 1: the entity model's parameters "a human confirms at gate G1").
@@ -120,6 +123,7 @@ REQUIRED_GATES: Mapping[str, tuple[Gate, ...]] = {
     "entity_model": ("schema", "human"),
     "event_families": ("schema", "tests"),
     "lead": ("schema", "human"),
+    "observable": ("schema", "tests"),
 }
 # A question proposed to replace a parent (a split) passes stability (spec §2.1: "A proposed split yields stable
 # sub-questions") and relevance (spec §2.2: "A split is admitted only if it raises relevance or is needed for

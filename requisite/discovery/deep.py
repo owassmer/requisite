@@ -1909,27 +1909,38 @@ def recompute(store: Store, *, judge: JudgeCall | None = None, runtime: Runtime 
     return case, res, rt, diff
 
 
-def compare(store: Store, before: int, after: int, *, judge: JudgeCall | None = None) -> Diff:
-    """The diff between the materiality of two G1-approved versions of the entity model, each with the G1-approved
-    decision spec of its horizon: the earlier computed first, then the later on the same runtime, so only what the
-    change reaches is recomputed (spec §5; WP11a)."""
+def version_case(store: Store, version: int) -> Case:
+    """The case as a G1-approved version of its entity model gives it, with the G1-approved decision spec of that
+    model's horizon (the latest, where several share it) and the evidence as of its decision time."""
     models = {m.version: m for m in (_payload(p, core.EntityModel) for p in _active(store, "entity_model"))}
     specs = sorted(((_payload(p, core.DecisionSpec), p.id) for p in _active(store, "decision_spec")),
                    key=lambda s: s[0].version)  # fmt: skip
+    if version not in models:
+        raise Refused(f"no G1-approved entity model of version {version} in this case")
+    found = next(((sp, sid) for sp, sid in reversed(specs) if sp.horizon == models[version].horizon), None)
+    if found is None:
+        raise Refused(f"no G1-approved decision spec has entity model v{version}'s horizon")
+    spec, spec_id = found
     case = open_deep(store)
-    rt = Runtime(store)
+    state, claims, artifacts = _evidence(store, spec.decision_time)
+    return Case(store, models[version], case.model_proposal, spec, spec_id, case.events, state, claims, artifacts)
+
+
+def compare(store: Store, before: int, after: int, *, judge: JudgeCall | None = None,
+            runtime: Runtime | None = None) -> Diff:  # fmt: skip
+    """The diff between two G1-approved versions of the entity model (version_case): the earlier computed first, then
+    the later on the same runtime, so only what the change reaches is recomputed (spec §5; WP11a). The graph is the
+    case's whole: materiality, and construction's vertices beside it where the case holds a construction
+    (requisite/construct/graph.py), so a moved horizon shows the exposure and optimizer nodes it changes and the
+    settlement nodes it does not (spec §15 beat 5)."""
+    from requisite.construct.graph import full_graph  # construction builds on this module
+
+    rt = runtime or Runtime(store)
     calls = Judge(judge or providers.judge)
     diff: Diff | None = None
     for v in (before, after):
-        if v not in models:
-            raise Refused(f"no G1-approved entity model of version {v} in this case")
-        found = next(((sp, sid) for sp, sid in reversed(specs) if sp.horizon == models[v].horizon), None)
-        if found is None:
-            raise Refused(f"no G1-approved decision spec has entity model v{v}'s horizon")
-        spec, spec_id = found
-        state, claims, artifacts = _evidence(store, spec.decision_time)
-        c = Case(store, models[v], case.model_proposal, spec, spec_id, case.events, state, claims, artifacts)
-        diff = rt.recompute(build_graph(c, resolve_case(c, calls)))
+        c = version_case(store, v)
+        diff = rt.recompute(full_graph(c, resolve_case(c, calls)))
     assert diff is not None
     return diff
 

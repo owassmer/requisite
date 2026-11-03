@@ -560,18 +560,8 @@ def forced(ir: core.ContractIR, truth: Kleene, observations: Sequence[core.Synth
 
 
 def determined(ev: core.ResolutionEvaluation, ir: core.ContractIR) -> bool:
-    """Whether an evaluation's transfers are settled amounts: a NO, a void with its stated refund, or a YES with every
-    payment made (a quantity still an interval, a refund of the premium or an early date left to a rule are not)."""
-    if ev.procedure_status == "resolved_no":
-        return True
-    if ev.procedure_status == "void":
-        assert ir.resolution.void_transfer is not None  # a void outcome: the procedure has a void path, so states it
-        returns = ir.resolution.void_transfer.returns
-        return returns == "nothing" or (returns == "fixed_amount" and len(ev.transfers) == 1)
-    if ev.procedure_status == "resolved_yes":
-        expected = len(ir.payout.periods) if ir.payout.payment == "per_period" else 1
-        return len([t for t in ev.transfers if t.basis == "payout"]) == expected
-    return False
+    """Whether an evaluation's transfers are settled amounts (core.payment_why, the one statement of it)."""
+    return core.payment_why(ev, ir) is None
 
 
 def total(ev: core.ResolutionEvaluation) -> Fraction:

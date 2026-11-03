@@ -79,6 +79,7 @@ PAYLOAD: dict[str, type[Record]] = {
     "scenario": core.ScenarioPacket,
     "event_families": core.EventFamilies,
     "lead": core.LeadPromotion,
+    "observable": core.ObservableCandidate,
 }
 
 SCHEMA = """

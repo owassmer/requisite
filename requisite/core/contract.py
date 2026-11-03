@@ -681,6 +681,49 @@ class ResolutionEvaluation(Record):
         return self
 
 
+def payment_why(evaluation: ResolutionEvaluation, ir: ContractIR) -> str | None:
+    """Why the per-unit payment an evaluation gives is not determined, or None where it is: every amount and date it pays
+    is fixed (A05 §5.2-5.3; A04 §4.3: an undetermined payment is never read as zero). A NO pays nothing, however its
+    trigger was decided (an unknown trigger settled NO under a stated policy stays unknown, and its payment is
+    determined: A05 §5.2). A void pays its stated refund: nothing, or a fixed amount paid (its one transfer); a refund of
+    the premium is not determined, the premium being the holder's price, which an evaluation is not given. A YES pays
+    where each payout it owes is a transfer with its amount and date: one at settlement, or one per period (an open
+    quantity, or a date left to a rule, leaves a payout unpaid and named in `unresolved`). Pending, extended and disputed
+    outcomes determine no payment, nor does any outcome the exchange may still review at its discretion
+    (ResolutionProcedure.review_rule). A transfer dated only as a window (CashTransfer.earliest before its `at`: a settlement
+    stated as a deadline) has no one date, so its payment is not determined (A04 §4.3: an unresolved parameter is kept as
+    a range or blocks point-valued use, never placed at one end). The one statement of a determined payment: the
+    wording test and construction read it."""
+    status = evaluation.procedure_status
+    unresolved = f": {'; '.join(evaluation.unresolved)}" if evaluation.unresolved else ""
+    if ir.resolution.review_rule is not None and status in ("resolved_yes", "resolved_no", "void"):
+        # An outcome the exchange may still review is not fixed (A04 §4.3: an unresolved parameter blocks point-valued
+        # use): it stands only unless reviewed, and a review is neither foreseen nor an input here.
+        return f"it stands unless the exchange reviews it under {ir.resolution.review_rule}"
+    for t in evaluation.transfers:
+        if t.earliest is not None and t.earliest != t.at:
+            return f"it pays {t.amount} {t.currency} on a date between {t.earliest.isoformat()} and {t.at.isoformat()}"
+    if status == "resolved_no":
+        return None
+    if status == "void":
+        assert ir.resolution.void_transfer is not None  # ResolutionProcedure: a procedure that can end void states it
+        returns = ir.resolution.void_transfer.returns
+        if returns == "nothing":
+            return None
+        if returns == "fixed_amount" and len(evaluation.transfers) == 1:
+            return None
+        return f"it is void and returns the {returns}, not determined here{unresolved}"
+    if status == "resolved_yes":
+        # The evaluator makes a payout transfer only where its amount is one value, and names an amount still open in
+        # `unresolved` instead (requisite/contract/evaluate.py _payout): so the transfers made are the payments
+        # determined. An open quantity whose capped or rounded amount is one value pays it; A05 §5.3 keeps the quantity
+        # an interval, not a payment the contract fixes.
+        owed = len(ir.payout.periods) if ir.payout.payment == "per_period" else 1
+        paid = len([t for t in evaluation.transfers if t.basis == "payout"])
+        return None if paid == owed else f"it resolves YES with {paid} of its {owed} payout(s) determined{unresolved}"
+    return f"it is {status}{unresolved}"
+
+
 Support = Literal["supported_exact", "supported_with_explicit_assumptions", "unsupported"]
 Equivalence = Literal[
     "counterexample_found",

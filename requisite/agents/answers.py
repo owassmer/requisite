@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationInfo, m
 
 from requisite.core import (
     Assumption,
+    CmpValue,
     ContractFamily,
     ContractIR,
     Driver,
@@ -20,6 +21,7 @@ from requisite.core import (
     HarvestedContract,
     LiquidityProfile,
     ListingBinding,
+    Observable,
     Parameter,
     SettlementBinding,
     TimeWindow,
@@ -416,3 +418,24 @@ class EntityModelDraft(_Answer):
         return EntityModel(id=id, version=version, entity=entity, drivers=[d.driver() for d in self.drivers],
                            liquidity=self.liquidity.profile(), horizon=horizon, loss_definition=loss_definition,
                            currency=self.currency)  # fmt: skip
+
+
+class ObservableDraft(_Answer):
+    """One candidate observable (core.ObservableCandidate's fields that are the agent's; its event is code's): the
+    observable with its sources ranked, schedule and revision policy; the exposures of the event whose loss it links to;
+    the mechanism of that link; and the value it publishes for a day on which the event's adverse state holds, otherwise,
+    and in part where it has such a value."""
+
+    observable: Observable
+    exposures: Sequence[str]
+    mechanism: str
+    occurs: CmpValue
+    absent: CmpValue
+    partial: CmpValue | None
+
+
+class ObservablesDraft(_Answer):
+    """observable_scout: the candidate observables for one pending event of a deep case's top k (spec §8.1)."""
+
+    candidates: Sequence[ObservableDraft]
+    rationale: str

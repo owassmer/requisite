@@ -476,8 +476,9 @@ def examples() -> list[c.Record]:
         c.OptimizationResult(
             decision=c.Ref(id="decision", version=1),
             objective="liquidity_cvar",
+            alpha=F(9, 10),
             scenarios_hash=H,
-            probabilities_hash=H,
+            probabilities_hash=H, business_hash="0" * 64, receipts_hash="0" * 64,
             candidates=[
                 c.PricedCandidate(ref="y", ir=c.Ref(id="wet-spring", version=1), price=D("10"), pricing="indicative",
                                   price_source="model", cap=D("1"))  # fmt: skip

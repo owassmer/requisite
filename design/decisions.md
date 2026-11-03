@@ -274,6 +274,39 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   - The design the draws name is committed (core.SamplingDesign, kind sampling_design) with the gold draw, when its
     phase-2 cells exist. The coverage simulation before the gold is a statement about the design under a label model:
     where that model puts no item in the denominator it says the ratio is undefined and the gold is drawn regardless.
+- Construction as built (004-1, November 2; accepted by the coordinator after reading requisite/core/construction.py
+  whole). The business's cash grid is the day: each day's operating flows, modeled loss and transfers count on that
+  day, deep's monthly amounts spread over the month's days, rounded to the cent toward less cash, so the computed cash
+  never exceeds the exact model's; starting liquidity is cash plus the undrawn credit line; the premium is paid on the
+  decision day (or the horizon's first day if later). The scenario model covers every pending event of the case (a
+  model over the top k alone would silently shrink the business's cash); the top k chooses what is hedged. Two endpoint
+  models: adverse (every exposure at its cash-lowering end, each event on its earliest day) and favourable (the reverse,
+  each event on its window's last day); the chosen structure is the adverse solve, the favourable shown beside it, and
+  the worst-case claim is made only where no candidate's transfers differ between them. Several events with no committed
+  event tree join as independent, recorded hypothetical with the assumption named; where several events move one
+  driver, their changes add, each a share of the current amount, stated as an assumption. Indicative price: discounted
+  expected payout from the evaluator's transfers (simple interest, a step-given annual rate, actual/365, to the premium
+  day) times (1 + loading), rounded up to 1e-6; a quote only for a listed market whose IR predicate is the candidate's,
+  with a positive ask, its exchange fee stated as not included. Candidates whose receipts and price are proportional in
+  every scenario are one LP column (payoff classes), so a solver's tie is never read as a choice. A design holds
+  (core.design_holds, from A03 §3.3) where, held as one instrument and resized, it is within the decision's tolerance of
+  the re-solve's optimum and still beats buying nothing by more than that tolerance. Robustness varies one forecast at a
+  time across its band, prices held; repricing varies the loading over its range. Structure templates read the event
+  window, the decision time and the observable, never the horizon, so moving the horizon changes no settlement value
+  (beat 5); terms are 6, 12 and 24 months, settlement one day after. A new proposal kind, observable (schema, tests):
+  an agent's candidate observable, screened by the judges on spec §8.1's three hedgeability questions, passing only where
+  all three are true. Every construction computation is a registered node in the case's graph beside deep's, so the
+  horizon diff shows the optimizer's nodes.
+  A construction record holds only its own problem (definition review, November 2): each solve's scenarios,
+  probabilities and candidate prices are the record's (addendum §12's hashes, recomputed), its premium is its quantities
+  at those prices and within the budget (A06 §6.2: c'q <= B). A payment is determined (core.payment_why, the one
+  statement the wording test and construction both read) where every amount and date it pays is fixed: a YES whose
+  payout has no date (left to a rule) or no single amount is not, and is never read as zero.
+  A candidate a listed market settling on its predicate offers at an ask whose exchange fee is not known is unpriced,
+  with why, and enters no solve (definition review, November 2): the listed quote is the price where one exists (spec
+  §8.3) and fees enter every comparison (§10), so neither the ask alone nor an indicative price stands for its cost
+  (A04 §4.3). Construction's candidates in the demo are new contracts, which no market lists; Kalshi's fee schedule
+  read into the quote would close it where one does.
 - F4's reading, after the read and before the gold draw (coordinator, November 2, 17:30 ET; each found in F4's own
   items before any gold label or estimate, so fixed at its source and the run continued from the same objective and
   as_of, with no item chosen by hand):
