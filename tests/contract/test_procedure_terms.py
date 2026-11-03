@@ -69,3 +69,19 @@ def test_a_binary_payout_is_paid_as_stated_and_a_computed_amount_states_its_roun
                  currency="USD", payment="at_settlement")  # fmt: skip
     with pytest.raises(ValidationError, match="quantum and its mode together"):
         binary("1.00", rounding_mode=None)
+
+
+def test_an_outcome_the_exchange_may_review_stands_unless_reviewed_and_the_fuzz_refuses_it_by_name():
+    from requisite.fuzz.scenarios import FuzzError, plan
+
+    reviewed = contract(UNREAD, resolution=procedure(review_rule=RULE))
+    after = EXPIRY + timedelta(days=1)
+    ev = evaluate(reviewed, [], {"qualifies": Kleene.TRUE}, at=after)
+    assert ev.procedure_status == "resolved_yes" and len(ev.transfers) == 1  # the outcome the procedure determines
+    assert any(RULE in u and "unless the exchange reviews it" in u for u in ev.unresolved)
+    assert not any("review" in u for u in evaluate(contract(UNREAD), [], {"qualifies": Kleene.TRUE}, at=after).unresolved)
+    pending = evaluate(reviewed, [], {"qualifies": Kleene.TRUE}, at=EXPIRY - timedelta(days=1))
+    assert not any("review" in u for u in pending.unresolved)  # nothing stands yet to be reviewed
+    assert "review_rule" not in contract(UNREAD).model_dump(mode="json")["resolution"]
+    with pytest.raises(FuzzError, match="may review any outcome"):
+        plan(reviewed)

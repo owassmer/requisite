@@ -460,6 +460,15 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   neutral value and list it as an assumption is gone, since a field the terms do not state is no longer required. Each
   new field is left out of the record at its default, so a contract stated before hashes as it did.
 
+- An outcome the exchange may review (coordinator, November 2, the grammar batch's last piece; the definition review's
+  note on the settlement deadline). Castle's filed terms let Kalshi, "Before Settlement ... at its sole discretion,"
+  review the outcome under Rule 7.1, and the settlement deadline holds "unless the Market Outcome is under review". A
+  procedure names such a rule (ResolutionProcedure.review_rule); an outcome it determines then stands unless reviewed,
+  said so in the evaluation, and a fuzz run refuses the contract by name. The planned "expire once decided either way"
+  is dropped: read again, the filed terms expire early only when the payout event occurs ("If an event described in the
+  Payout Criterion occurs, expiration will be moved to an earlier date ... in accordance with Rule 7.2"), which the IR
+  already states (early_expiration "when_true", "per_exchange_rule", the rule named).
+
 ## No escape routes, loud or quiet
 
 - Owen, November 1: "I am also uncompromisingly averse to 'loud failure' escape routes and deferrals/dismissals/shortcuts

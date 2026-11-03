@@ -515,8 +515,15 @@ class ResolutionProcedure(Record):
     payouts pursuant to Rule 7.1"): the outcome is that determination, which is not among the inputs, so the evaluation
     stays pending on it (A05 §5.2: "Unsupported procedure details must be reported, not guessed"). void_transfer: what a
     void returns (A05 §5.2: "The per-unit transfer policy must state whether acquisition premium, a fixed amount, fees,
-    or another amount is returned"), required where the procedure can end void (on_unknown_at_expiry or after_extension "void"); a contract with no void path
-    need not state one, and one stated there is never applied (contracts read before it was optional state one)."""
+    or another amount is returned"), required where the procedure can end void (on_unknown_at_expiry or after_extension
+    "void"); a contract with no void path need not state one, and one stated there is never applied (contracts read
+    before it was optional state one). review_rule: a rule of the exchange under which it may, at its discretion, review
+    any outcome before settlement, named as the contract names it ("Before Settlement, Kalshi may, at its sole
+    discretion, initiate the Market Outcome Review Process pursuant to Rule 7.1"; "The Settlement Date ... shall be no
+    later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1"): an
+    outcome the procedure determines stands unless so reviewed, a reviewed outcome is the exchange's determination,
+    which is not among the inputs, and the settlement date's deadline does not bind while a review runs (A05 §5.2:
+    "Unsupported procedure details must be reported, not guessed")."""
 
     precedence: Sequence[str]
     conflict_policy: ConflictPolicy
@@ -528,6 +535,7 @@ class ResolutionProcedure(Record):
     extension_days: int | None = None
     after_extension: Literal["no", "yes", "void"] | None = None
     void_transfer: VoidTransfer | None = Field(default=None, exclude_if=lambda v: v is None)
+    review_rule: str | None = Field(default=None, exclude_if=lambda v: v is None)
 
     @model_validator(mode="after")
     def _extend(self) -> ResolutionProcedure:
@@ -539,6 +547,8 @@ class ResolutionProcedure(Record):
         extending = self.on_unknown_at_expiry == "extend"
         if extending != (self.extension_days is not None and self.after_extension is not None):
             raise ValueError("an extension states its days and what follows it, and only an extension does")
+        if self.review_rule is not None and not self.review_rule.strip():
+            raise ValueError("a review rule names the rule the exchange reviews an outcome under")
         if (self.on_unknown_at_expiry == "per_rule") != (self.unknown_rule is not None):
             raise ValueError("an unknown left to an exchange rule names that rule, and only it does")
         if "void" in (self.on_unknown_at_expiry, self.after_extension) and self.void_transfer is None:

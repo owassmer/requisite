@@ -1040,6 +1040,14 @@ def evaluate(
     inp = _Inputs(ir, observations, interpretations)
     at = _utc(at)
     out = _procedure(inp, at)
+    review = ir.resolution.review_rule
+    if review is not None and out.status in ("resolved_yes", "resolved_no", "void"):
+        # core.ResolutionProcedure.review_rule: the outcome stands unless the exchange reviews it; a review is neither
+        # foreseen nor read here.
+        out.unresolved.append(f"this outcome stands unless the exchange reviews it under {review} before settlement; a "
+                              "reviewed outcome is the exchange's determination, which is not among the inputs, and the "
+                              "settlement deadline does not bind while a review runs")  # fmt: skip
+        out.policies.append(_clause(ir, "resolution/review_rule"))
     out.policies = list(dict.fromkeys([EVALUATOR, *_value_policies(ir), *out.policies]))
     return ResolutionEvaluation(
         contract=ir.ref,

@@ -210,6 +210,8 @@ class IRView:
             pairs.append(("extension", esc(f"{r.extension_days} days, then {r.after_extension}")))
         if r.unknown_rule is not None:
             pairs.append(("an unknown at expiry is settled by", esc(r.unknown_rule)))
+        if r.review_rule is not None:
+            pairs.append(("the exchange may review any outcome before settlement under", esc(r.review_rule)))
         v = r.void_transfer
         if v is not None:
             pairs.append(("a void returns", esc(v.returns + (f" {v.amount}" if v.amount is not None else ""))))
