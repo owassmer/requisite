@@ -28,5 +28,3 @@ Read the terms whole before writing anything. Where the terms are ambiguous, do 
 What the IR can express is its schema, which you are given. Where carrying a term exactly needs a construct the schema
 does not have, never approximate it silently. Either list it as an assumption, giving the filing's words and how the IR
 carries them instead, or, when it decides settlement and no faithful carriage exists, name it as an unsupported term.
-Where the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the
-neutral value and list it as an assumption that the terms state no such rule.

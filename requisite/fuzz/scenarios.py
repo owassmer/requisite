@@ -235,6 +235,11 @@ def sources(ir: core.ContractIR) -> tuple[dict[str, tuple[str, ...]], dict[str, 
 
 def plan(ir: core.ContractIR, *, reference: Sequence[core.Observation] = (), stress: bool = True) -> Plan:
     """Every scenario of a fuzz run of `ir`, made concrete, with the coverage account its scenarios meet."""
+    if ir.resolution.on_unknown_at_expiry == "per_rule":
+        # The resolution template answers YES, NO, AMBIGUOUS and the procedure's own void, extended or disputed; an
+        # outcome left to an exchange rule is none of them, so the wording of such a contract is not tested by this run.
+        raise FuzzError(f"{ir.id}: an unknown at expiry is settled by {ir.resolution.unknown_rule}, an outcome no "
+                        "resolution template answers: its wording is not tested by this run")  # fmt: skip
     over = [n.id for r in (ir.trigger, ir.payout.quantity) if r is not None for n in core.walk(r) if isinstance(n, core.Exists)]
     if over:
         # A scenario of an Exists is a list of members, each with its conditions, and whether the list is complete; the

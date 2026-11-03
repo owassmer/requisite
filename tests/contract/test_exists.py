@@ -27,6 +27,7 @@ EXISTS = c.Exists(
     member="an instrument (act, regulation, order, guidance or agreement)",
     domain="the instruments the source agencies document by the expiration",
     sources=SOURCES,
+    on_conflict="acting_body_record",
     expr=QUALIFIES,
 )
 IR = contract(EXISTS)
@@ -63,16 +64,16 @@ def test_a_member_is_given_every_judged_condition_of_the_body_and_nothing_at_top
 
 def test_an_exists_judges_each_member_and_binds_no_member_itself():
     with pytest.raises(ValueError, match="no judged condition"):
-        c.Exists(id="x", member="m", domain="d", sources=SOURCES, expr=c.Cmp(id="cmp", observable="x", op=">", value=c.Number(value=1)))
+        c.Exists(id="x", member="m", domain="d", sources=SOURCES, on_conflict="acting_body_record", expr=c.Cmp(id="cmp", observable="x", op=">", value=c.Number(value=1)))
     bound = QUALIFIES.model_copy(update={"bindings": {**QUALIFIES.bindings, c.MEMBER: "one instrument"}})
     with pytest.raises(ValueError, match="given per member"):
-        c.Exists(id="x", member="m", domain="d", sources=SOURCES, expr=bound)
+        c.Exists(id="x", member="m", domain="d", sources=SOURCES, on_conflict="acting_body_record", expr=bound)
     with pytest.raises(ValueError, match="names where its members are recorded"):
-        c.Exists(id="x", member="m", domain="d", sources=[], expr=QUALIFIES)
+        c.Exists(id="x", member="m", domain="d", sources=[], on_conflict="acting_body_record", expr=QUALIFIES)
     with pytest.raises(ValueError, match="source ids are distinct"):
-        c.Exists(id="x", member="m", domain="d", sources=[SOURCES[0], SOURCES[0]], expr=QUALIFIES)
+        c.Exists(id="x", member="m", domain="d", sources=[SOURCES[0], SOURCES[0]], on_conflict="acting_body_record", expr=QUALIFIES)
     with pytest.raises(ValueError, match="states what a member is"):
-        c.Exists(id="x", member=" ", domain="d", sources=SOURCES, expr=QUALIFIES)
+        c.Exists(id="x", member=" ", domain="d", sources=SOURCES, on_conflict="acting_body_record", expr=QUALIFIES)
 
 
 def test_a_fuzz_run_refuses_an_exists_by_name():
@@ -84,7 +85,7 @@ def test_a_fuzz_run_refuses_an_exists_by_name():
 
 def test_an_exists_holds_no_exists():
     with pytest.raises(ValueError, match="holds no further Exists"):
-        c.Exists(id="outer", member="m", domain="d", sources=SOURCES, expr=EXISTS)
+        c.Exists(id="outer", member="m", domain="d", sources=SOURCES, on_conflict="acting_body_record", expr=EXISTS)
 
 
 def test_the_dossier_states_an_exists_and_its_body():

@@ -259,6 +259,7 @@ def examples() -> list[c.Record]:
         c.Interpretive(id="relief", question_template="qt.relief", bindings={"rule": "X"}),
         c.Exists(id="any_relief", member="an order granting relief", domain="the orders the agency issues by expiry",
                  sources=[c.Source(id="register", name="the Federal Register", rank=1, role="official_record")],
+                 on_conflict="highest_ranked",
                  expr=c.Interpretive(id="grants", question_template="qt.relief", bindings={"rule": "X"})),  # fmt: skip
         COUNT,
         c.Number(value=D("1.5")),

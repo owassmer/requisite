@@ -1225,14 +1225,22 @@ def _apply_rule(inp: _Inputs, view: _View, t: _T, rule: str, resolution_at: date
         out = _Outcome(t.value, "resolved_yes", unresolved=[w.text for w in t.why])
         _payout(inp, view, resolution_at, "", out)
         return out
+    if rule == "per_rule":
+        out = _Outcome(t.value, "pending", unresolved=[
+            f"the outcome is the one {ir.resolution.unknown_rule} determines for a trigger unknown at expiry; that "
+            "determination is not among the inputs", *(w.text for w in t.why)])  # fmt: skip
+        out.quantity = _quantity(inp, view)[0]
+        return out
     out = _Outcome(t.value, "void", unresolved=[w.text for w in t.why])
     void = ir.resolution.void_transfer
+    assert void is not None  # core.ResolutionProcedure: a procedure that can end void states its void transfer
     out.policies.append(_clause(ir, f"resolution/void_transfer/{void.returns}"))
     out.quantity = _quantity(inp, view)[0]
     paid = _pay_date(resolution_at, ir)
     if void.returns == "fixed_amount":
         assert void.amount is not None
-        out.transfers.append(CashTransfer(at=paid, amount=void.amount, currency=ir.payout.currency, basis="void refund"))
+        out.transfers.append(CashTransfer(at=paid, amount=void.amount, currency=ir.payout.currency, basis="void refund",
+                                          earliest=_earliest(resolution_at, ir)))  # fmt: skip
         out.policies.append(_timing_policy(ir))
     elif void.returns == "premium":
         out.unresolved.append(f"void refund: the premium paid per unit is returned at {paid.isoformat()}; the premium "
@@ -1247,7 +1255,8 @@ def _apply_rule(inp: _Inputs, view: _View, t: _T, rule: str, resolution_at: date
 def _timing_policy(ir: ContractIR) -> Ref:
     t = ir.timing
     days = f"business/{t.holiday_calendar}" if t.lag_days == "business" else "calendar"
-    return _clause(ir, f"timing/lags/{days}/{t.settlement_lag_days}+{t.payment_lag_days}/{t.tz}")
+    bound = "" if t.settlement_lag == "exact" else "at_most/"
+    return _clause(ir, f"timing/lags/{days}/{bound}{t.settlement_lag_days}+{t.payment_lag_days}/{t.tz}")
 
 
 def _shift(t: datetime, days: int, ir: ContractIR) -> datetime:
@@ -1260,9 +1269,17 @@ def _shift(t: datetime, days: int, ir: ContractIR) -> datetime:
 
 def _pay_date(resolution_at: datetime, ir: ContractIR) -> datetime:
     """Paid at the resolution instant plus the settlement lag, then the payment lag (A05 §5.3: the settlement
-    determination and payment dates are distinct)."""
+    determination and payment dates are distinct); where the settlement lag is a deadline, the latest such date."""
     determined = _shift(resolution_at, ir.timing.settlement_lag_days, ir)
     return _shift(determined, ir.timing.payment_lag_days, ir).astimezone(ZoneInfo(ir.timing.tz))
+
+
+def _earliest(resolution_at: datetime, ir: ContractIR) -> datetime | None:
+    """Where the settlement lag is a deadline (core.Timing.settlement_lag "at_most"), the earliest payment date: settled
+    at resolution, then the payment lag; otherwise None (the date is _pay_date's)."""
+    if ir.timing.settlement_lag != "at_most":
+        return None
+    return _shift(resolution_at, ir.timing.payment_lag_days, ir).astimezone(ZoneInfo(ir.timing.tz))
 
 
 def _round(x: Fraction, quantum: Decimal, mode: str) -> Decimal:
@@ -1291,6 +1308,8 @@ def _amount(ir: ContractIR, q: Interval | None) -> tuple[Decimal, Decimal] | Non
     p = ir.payout
     u = Fraction(p.unit_value)
     if p.kind == "binary":
+        if p.rounding_quantum is None or p.rounding_mode is None:
+            return (p.unit_value, p.unit_value)  # paid as stated
         a = _round(u, p.rounding_quantum, p.rounding_mode)
         return (a, a)
     assert q is not None
@@ -1302,6 +1321,7 @@ def _amount(ir: ContractIR, q: Interval | None) -> tuple[Decimal, Decimal] | Non
         if p.kind == "capped_linear":
             assert p.cap is not None
             v = min(v, Fraction(p.cap))
+        assert p.rounding_quantum is not None and p.rounding_mode is not None  # core.Payout: a computed amount rounds
         return _round(v, p.rounding_quantum, p.rounding_mode)
 
     ends = sorted([f(q.lo), f(q.hi)])
@@ -1333,7 +1353,7 @@ def _payout(inp: _Inputs, view: _View, resolution_at: datetime | None, when: str
     ir = inp.ir
     p = ir.payout
     out.quantity, n = _quantity(inp, view)
-    rounding = _clause(ir, f"payout/rounding/{p.rounding_mode}/{p.rounding_quantum}")
+    rounding = [] if p.rounding_mode is None else [_clause(ir, f"payout/rounding/{p.rounding_mode}/{p.rounding_quantum}")]
     if p.payment == "per_period":
         for period in p.periods:
             assert period.end is not None and p.quantity is not None
@@ -1342,23 +1362,24 @@ def _payout(inp: _Inputs, view: _View, resolution_at: datetime | None, when: str
             label = f"{_iso(period.start) if period.start else '-inf'} to {_iso(period.end)}"
             if amount is not None and amount[0] == amount[1]:
                 out.transfers.append(CashTransfer(at=_pay_date(_utc(period.end), ir), amount=amount[0],
-                                                  currency=p.currency, basis="payout"))  # fmt: skip
+                                                  currency=p.currency, basis="payout",
+                                                  earliest=_earliest(_utc(period.end), ir)))  # fmt: skip
             else:
                 out.unresolved.append(_open_amount(ir, f"the period {label}", part, amount))
-        out.policies += [rounding, _timing_policy(ir)]
+        out.policies += [*rounding, _timing_policy(ir)]
         return
     amount = _amount(ir, n.interval if n is not None else None)
     if amount is None or amount[0] != amount[1]:
         assert n is not None
         out.unresolved.append(_open_amount(ir, "the payout", n, amount))
         return
-    out.policies.append(rounding)
+    out.policies += rounding
     if resolution_at is None:
         lag = f"{ir.timing.settlement_lag_days} + {ir.timing.payment_lag_days} {ir.timing.lag_days} days"
         out.unresolved.append(f"payout: {amount[0]} {p.currency} per unit, paid {lag} after {when}")
         return
     out.transfers.append(CashTransfer(at=_pay_date(resolution_at, ir), amount=amount[0], currency=p.currency,
-                                      basis="payout"))  # fmt: skip
+                                      basis="payout", earliest=_earliest(resolution_at, ir)))  # fmt: skip
     out.policies.append(_timing_policy(ir))
 
 

@@ -234,7 +234,12 @@ class Exists(Record):
 
     member: what one member is, in the contract's words. domain: the class `expr` ranges over, in the contract's words.
     sources: where the class's members are recorded, ranked as the contract ranks them (rank 1 highest), at least one:
-    a member is a record one of them documents by the observation cutoff. expr: the condition each member is tested on. Each judged
+    a member is a record one of them documents by the observation cutoff. on_conflict: which record governs where the
+    sources' records of a member conflict, or a source retracts, corrects or removes information: the highest-ranked
+    source's, or the official record of the body that took the action (as in "Where the records of the Source Agencies
+    conflict, or where a Source Agency retracts, corrects, or removes information, the official records of the body that
+    took the action govern"); the resolvers who list the members and judge each are bound by it. expr: the condition each member is
+    tested on. Each judged
     condition of `expr` (an Interpretive or a ReadValue) is asked about one member at a time: its bindings are the
     contract's, and the member is given under the binding MEMBER, as its evidence identifies it (the record, its
     publisher and date), so the question names the member it is about; a judged node of `expr` binds no MEMBER itself.
@@ -255,6 +260,7 @@ class Exists(Record):
     member: str
     domain: str
     sources: Sequence[Source]
+    on_conflict: Literal["highest_ranked", "acting_body_record"]
     expr: Expr
 
     @model_validator(mode="after")
@@ -394,7 +400,8 @@ def walk(expr: Any) -> Iterator[Any]:
 
 class Payout(Record):
     """Per unit (spec §4). currency, and rounding to `rounding_quantum` by `rounding_mode`, are explicit (A05 §5.1,
-    §5.4: "Define ... rounding"). payment: paid once at settlement, or per
+    §5.4: "Define ... rounding") wherever the amount is computed; a binary payout pays its unit value as stated, so it
+    states a rounding only where its terms do. payment: paid once at settlement, or per
     period of `periods`, each period's amount paid after its end (A05 §5.3: "A count paid once at expiry and a strip paid
     periodically can have identical terminal amounts and very different liquidity consequences")."""
 
@@ -403,8 +410,8 @@ class Payout(Record):
     quantity: NumExpr | None = None
     cap: Money | None = None
     currency: str
-    rounding_quantum: Money
-    rounding_mode: Literal["half_even", "half_up", "down", "up"]
+    rounding_quantum: Money | None = Field(default=None, exclude_if=lambda v: v is None)
+    rounding_mode: Literal["half_even", "half_up", "down", "up"] | None = Field(default=None, exclude_if=lambda v: v is None)
     payment: Literal["at_settlement", "per_period"]
     periods: Sequence[TimeWindow] = ()
 
@@ -418,6 +425,10 @@ class Payout(Record):
             raise ValueError("a cap belongs to a capped_linear payout, and it has one")
         if (self.payment == "per_period") != bool(self.periods):
             raise ValueError("a per-period payment lists its periods, and only it does")
+        if (self.rounding_quantum is None) != (self.rounding_mode is None):
+            raise ValueError("a rounding states its quantum and its mode together")
+        if self.kind != "binary" and self.rounding_quantum is None:
+            raise ValueError(f"a {self.kind} payout states how its amount is rounded (A05 §5.4)")
         return self
 
 
@@ -428,7 +439,10 @@ class Timing(Record):
     timezone, day-count conventions"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose
     one registered calendar is the United States federal holidays of 5 U.S.C. §6103 (ours: the calendar the contracts
     we build settle against; another is registered here before a contract can use it, A05 §5.4 "Mechanical policies
-    must be executable")."""
+    must be executable"). settlement_lag: "exact" where the settlement determination falls settlement_lag_days after
+    resolution; "at_most" where the contract sets a deadline instead ("no later than the day after the Expiration Date"):
+    it falls between resolution and that day, so a payment's date is a range (CashTransfer.earliest) (ours, from the
+    filed terms; "exact" is left out of the record, so a contract stated before this field hashes as it did)."""
 
     open: Instant
     close: Instant
@@ -439,6 +453,7 @@ class Timing(Record):
     lag_days: Literal["calendar", "business"]
     holiday_calendar: Literal["us_federal"] | None
     tz: str
+    settlement_lag: Literal["exact", "at_most"] = Field(default="exact", exclude_if=lambda v: v == "exact")
 
     @model_validator(mode="after")
     def _order(self) -> Timing:
@@ -495,17 +510,24 @@ class ResolutionProcedure(Record):
     outside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is
     true while the early date stays unresolved, named, until that rule is supplied (A05 §5.2: "Unsupported procedure
     details must be reported, not guessed"). An extension names its length and what happens if the trigger is still
-    unknown after it."""
+    unknown after it. "per_rule": an unknown trigger at expiry is settled by a rule of the exchange outside the IR's
+    sources, named in unknown_rule ("If an Expiration Value cannot be determined ... Kalshi has the right to determine
+    payouts pursuant to Rule 7.1"): the outcome is that determination, which is not among the inputs, so the evaluation
+    stays pending on it (A05 §5.2: "Unsupported procedure details must be reported, not guessed"). void_transfer: what a
+    void returns (A05 §5.2: "The per-unit transfer policy must state whether acquisition premium, a fixed amount, fees,
+    or another amount is returned"), required where the procedure can end void (on_unknown_at_expiry or after_extension "void"); a contract with no void path
+    need not state one, and one stated there is never applied (contracts read before it was optional state one)."""
 
     precedence: Sequence[str]
     conflict_policy: ConflictPolicy
-    on_unknown_at_expiry: Literal["no", "yes", "extend", "void"]
+    on_unknown_at_expiry: Literal["no", "yes", "extend", "void", "per_rule"]
+    unknown_rule: str | None = Field(default=None, exclude_if=lambda v: v is None)
     early_expiration: Literal["none", "when_true"]
     early_expiration_at: Literal["first_true", "per_exchange_rule"] | None = None
     early_expiration_rule: str | None = None
     extension_days: int | None = None
     after_extension: Literal["no", "yes", "void"] | None = None
-    void_transfer: VoidTransfer
+    void_transfer: VoidTransfer | None = Field(default=None, exclude_if=lambda v: v is None)
 
     @model_validator(mode="after")
     def _extend(self) -> ResolutionProcedure:
@@ -517,6 +539,10 @@ class ResolutionProcedure(Record):
         extending = self.on_unknown_at_expiry == "extend"
         if extending != (self.extension_days is not None and self.after_extension is not None):
             raise ValueError("an extension states its days and what follows it, and only an extension does")
+        if (self.on_unknown_at_expiry == "per_rule") != (self.unknown_rule is not None):
+            raise ValueError("an unknown left to an exchange rule names that rule, and only it does")
+        if "void" in (self.on_unknown_at_expiry, self.after_extension) and self.void_transfer is None:
+            raise ValueError("a procedure that can end void states what a void returns")
         return self
 
 
@@ -603,12 +629,21 @@ class ContractIR(Record):
 
 
 class CashTransfer(Record):
-    """One dated per-unit transfer (A05 §5.1). basis: payout, contractual refund, fee, and so on."""
+    """One dated per-unit transfer (A05 §5.1). basis: payout, contractual refund, fee, and so on. Where the contract
+    sets a deadline rather than a date (Timing.settlement_lag "at_most"), `at` is the latest instant it can be paid and
+    `earliest` the first; otherwise `at` is its date and earliest is not stated."""
 
     at: Instant
     amount: Money
     currency: str
     basis: str
+    earliest: Instant | None = Field(default=None, exclude_if=lambda v: v is None)
+
+    @model_validator(mode="after")
+    def _range(self) -> CashTransfer:
+        if self.earliest is not None and not self.earliest <= self.at:
+            raise ValueError("a transfer's earliest date is not after its latest (`at`)")
+        return self
 
 
 class ResolutionEvaluation(Record):

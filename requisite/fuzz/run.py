@@ -565,6 +565,7 @@ def determined(ev: core.ResolutionEvaluation, ir: core.ContractIR) -> bool:
     if ev.procedure_status == "resolved_no":
         return True
     if ev.procedure_status == "void":
+        assert ir.resolution.void_transfer is not None  # a void outcome: the procedure has a void path, so states it
         returns = ir.resolution.void_transfer.returns
         return returns == "nothing" or (returns == "fixed_amount" and len(ev.transfers) == 1)
     if ev.procedure_status == "resolved_yes":

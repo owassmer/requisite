@@ -133,8 +133,11 @@ class IRView:
             return f"computed by the registered node {code(f'{n.node.id} v{n.node.version}')} from its inputs below"
         if isinstance(n, core.Exists):
             named = ", ".join(esc(s.name) for s in sorted(n.sources, key=lambda s: s.rank))
+            governs = ("the highest-ranked source's record" if n.on_conflict == "highest_ranked" else
+                       "the official record of the body that took the action")  # fmt: skip
             return (f"some {esc(n.member)} of {esc(n.domain)}, as recorded by {named}, meets this, each judged for "
-                    "itself; none does only once each of them has been read through the observation cutoff")  # fmt: skip
+                    f"itself; where their records conflict, {governs} governs; none does only once each of them has "
+                    "been read through the observation cutoff")  # fmt: skip
         raise TypeError(f"no wording for an IR node of kind {type(n).__name__}")
 
     def children(self, n: Any) -> list[tuple[str, Any]]:
@@ -179,7 +182,8 @@ class IRView:
         p = ir.payout
         pairs = [("kind", esc(p.kind)), ("per unit", esc(f"{p.unit_value} {p.currency}")),
                  ("cap", value(None if p.cap is None else str(p.cap))),
-                 ("rounding", esc(f"to {p.rounding_quantum}, {p.rounding_mode}")), ("payment", esc(p.payment))]  # fmt: skip
+                 ("rounding", esc(f"to {p.rounding_quantum}, {p.rounding_mode}") if p.rounding_mode is not None else
+                  "<em>none: the unit value is paid as stated</em>"), ("payment", esc(p.payment))]  # fmt: skip
         if p.periods:
             pairs.append(("periods", ul(esc(window(w)) for w in p.periods)))
         quantity = f'<ul class="tree">{self.tree(p.quantity)}</ul>' if p.quantity is not None else "<em>none</em>"
@@ -189,7 +193,8 @@ class IRView:
         out.append(heading(2, "Timing") + dl([
             ("open", esc(iso(t.open))), ("close", esc(iso(t.close))), ("expiration", esc(iso(t.expiration))),
             ("observation cutoff", esc(iso(t.observation_cutoff))),
-            ("settlement lag", esc(f"{t.settlement_lag_days} {t.lag_days} days")),
+            ("settlement lag", esc(f"{'at most ' if t.settlement_lag == 'at_most' else ''}{t.settlement_lag_days} "
+                                   f"{t.lag_days} days")),
             ("payment lag", esc(f"{t.payment_lag_days} {t.lag_days} days")),
             ("holiday calendar", value(t.holiday_calendar)), ("time zone", esc(t.tz)),
         ]))  # fmt: skip
@@ -203,8 +208,11 @@ class IRView:
                  ("on unknown at expiry", esc(r.on_unknown_at_expiry)), ("early expiration", esc(early))]  # fmt: skip
         if r.on_unknown_at_expiry == "extend":
             pairs.append(("extension", esc(f"{r.extension_days} days, then {r.after_extension}")))
+        if r.unknown_rule is not None:
+            pairs.append(("an unknown at expiry is settled by", esc(r.unknown_rule)))
         v = r.void_transfer
-        pairs.append(("a void returns", esc(v.returns + (f" {v.amount}" if v.amount is not None else ""))))
+        if v is not None:
+            pairs.append(("a void returns", esc(v.returns + (f" {v.amount}" if v.amount is not None else ""))))
         out.append(heading(2, "Resolution procedure") + dl(pairs))
         if ir.exclusions:
             rows = [[esc(x.text), "operative" if x.operative else "a disclosure, not operative",

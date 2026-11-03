@@ -448,6 +448,17 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   is never overwritten, so the draw from v2's answers stays committed under its own key and the redraw from v3's is
   another record; its sampling design likewise. A gold label is a fact about an item under a question at its version,
   so a label carries to any draw that holds the item; its weight is always the current draw's (results._gold).
+- What a filed contract states beyond the existential, carried as stated (coordinator, November 2, the grammar batch's
+  second part, read against Castle's filed terms for KXCAGOAT). An Exists names whose record governs where its sources
+  conflict (the highest-ranked source's, or "the official records of the body that took the action"). A settlement date
+  stated as a deadline ("no later than the day after the Expiration Date") is Timing.settlement_lag "at_most": each
+  payment is dated as a range, CashTransfer.earliest to `at`. An unknown at expiry left to the exchange ("Kalshi has the
+  right to determine payouts pursuant to Rule 7.1") is on_unknown_at_expiry "per_rule", naming the rule; its outcome is
+  that determination, not among the inputs, so the evaluation stays pending on it; the fuzz refuses it by name, as no
+  resolution template answers it. A void transfer is stated where the procedure can end void and only there, and a
+  binary payout states a rounding only where its terms do: the contract reader's instruction to fill such fields with a
+  neutral value and list it as an assumption is gone, since a field the terms do not state is no longer required. Each
+  new field is left out of the record at its default, so a contract stated before hashes as it did.
 
 ## No escape routes, loud or quiet
 

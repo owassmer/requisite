@@ -188,10 +188,12 @@ def payment_terms(ir: core.ContractIR) -> dict[str, str]:
         pays += ", paid per period: " + "; ".join(window(w) for w in p.periods)
     nothing = "when it resolves NO, one contract pays nothing"
     days = "business days (United States federal holidays excluded)" if t.lag_days == "business" else "calendar days"
-    when = (f"the outcome is determined {t.settlement_lag_days} {days} after expiration ({iso(t.expiration)}) and payment "
-            f"is made {t.payment_lag_days} {days} after that, in the {t.tz} time zone")
+    by = "no later than " if t.settlement_lag == "at_most" else ""
+    when = (f"the outcome is determined {by}{t.settlement_lag_days} {days} after expiration ({iso(t.expiration)}) and "
+            f"payment is made {t.payment_lag_days} {days} after that, in the {t.tz} time zone")
     out = {"payout_yes": pays, "payout_no": nothing, "payment_date": when}
     if ir.resolution.on_unknown_at_expiry == "void" or ir.resolution.after_extension == "void":
+        assert v is not None  # core.ResolutionProcedure: a procedure that can end void states its void transfer
         refund = {"premium": "the premium paid is returned", "nothing": "nothing is returned",
                   "fixed_amount": f"{_money(v.amount, p.currency) if v.amount is not None else ''} is returned"}[v.returns]
         out["void_refund"] = f"if the contract is void, {refund}"
