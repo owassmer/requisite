@@ -96,29 +96,39 @@ def the_families(store: Store) -> tuple[core.Proposal, core.EventFamilies]:
 # ---------------------------------------------------------------- 10. estimate
 
 Label = Literal[0, 1, "U"]
+# The answers that leave a gold indicator unresolved (decisions: "A gold answer of 'unsure' or not_established is
+# unresolved, never read as 0"); every other answer settles it: 1 where it is the indicator's yes, 0 otherwise.
+UNRESOLVED_ANSWERS = ("not_established",)
+# The estimator's version: 2 reads every answer by `indicator` (1 had left not_in_class unresolved). An estimate is kept
+# under the questions it rests on and this version, so a corrected one never overwrites the one it corrects.
+ESTIMATOR = 2
+
+
+def estimate_key(store: Store) -> str:
+    return f"{wide.drawn(store, 1).design.id}.estimate.{wide.phase1_questions()}.estimator{ESTIMATOR}"
+YES = {"voice_in_population": ("in_population",), "exposure_to_measure": wide.EXPOSED}
+
+
+def indicator(template: str, g: core.GoldLabel | None) -> Label:
+    """A gold label's value for the estimand's indicator: unresolved where unsure, not established or not labelled; 1
+    where its answer is the indicator's yes; 0 for every other answer of the question (an author not in the population;
+    a measure outside the event class; no loss to the author)."""
+    if g is None or g.outcome != "labeled" or g.label is None or g.label in UNRESOLVED_ANSWERS:
+        return "U"
+    return 1 if g.label in YES[template] else 0
 
 
 def _gold(store: Store, gold: core.SampleDraw) -> dict[str, tuple[Label, Label]]:
-    """Each gold item's (in the population's voice, exposed) as labelled: 1, 0, or "U" (unsure, not_established or not
-    yet labelled: unresolved, never 0)."""
+    """Each gold item's (in the population's voice, exposed) as labelled (indicator)."""
     labelled: dict[tuple[str, str], core.GoldLabel] = {}
     current = {t: library.template(t).version for t in labels.OBJECTIVE_TEMPLATES}
     for g in store.all("gold_label", core.GoldLabel):
         template = g.question.id.split(".")[0]
         if current.get(template) == g.question.version:  # a label of another version answers another question
             labelled[(g.item, template)] = g
-    out: dict[str, tuple[Label, Label]] = {}
-    for d in gold.items:
-        voice, exposure = labelled.get((d.item, "voice_in_population")), labelled.get((d.item, "exposure_to_measure"))
-
-        def value(g: core.GoldLabel | None, yes: tuple[str, ...], no: tuple[str, ...]) -> Label:
-            if g is None or g.outcome != "labeled" or g.label is None:
-                return "U"
-            return 1 if g.label in yes else 0 if g.label in no else "U"
-
-        out[d.item] = (value(voice, ("in_population",), ("other_author",)),
-                       value(exposure, wide.EXPOSED, ("no_loss",)))  # fmt: skip
-    return out
+    return {d.item: (indicator("voice_in_population", labelled.get((d.item, "voice_in_population"))),
+                     indicator("exposure_to_measure", labelled.get((d.item, "exposure_to_measure"))))
+            for d in gold.items}  # fmt: skip
 
 
 def _complete(d: Label, e: Label, lowest: bool) -> tuple[int, int]:
@@ -210,7 +220,7 @@ def estimate(store: Store, *, level: float = 0.95) -> core.WideEstimate:
         phase1_items=len(items), unreadable_items=len(unread), gold_items=len(gold.items),
         unresolved_gold_labels=unresolved, scopes=out,
     )  # fmt: skip
-    store.commit("wide_estimate", f"{draw.design.id}.estimate", est)
+    store.commit("wide_estimate", estimate_key(store), est)
     return est
 
 
@@ -269,7 +279,7 @@ def _impacts(store: Store, st: labels.ItemState, result: Any, agent_input: Mappi
 
 def find_leads(store: Store, *, workers: int = 16, agent: Callable[..., Any] | None = None) -> core.LeadList:
     """Step 11: the leads, asked, extracted and ranked (decisions, "F4 from the labels to the leads")."""
-    est_key = f"{wide.drawn(store, 1).design.id}.estimate"
+    est_key = estimate_key(store)
     if store.get("wide_estimate", est_key, core.WideEstimate) is None:
         raise Refused("the estimate is not committed: run `wide estimate`")
     _, fams = the_families(store)

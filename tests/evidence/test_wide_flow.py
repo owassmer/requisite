@@ -218,3 +218,27 @@ def test_a_phase1_answer_stands_over_a_refusal_of_the_same_question_and_state_an
     store.commit_judgment(other)
     with pytest.raises(Refused, match="two answers"):
         wide._phase1(store)
+
+
+def test_every_answer_of_each_objective_question_settles_its_gold_indicator_or_is_the_recorded_unresolved_one():
+    # Every answer the questions offer, from the templates themselves: unsure and not_established are unresolved (the
+    # recorded rule); the indicator's yes is 1; every other answer is 0 (a measure outside the event class is not in the
+    # numerator). An answer added to a template is settled by this rule, never left unresolved by omission.
+    from requisite.discovery import results
+
+    for template in labels.OBJECTIVE_TEMPLATES:
+        values = [a["value"] for a in library.template(template).model_dump()["answers"]]
+        for v in values:
+            g = core.GoldLabel(item="i", question=core.Ref(id=template, version=1), design=core.Ref(id="d", version=1),
+                               stratum="s", inclusion_prob=1, outcome="labeled", label=v, labeler="owen", labeled_at=T,
+                               blind=True)  # fmt: skip
+            want = "U" if v in results.UNRESOLVED_ANSWERS else 1 if v in results.YES[template] else 0
+            assert results.indicator(template, g) == want, (template, v)
+        assert "not_established" in values  # the unresolved answer is one the question offers
+    assert results.indicator("exposure_to_measure", None) == "U"
+    unsure = core.GoldLabel(item="i", question=core.Ref(id="exposure_to_measure", version=1),
+                            design=core.Ref(id="d", version=1), stratum="s", inclusion_prob=1, outcome="unresolved",
+                            label=None, labeler="owen", labeled_at=T, blind=True)  # fmt: skip
+    assert results.indicator("exposure_to_measure", unsure) == "U"
+    assert results.indicator("exposure_to_measure", unsure.model_copy(update={"outcome": "labeled",
+                                                                           "label": "not_in_class"})) == 0  # fmt: skip

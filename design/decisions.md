@@ -206,6 +206,14 @@ work is judged against this file; its writer is the coordinator (a worker's repo
     denominator and out of the numerator where it can be) and the highest (into the numerator where it can be, and out
     of the denominator otherwise). The interval read is from the lower completion's lower bound to the upper
     completion's upper bound, and the number of unresolved labels is shown beside it.
+    Amended (coordinator, November 2, 23:50 ET, after F4's first estimate, with its cause): the estimate read only
+    no_loss and other_author as 0, so not_in_class, added to the exposure question in v2 after the estimate's code
+    was written, fell to unresolved: 95 gold answers that settle the numerator (a measure outside the event class) were
+    treated as unknown, 117 labels in all, and the interval spanned [0, 1]. The code now implements the rule as
+    recorded: only unsure and not_established are unresolved, the indicator's yes is 1, and every other answer the
+    question offers is 0, tested over every answer of both templates. The estimate is re-run from the same labels;
+    nothing else changes. The first estimate stays committed under its own key; each estimate is kept under the
+    questions it rests on and the estimator version (results.estimate_key).
   - Event families: the clause the objective approved ("Families are defined by the run from what it finds"). An agent
     proposes families over the measures the readable phase-1 items address, each a cost channel (labor, inputs, or both)
     and a mechanism; every such measure is in exactly one family (the proposal's tests gate). An item's family is its
