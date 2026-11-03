@@ -425,11 +425,13 @@ def examples() -> list[c.Record]:
                       artifacts=[ART]),  # fmt: skip
         c.CostStatement(quote="Employers would pay $1.2 billion more a year in overtime.", payer="employers",
                         pays_for="overtime pay", direction="more", amount=D("1200000000"), currency="USD",
-                        per="per year"),
-        c.MeasureText(document="DOCKET-1-0001", fr_number="2026-07001", summary="The Department proposes to raise the "
+                        per="per year", scope="all_affected", affected=3624,
+                        affected_quote="an estimated 3,624 hospitals"),
+        c.MeasureText(document="DOCKET-1-0001", reader="cost_statements/2", fr_number="2026-07001", summary="The Department proposes to raise the "
                       "overtime salary threshold.", statements=[c.CostStatement(quote="Employers would pay $1.2 billion more a year in overtime.", payer="employers",
                         pays_for="overtime pay", direction="more", amount=D("1200000000"), currency="USD",
-                        per="per year")], artifacts=[ART], readings=["run"]),  # fmt: skip
+                        per="per year", scope="all_affected", affected=3624,
+                        affected_quote="an estimated 3,624 hospitals")], artifacts=[ART], readings=["run"]),  # fmt: skip
         c.Frame(id="frame1", criteria=c.Ref(id="frame", version=1), as_of=T0, retrieval_started=T0, retrieval_ended=T0,
                 mode="prospective",
                 searches=[c.FrameSearch(term="wage", request="documents?filter[searchTerm]=wage", documents=3, artifacts=[ART])],

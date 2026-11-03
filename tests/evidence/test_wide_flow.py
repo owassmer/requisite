@@ -106,11 +106,12 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     texts = wide.read_measure_texts(store, federal_register=fr)
     mt = texts[f"{DOCKET}-0001"]
     assert mt.summary == PROPOSAL_ABSTRACT and mt.fr_number == "2026-07001" and len(mt.artifacts) == 2
-    assert [(c.quote, c.payer, c.direction, str(c.amount)) for c in mt.statements] == [
-        (PROPOSAL_COST, "air carriers", "more", "12000000")]
-    assert store.get("measure_text", f"{DOCKET}-0001", core.MeasureText) == mt
+    assert [(c.quote, c.payer, c.direction, str(c.amount), c.scope, c.affected) for c in mt.statements] == [
+        (PROPOSAL_COST, "air carriers", "more", "12000000", "all_affected", 64)]
+    assert store.get("measure_text", f"{DOCKET}-0001|cost_statements/2", core.MeasureText) == mt
     q = labels.questions(wide.approved_objective(store), ms, texts, served[0])["exposure_to_measure"]
-    assert PROPOSAL_ABSTRACT in q.target and PROPOSAL_COST in q.target and q.version == 3
+    assert PROPOSAL_ABSTRACT in q.target and PROPOSAL_COST in q.target and q.version == 4
+    assert "(all who pay it together)" in q.target and "paid by 64" in q.target  # a total is never one carrier's cost
 
     done = wide.label_phase1(store)
     readable = len(items) - len(done.unreadable)

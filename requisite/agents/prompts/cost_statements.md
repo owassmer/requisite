@@ -19,6 +19,14 @@ payer and cost: the statement that says most completely who pays what and how mu
 - amount, currency, per: where the words state a sum, the sum as an exact decimal in units of the currency ("$1.2
   billion" is 1200000000, "$70,000" is 70000), its ISO 4217 code, and its basis ("per petition", "per year, annualized
   at 7 percent"); otherwise null for all three.
+- scope: whether the sum is what everyone who pays it pays together ("all_affected": an industry-wide, program-wide or
+  nationwide figure, such as "hospitals would spend $5,334,890 updating their policies"), or what each one payer pays
+  ("per_entity": "$70,000 for each initial OPT", "approximately $1,500 per hospital"), as the text says it; "not_stated"
+  where the words do not say which, or where there is no sum. A total is never read as each payer's cost, nor the
+  reverse: what one business would pay is read from the text only where the text states it.
+- affected, affected_quote: how many payers the text says bear this cost (for example "an estimated 3,624 hospitals"),
+  as an integer, and the text's words that state that number, copied exactly from the part you are given (code finds
+  them there, as it finds the quote); both null where this part does not state the number. Do not estimate or count.
 
 Quote the measure's own statements: the agency's, in its own voice. A statement the text attributes to commenters or
 others is not the measure's, unless the agency adopts it as its own. Do not compute, convert or estimate a sum the

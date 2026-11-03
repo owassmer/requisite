@@ -243,7 +243,8 @@ def fixture_world(api: FakeAPI, *, scanned_0003: bytes | None = None) -> FakeAPI
 # who would pay what (requisite/evidence/measure_text.py reads it).
 PROPOSAL_FR = "2026-07001"
 PROPOSAL_ABSTRACT = "The FAA proposes to require additional rest periods for flight attendants."
-PROPOSAL_COST = "Air carriers would pay an estimated $12 million a year more in flight attendant wages."
+PROPOSAL_COST = "The 64 air carriers affected would pay an estimated $12 million a year more in flight attendant wages."
+PROPOSAL_PAYERS = "The 64 air carriers affected"
 PROPOSAL_TEXT = (f"SUMMARY: {PROPOSAL_ABSTRACT}\n\nII. Regulatory Analysis\n\n{PROPOSAL_COST} The rule would not change "
                  "what passengers pay.\n\nPART 121--AMENDED\n")  # fmt: skip
 
@@ -257,7 +258,8 @@ def cost_reader(role, agent_input, output, *, effort, root=None, context=None):
     text = agent_input["text"]
     if PROPOSAL_COST in text:
         draft = {"statements": [{"quote": PROPOSAL_COST, "payer": "air carriers", "pays_for": "flight attendant wages",
-                                 "direction": "more", "amount": "12000000", "currency": "USD", "per": "per year"}],
+                                 "direction": "more", "amount": "12000000", "currency": "USD", "per": "per year",
+                                 "scope": "all_affected", "affected": 64, "affected_quote": PROPOSAL_PAYERS}],
                  "none_why": None}  # fmt: skip
     else:
         draft = {"statements": [], "none_why": "it amends the regulation's text"}

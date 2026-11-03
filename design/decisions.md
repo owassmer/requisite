@@ -448,6 +448,14 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   is never overwritten, so the draw from v2's answers stays committed under its own key and the redraw from v3's is
   another record; its sampling design likewise. A gold label is a fact about an item under a question at its version,
   so a label carries to any draw that holds the item; its weight is always the current draw's (results._gold).
+  Each sum's scope and its count of payers (Owen, November 2, 22:05 ET: "imperative to scale actual impact"). Of the
+  910 statements with a sum, about 400 said "per year" without saying whether across all who pay it or for each, and
+  in an agency's analysis such a figure is almost always the total (CMS's $5.3 million is over 3,624 hospitals). The
+  reader (cost_statements/2) now reads each sum's scope (all who pay it together, each one, or not stated) and, where
+  the text states it, how many pay it, with the words that state that number, checked as text as the quote is; the
+  question shows both. exposure_to_measure is v4; MeasureText is kept per document and reader version, the v1 readings
+  staying committed; the judges are asked again and the gold draw named by v4. Owen's question-2 labels under v3 answer
+  another question and are asked again.
 - What a filed contract states beyond the existential, carried as stated (coordinator, November 2, the grammar batch's
   second part, read against Castle's filed terms for KXCAGOAT). An Exists names whose record governs where its sources
   conflict (the highest-ranked source's, or "the official records of the body that took the action"). A settlement date

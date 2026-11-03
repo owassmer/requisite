@@ -29,7 +29,7 @@
     },
     {
       "id": "exposure_to_measure",
-      "version": 3,
+      "version": 4,
       "task": "interpret",
       "slots": [
         "measure",

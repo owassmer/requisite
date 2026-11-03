@@ -615,7 +615,11 @@ class CostStatement(Record):
     reader's reading of those words into a fixed form (an agent's reading, never a pattern matched by code): payer, who
     must pay or bears the cost, as the text names them; pays_for, what for; direction, whether it means paying more,
     less, the same, or the text does not say; amount, currency and per, the sum as an exact decimal in units of the
-    currency and its basis ("per petition", "per year, annualized"), where the words state one.
+    currency and its basis ("per petition", "per year, annualized"), where the words state one; scope, whether that sum
+    is what all who pay it pay together ("all_affected"), what each one pays ("per_entity"), or the words do not say
+    ("not_stated", as for a statement with no sum); affected, how many pay it, with affected_quote, the text's words that
+    state that number (checked as text, as the quote is), where the text states it (Owen, November 2: "imperative to
+    scale actual impact": a total is never one business's cost, nor the reverse).
 
     The fixed form is ours (coordinator, November 2), shaped by what the exposure question asks of it: whether a measure
     would change what a business pays. So direction is closed to the four answers that question can use (more, less,
@@ -631,6 +635,9 @@ class CostStatement(Record):
     amount: Money | None = None
     currency: str | None = None
     per: str | None = None
+    scope: Literal["all_affected", "per_entity", "not_stated"]
+    affected: int | None = None
+    affected_quote: str | None = None
 
     @model_validator(mode="after")
     def _read(self) -> CostStatement:
@@ -641,23 +648,31 @@ class CostStatement(Record):
         code = self.currency
         if code is not None and not (len(code) == 3 and code.isalpha() and code.isupper()):
             raise ValueError("a currency is written as an ISO 4217 code: three capital letters")
+        if self.amount is None and self.scope != "not_stated":
+            raise ValueError("a scope is the scope of an amount: a statement with no amount has scope not_stated")
+        if (self.affected is None) != (self.affected_quote is None):
+            raise ValueError("a count of those who pay is given with the words that state it, and only with them")
+        if self.affected is not None and self.affected < 0:  # a count (a text may state that none pay it): ours
+            raise ValueError("a count of those who pay is not negative")
         return self
 
 
 class MeasureText(Record):
     """What a measure is, as its own published text states it (Owen, November 2, after the gold session showed only a
     title: "would its direct legal effect change what a business pays" cannot be answered from a title). One per
-    document, shared by every item that addresses it. summary: the agency's own summary of the measure, verbatim (the
+    document and reader version, shared by every item that addresses the document. summary: the agency's own summary of the measure, verbatim (the
     Federal Register's abstract of the document, the SUMMARY its published text opens with), or None with summary_why
     where the source states none. statements: the measure's own statements of who pays what (CostStatement), read from
     its whole published text in consecutive parts, in the order the text makes them; none_why: where the text makes no
     such statement, the reader's account of what it does say of costs (a measure with no cost statement is read, never
     assumed). artifacts: the source's record of the document (its abstract) and its full text (spec I2). readings: the
-    agent runs that read the text, one per part (requisite/agents). fr_number: the Federal Register document it was read
+    agent runs that read the text, one per part (requisite/agents). reader: the reader and its version that read the
+    text (its prompt and answer type); a MeasureText is committed once per document and reader. fr_number: the Federal Register document it was read
     from, or None where it was read from regulations.gov (its record states no number, or one the Federal Register does
     not serve)."""
 
     document: str
+    reader: str
     fr_number: str | None
     summary: str | None
     summary_why: str | None = None

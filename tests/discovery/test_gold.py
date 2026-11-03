@@ -23,8 +23,8 @@ COST = "Employers would pay an estimated $1.2 billion more a year in overtime."
 TEXTS = {"D-1-0001": core.MeasureText(
     document="D-1-0001", fr_number="2026-00001", summary="The Department proposes to raise the overtime salary threshold.",
     statements=[core.CostStatement(quote=COST, payer="employers", pays_for="overtime pay", direction="more",
-                                   amount="1200000000", currency="USD", per="per year")],
-    artifacts=[artifact_id(b"record")], readings=["run"],
+                                   amount="1200000000", currency="USD", per="per year", scope="all_affected")],
+    artifacts=[artifact_id(b"record")], readings=["run"], reader="cost_statements/2",
 )}  # fmt: skip
 
 

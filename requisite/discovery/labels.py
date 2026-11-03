@@ -91,8 +91,13 @@ def measure_said(mt: core.MeasureText) -> str:
         lines.append("What its text says of who pays what (each statement quoted from the text; after the dash, an AI "
                      "reader's reading of it):")  # fmt: skip
         for n, c in enumerate(mt.statements, 1):
-            amount = f"; {c.amount} {c.currency}{f' {c.per}' if c.per else ''}" if c.amount is not None else ""
-            lines.append(f'{n}. "{c.quote}" - {c.payer}; {c.pays_for}; pays {c.direction.replace("_", " ")}{amount}')
+            amount = ""
+            if c.amount is not None:
+                whose = {"all_affected": "all who pay it together", "per_entity": "each one",
+                         "not_stated": "whether all together or each one, not stated"}[c.scope]  # fmt: skip
+                amount = f"; {c.amount} {c.currency}{f' {c.per}' if c.per else ''} ({whose})"
+            count = f'; paid by {c.affected} ("{c.affected_quote}")' if c.affected is not None else ""
+            lines.append(f'{n}. "{c.quote}" - {c.payer}; {c.pays_for}; pays {c.direction.replace("_", " ")}{amount}{count}')
     else:
         lines.append(f"What its text says of who pays what: nothing; {mt.none_why}")
     return "\n".join(lines)

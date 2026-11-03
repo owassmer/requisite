@@ -189,7 +189,8 @@ class ImpactsDraft(_Answer):
 
 class CostStatementDraft(_Answer):
     """One statement a measure's text makes of who pays what (core.CostStatement): the text's words, and the reader's
-    reading of them."""
+    reading of them, with the scope of its amount (all who pay it together, or each one) and how many pay it, in the
+    text's words where it says."""
 
     quote: str
     payer: str
@@ -198,6 +199,9 @@ class CostStatementDraft(_Answer):
     amount: Money | None
     currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")] | None
     per: str | None
+    scope: Literal["all_affected", "per_entity", "not_stated"]
+    affected: int | None
+    affected_quote: str | None
 
 
 class CostStatementsDraft(_Answer):
@@ -211,6 +215,11 @@ class CostStatementsDraft(_Answer):
     def _quoted(self, info: ValidationInfo) -> CostStatementsDraft:
         if bool(self.statements) == (self.none_why is not None):
             raise ValueError("give the part's statements of who pays what, or, where it makes none, none_why; not both")
+        for s in self.statements:
+            if (s.affected is None) != (s.affected_quote is None):
+                raise ValueError("a count of those who pay is given with the words that state it, and only with them")
+            if s.amount is None and s.scope != "not_stated":
+                raise ValueError("a scope is the scope of an amount: a statement with no amount has scope not_stated")
         text = (info.context or {}).get("text")
         if text is not None:
             self.check_quotes(text)
@@ -220,6 +229,8 @@ class CostStatementsDraft(_Answer):
         """Each quote is the measure's words: copied exactly from the part of its text the reader was given
         (provenance, checked as text; who pays what is the reader's reading of those words, never matched by code)."""
         missing = [s.quote for s in self.statements if not (s.quote.strip() and s.quote in text)]
+        missing += [s.affected_quote for s in self.statements
+                    if s.affected_quote is not None and not (s.affected_quote.strip() and s.affected_quote in text)]  # fmt: skip
         if missing:
             raise ValueError(f"each quote is copied character for character from the part of the text given; not "
                              f"found: {missing}")  # fmt: skip

@@ -31,6 +31,13 @@ from requisite.evidence.regulations_gov import RegulationsGov
 from requisite.store import Refused, Store
 
 ROLE = "cost_statements"
+# The reader's version: 2 reads each sum's scope and the count of its payers (Owen, November 2). A MeasureText is kept
+# per document and reader version (committed state is never overwritten).
+READER = f"{ROLE}/2"
+
+
+def key(document: str) -> str:
+    return f"{document}|{READER}"
 # The characters of text one reading takes: about 75,000 tokens, well within the reader's context with its prompt and
 # answer (ours). A part ends at the last blank line before the limit, so a paragraph is read whole wherever it can be.
 PART_CHARS = 300_000
@@ -82,7 +89,7 @@ def read_text(store: Store, documents: Mapping[str, Mapping[str, Any]], *, worke
     out: dict[str, core.MeasureText] = {}
     todo = []
     for doc, attributes in sorted(documents.items()):
-        have = store.get("measure_text", doc, core.MeasureText)
+        have = store.get("measure_text", key(doc), core.MeasureText)
         if have is not None:
             out[doc] = have
         else:
@@ -130,12 +137,12 @@ def read_text(store: Store, documents: Mapping[str, Mapping[str, Any]], *, worke
             none_why = f"read whole in {len(read)} part(s), it states no cost to anyone ({said})"
         number = fr_number(documents[doc]) if served else None
         mt = core.MeasureText(
-            document=doc, fr_number=number,
+            document=doc, reader=READER, fr_number=number,
             summary=summary if summary else None,
             summary_why=None if summary else summary_why,
             statements=statements, none_why=none_why, artifacts=arts, readings=[res.run for _, res in read],
         )  # fmt: skip
-        store.commit("measure_text", doc, mt)
+        store.commit("measure_text", key(doc), mt)
         out[doc] = mt
         if on_done is not None:
             on_done(doc)
@@ -197,7 +204,7 @@ def measure_texts(store: Store, documents: Sequence[str]) -> dict[str, core.Meas
     """The committed MeasureText of each document; refused where one is not yet read (`wide measure-text`)."""
     out = {}
     for doc in documents:
-        mt = store.get("measure_text", doc, core.MeasureText)
+        mt = store.get("measure_text", key(doc), core.MeasureText)
         if mt is None:
             raise Refused(f"the text of measure {doc} is not read yet: run `requisite wide measure-text`")
         out[doc] = mt
