@@ -226,11 +226,17 @@ class CostStatementsDraft(_Answer):
         return self
 
     def check_quotes(self, text: str) -> None:
-        """Each quote is the measure's words: copied exactly from the part of its text the reader was given
-        (provenance, checked as text; who pays what is the reader's reading of those words, never matched by code)."""
-        missing = [s.quote for s in self.statements if not (s.quote.strip() and s.quote in text)]
-        missing += [s.affected_quote for s in self.statements
-                    if s.affected_quote is not None and not (s.affected_quote.strip() and s.affected_quote in text)]  # fmt: skip
+        """Each quote is the measure's words: copied from the part of its text the reader was given, word for word
+        (provenance, checked as text; who pays what is the reader's reading of those words, never matched by code). The
+        published text breaks its lines inside sentences, so a quote's words are found with every run of whitespace, in
+        the quote and in the text alike, taken as one space: a line break is the text's layout, not a word."""
+        flat = " ".join(text.split())
+
+        def found(words: str | None) -> bool:
+            return words is not None and bool(words.strip()) and " ".join(words.split()) in flat
+
+        missing = [s.quote for s in self.statements if not found(s.quote)]
+        missing += [s.affected_quote for s in self.statements if s.affected_quote is not None and not found(s.affected_quote)]
         if missing:
             raise ValueError(f"each quote is copied character for character from the part of the text given; not "
                              f"found: {missing}")  # fmt: skip

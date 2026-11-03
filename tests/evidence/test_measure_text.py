@@ -83,3 +83,14 @@ def test_a_sums_scope_and_its_count_of_payers_are_read_from_the_words_and_checke
                                            context={"text": part})  # fmt: skip
     with pytest.raises(ValidationError, match="scope is the scope of an amount"):
         core.CostStatement(quote="q", payer="p", pays_for="f", direction="more", scope="per_entity")
+
+
+def test_a_quote_is_found_word_for_word_whatever_the_texts_line_breaks():
+    part = "The Department estimates that employers would pay\n$1.2 billion more a year in overtime."
+    said = {"quote": "employers would pay $1.2 billion more a year", "payer": "employers", "pays_for": "overtime",
+            "direction": "more", "amount": "1200000000", "currency": "USD", "per": "per year", "scope": "all_affected",
+            "affected": None, "affected_quote": None}  # fmt: skip
+    CostStatementsDraft.model_validate({"statements": [said], "none_why": None}, context={"text": part})
+    with pytest.raises(ValidationError, match="not found"):  # a word changed is not the text's
+        CostStatementsDraft.model_validate({"statements": [{**said, "quote": "employers would pay $1.3 billion"}],
+                                            "none_why": None}, context={"text": part})  # fmt: skip

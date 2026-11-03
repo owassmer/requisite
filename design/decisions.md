@@ -456,6 +456,9 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   question shows both. exposure_to_measure is v4; MeasureText is kept per document and reader version, the v1 readings
   staying committed; the judges are asked again and the gold draw named by v4. Owen's question-2 labels under v3 answer
   another question and are asked again.
+  A quote of a measure's text is found word for word with every run of whitespace taken as one space (coordinator,
+  November 2, 22:25 ET): the Federal Register's text breaks its lines inside sentences, and 75 of the reader's 95
+  refused answers in one pass were exact copies that differed from the text only in a line break.
 - What a filed contract states beyond the existential, carried as stated (coordinator, November 2, the grammar batch's
   second part, read against Castle's filed terms for KXCAGOAT). An Exists names whose record governs where its sources
   conflict (the highest-ranked source's, or "the official records of the body that took the action"). A settlement date
