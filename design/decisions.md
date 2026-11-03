@@ -480,6 +480,16 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   Payout Criterion occurs, expiration will be moved to an earlier date ... in accordance with Rule 7.2"), which the IR
   already states (early_expiration "when_true", "per_exchange_rule", the rule named).
 
+- F4's gold labels are the coordinator's, at Owen's direction and under his review (Owen, November 2, 23:05 ET: "label
+  the full golden set yourself. Then review it"). Owen labelled items 1-4 himself; the coordinator labels the rest with
+  a written rationale for each, then reviews the whole set; Owen reviews it. The coordinator is a model of another family
+  (Anthropic) than the phase-1 judge (OpenAI), and labels blind to the judges' answers on every gold item (it saw only
+  the phase-1 aggregate: 22 items with P(in population) >= 0.5 and the three largest P(exposed)). So the gold measures the
+  judges against an independent model's reading under human review, not against human labels: the estimate and the
+  dossier state so (labeler on every GoldLabel), and agreement there is evidence of the judges' reliability against that
+  reading, not of truth beyond it (addendum A01: stable judges can share a bias; two families lower that risk, they do
+  not remove it).
+
 ## No escape routes, loud or quiet
 
 - Owen, November 1: "I am also uncompromisingly averse to 'loud failure' escape routes and deferrals/dismissals/shortcuts

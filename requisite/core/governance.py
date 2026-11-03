@@ -436,7 +436,10 @@ class SampleDraw(Record):
 
 
 class GoldLabel(Record):
-    """A human label of one sampled item (spec §4; amended by addendum A07). inclusion_prob is the item's phase-2 chance
+    """A label of one sampled item (spec §4; amended by addendum A07), by the labeller named: a human, or the
+    coordinator (a model of another family than the judges whose answers the gold sample measures) at the human's
+    direction and under his review (decisions, F4's gold, November 2), the labeller always named so that what the
+    estimate rests on is stated. inclusion_prob is the item's phase-2 chance
     as its SampleDraw records it, exact (in a two-phase design, given the realized phase-1 sample); `outcome` keeps an explicit unresolved category, never dropped or read as zero (A07 §8.1).
     `blind`: the labeller did not see any model's answer (ours: a label that saw the model's answer measures agreement
     with it, not truth)."""
