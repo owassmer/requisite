@@ -490,6 +490,22 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   reading, not of truth beyond it (addendum A01: stable judges can share a bias; two families lower that risk, they do
   not remove it).
 
+- F4's estimate and leads are computed on the questions as they stand (Owen, November 2, 23:40 ET), and their
+  restructure follows the demo, with these causes (the gold review's close calls). (1) The exposure question bundles a
+  fact about the measure (is it pending and in the event class) with a fact about the comment (does its author describe
+  the loss), so one measure's class is judged once per comment, 1,200 times over 253 measures, and the class's
+  compliance exception ("unless the item says the measure itself requires extra paid labor or purchased inputs") lets
+  two comments on one measure place it differently (gold items 83 and 99). (2) "Outside the class" carries no reason
+  (in effect, not a legal measure, wrong channel, lowering costs only), so a near miss (item 75, a small business facing
+  a fee rise that took effect on 2026-07-22) reads as a census comment does, and a judge's disagreement with gold cannot
+  be traced. (3) "Not established" for the population joins a business whose size is not stated with an unidentified
+  author. (4) The class's "would change what a business pays" leaves rollbacks between "in class, no loss" and "outside
+  the class" (Owen labelled item 20 outside; the gold applies that throughout). None changes what the estimate counts
+  (in the population and exposed, both answered crisply), so the estimate stands on them; it states the coarse "no"
+  answers as a limit of its diagnostics. The restructure: a measure-level class question asked once per measure over
+  its text, with its reason; the comment-level loss question asked where the measure is in class or the comment
+  invokes the exception; the population's "not established" split in two.
+
 ## No escape routes, loud or quiet
 
 - Owen, November 1: "I am also uncompromisingly averse to 'loud failure' escape routes and deferrals/dismissals/shortcuts
