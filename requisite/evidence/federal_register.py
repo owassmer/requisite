@@ -29,6 +29,9 @@ PROVIDER = "federal_register"
 API = "https://www.federalregister.gov/api/v1/documents/"
 FIELDS = ("document_number", "type", "publication_date", "effective_on", "dates")
 BATCH = 20  # document numbers per request
+# A document's own record, read for what the measure is (core.MeasureText): its abstract and where its full text is.
+TEXT_FIELDS = ("document_number", "title", "type", "abstract", "raw_text_url")
+TEXT_ROOT = "https://www.federalregister.gov/documents/full_text/"
 TIMEOUT = 60.0
 RETRIES = 5
 TRANSIENT = frozenset({429, 500, 502, 503, 504})
@@ -61,16 +64,19 @@ class FederalRegister:
             transport=self.transport, timeout=TIMEOUT, follow_redirects=True, headers={"User-Agent": USER_AGENT}
         )
 
-    def _send(self, url: str) -> dict[str, Any]:
+    def _send(self, url: str, fields: Iterable[str] | None = FIELDS, keep: frozenset[int] = frozenset()) -> dict[str, Any]:
         for attempt in range(1, RETRIES + 2):
             try:
-                response = self._http.get(url, params=[("fields[]", f) for f in FIELDS])
+                if fields is None:
+                    response = self._http.get(url)
+                else:
+                    response = self._http.get(url, params=[("fields[]", f) for f in fields])
             except httpx.TransportError as e:
                 if attempt > RETRIES:
                     raise FederalRegisterError(f"{url}: no response after {RETRIES} retries: {e!r}") from e
                 time.sleep(2**attempt)
                 continue
-            if response.status_code == 200:
+            if response.status_code == 200 or response.status_code in keep:
                 return kept(response, ("content-type",))
             if response.status_code in TRANSIENT and attempt <= RETRIES:
                 time.sleep(2**attempt)
@@ -97,6 +103,31 @@ class FederalRegister:
             responses.append(response)
             out.update(_published(batch, response.json()))
         return responses, out
+
+    def document(self, number: str) -> Fetched:
+        """One document's record as the Federal Register states it: its title, type, abstract (the agency's own summary,
+        the SUMMARY its published text opens with) and the URL of its full text (TEXT_FIELDS). A number it does not serve
+        (HTTP 404: a page citation, or a document before its API's coverage) is its answer, kept."""
+        url = f"{API}{number}.json"
+
+        def live() -> tuple[Any, float]:
+            return self._send(url, TEXT_FIELDS, keep=frozenset({404})), 0.0
+
+        recorded = cassettes.call(PROVIDER, f"document/{number}", {"fields": list(TEXT_FIELDS)}, live, budget=self.budget,
+                                  estimate_usd=0.0, root=self.root)  # fmt: skip
+        return fetched(SOURCE, f"{url}?" + "&".join(f"fields[]={f}" for f in TEXT_FIELDS), recorded)
+
+    def full_text(self, url: str) -> Fetched:
+        """A document's whole published text, as the Federal Register serves it at the URL its record names."""
+        if not url.startswith(TEXT_ROOT):
+            raise FederalRegisterError(f"{url} is not a Federal Register full text")
+
+        def live() -> tuple[Any, float]:
+            return self._send(url, None), 0.0
+
+        recorded = cassettes.call(PROVIDER, "full_text", {"url": url}, live, budget=self.budget, estimate_usd=0.0,
+                                  root=self.root)  # fmt: skip
+        return fetched(SOURCE, url, recorded)
 
     def close(self) -> None:
         self._http.close()

@@ -239,12 +239,41 @@ def fixture_world(api: FakeAPI, *, scanned_0003: bytes | None = None) -> FakeAPI
 # ---------------------------------------------------------------- the Federal Register
 
 
+# The fixture docket's proposed rule as the Federal Register publishes it: its abstract and its whole text, which states
+# who would pay what (requisite/evidence/measure_text.py reads it).
+PROPOSAL_FR = "2026-07001"
+PROPOSAL_ABSTRACT = "The FAA proposes to require additional rest periods for flight attendants."
+PROPOSAL_COST = "Air carriers would pay an estimated $12 million a year more in flight attendant wages."
+PROPOSAL_TEXT = (f"SUMMARY: {PROPOSAL_ABSTRACT}\n\nII. Regulatory Analysis\n\n{PROPOSAL_COST} The rule would not change "
+                 "what passengers pay.\n\nPART 121--AMENDED\n")  # fmt: skip
+
+
+def cost_reader(role, agent_input, output, *, effort, root=None, context=None):
+    """The cost_statements agent as a test's own reader: it quotes the sentence of the part that says who pays what
+    (PROPOSAL_COST) where the part holds it, and is validated as the runner validates an answer."""
+    from requisite.agents.runner import AgentResult
+
+    assert role == "cost_statements", role
+    text = agent_input["text"]
+    if PROPOSAL_COST in text:
+        draft = {"statements": [{"quote": PROPOSAL_COST, "payer": "air carriers", "pays_for": "flight attendant wages",
+                                 "direction": "more", "amount": "12000000", "currency": "USD", "per": "per year"}],
+                 "none_why": None}  # fmt: skip
+    else:
+        draft = {"statements": [], "none_why": "it amends the regulation's text"}
+    return AgentResult(role, output.model_validate(draft, context=context), "run-" + str(abs(hash(text)))[:12],
+                       "test-double", effort, True)
+
+
 @dataclass
 class FakeFederalRegister:
     """The Federal Register's documents endpoint, as it answers a request for several document numbers: each number it
-    knows with its stated effective date (None: it states none), the rest as not found."""
+    knows with its stated effective date (None: it states none), the rest as not found; one document's record, with
+    its abstract and the URL of its full text; and that full text."""
 
     effective: dict[str, str | None] = field(default_factory=dict)  # document number -> effective_on, or None
+    texts: dict[str, tuple[str | None, str]] = field(
+        default_factory=lambda: {PROPOSAL_FR: (PROPOSAL_ABSTRACT, PROPOSAL_TEXT)})  # number -> (abstract, full text)
     requests: list[httpx.Request] = field(default_factory=list)
 
     def transport(self) -> httpx.MockTransport:
@@ -253,6 +282,16 @@ class FakeFederalRegister:
     def handle(self, request: httpx.Request) -> httpx.Response:
         assert request.url.host == "www.federalregister.gov" and request.headers["user-agent"] == USER_AGENT
         self.requests.append(request)
+        if request.url.path.startswith("/documents/full_text/"):
+            number = request.url.path.rsplit("/", 1)[1].removesuffix(".txt")
+            return httpx.Response(200, text=self.texts[number][1], headers={"content-type": "text/plain; charset=utf-8"})
+        if "raw_text_url" in request.url.params.get_list("fields[]"):
+            number = request.url.path.removeprefix("/api/v1/documents/").removesuffix(".json")
+            abstract, _ = self.texts[number]
+            body = {"document_number": number, "title": "Flight Attendant Rest", "type": "Proposed Rule",
+                    "abstract": abstract,
+                    "raw_text_url": f"https://www.federalregister.gov/documents/full_text/text/2026/04/01/{number}.txt"}
+            return httpx.Response(200, json=body, headers={"content-type": "application/json; charset=utf-8"})
         numbers = request.url.path.removeprefix("/api/v1/documents/").removesuffix(".json").split(",")
         found = [{"document_number": n, "type": "Rule", "publication_date": None, "effective_on": self.effective[n],
                   "dates": f"This rule is effective {self.effective[n]}." if self.effective[n] else None}

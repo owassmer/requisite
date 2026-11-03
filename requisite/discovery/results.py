@@ -102,8 +102,11 @@ def _gold(store: Store, gold: core.SampleDraw) -> dict[str, tuple[Label, Label]]
     """Each gold item's (in the population's voice, exposed) as labelled: 1, 0, or "U" (unsure, not_established or not
     yet labelled: unresolved, never 0)."""
     labelled: dict[tuple[str, str], core.GoldLabel] = {}
+    current = {t: library.template(t).version for t in labels.OBJECTIVE_TEMPLATES}
     for g in store.all("gold_label", core.GoldLabel):
-        labelled[(g.item, g.question.id.split(".")[0])] = g
+        template = g.question.id.split(".")[0]
+        if current.get(template) == g.question.version:  # a label of another version answers another question
+            labelled[(g.item, template)] = g
     out: dict[str, tuple[Label, Label]] = {}
     for d in gold.items:
         voice, exposure = labelled.get((d.item, "voice_in_population")), labelled.get((d.item, "exposure_to_measure"))

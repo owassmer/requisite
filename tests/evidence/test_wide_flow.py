@@ -7,10 +7,11 @@ from datetime import UTC, datetime
 from fractions import Fraction
 
 import pytest
-from fake_api import DOCKET, FakeAPI, fixture_world
+from fake_api import DOCKET, PROPOSAL_ABSTRACT, PROPOSAL_COST, FakeAPI, cost_reader, fixture_world
 from test_frame import criteria, register
 
 from requisite import cassettes, core
+from requisite.agents import runner
 from requisite.agents.runner import AgentResult
 from requisite.discovery import labels, wide
 from requisite.evidence.frame import frame_gate
@@ -59,6 +60,7 @@ def approve(store: Store, kind: str, payload: dict) -> None:
 def case(live, make_client, make_fr, scan, monkeypatch):
     monkeypatch.setattr(cassettes, "CASSETTES", live / "cassettes")
     monkeypatch.setattr(providers, "_send", stand_in)
+    monkeypatch.setattr(runner, "run", cost_reader)
     api = fixture_world(FakeAPI(), scanned_0003=scan)
     store = Store(live / "case", case="wide")
     approve(store, "objective", OBJECTIVE.model_dump(mode="json"))
@@ -98,6 +100,17 @@ def test_the_flow_draws_reads_labels_and_draws_its_gold_by_the_design(case):
     assert served and all(ms[i.id].document == i.addresses == f"{DOCKET}-0001" for i in served)
     statement = ms[served[0].id].statement
     assert f"Proposed Rule {DOCKET}-0001, posted" in statement and "proposed, not final" in statement
+
+    # What the measure does, as its own published text states it: the agency's summary and its statement of who pays
+    # what, quoted from the text (found there), with the reader's reading; bound into the exposure question.
+    texts = wide.read_measure_texts(store, federal_register=fr)
+    mt = texts[f"{DOCKET}-0001"]
+    assert mt.summary == PROPOSAL_ABSTRACT and mt.fr_number == "2026-07001" and len(mt.artifacts) == 2
+    assert [(c.quote, c.payer, c.direction, str(c.amount)) for c in mt.statements] == [
+        (PROPOSAL_COST, "air carriers", "more", "12000000")]
+    assert store.get("measure_text", f"{DOCKET}-0001", core.MeasureText) == mt
+    q = labels.questions(wide.approved_objective(store), ms, texts, served[0])["exposure_to_measure"]
+    assert PROPOSAL_ABSTRACT in q.target and PROPOSAL_COST in q.target and q.version == 3
 
     done = wide.label_phase1(store)
     readable = len(items) - len(done.unreadable)
@@ -148,6 +161,7 @@ def test_the_flow_goes_from_gold_labels_to_an_estimate_ranked_leads_and_a_lead_p
     store, client, fr = case
     wide.draw_sample(store)
     wide.read_sample(store, client, federal_register=fr)
+    wide.read_measure_texts(store, federal_register=fr)
     wide.label_phase1(store)
     gold = wide.draw_gold(store)
     fams = results.draft_families(store, agent_double)
@@ -157,7 +171,8 @@ def test_the_flow_goes_from_gold_labels_to_an_estimate_ranked_leads_and_a_lead_p
         for tid, label in (("voice_in_population", "in_population"),
                            ("exposure_to_measure", None if n == 0 else "labor")):  # fmt: skip
             store.commit_gold_label(core.GoldLabel(
-                item=d.item, question=core.Ref(id=tid, version=1), design=gold.design, stratum=d.stratum,
+                item=d.item, question=core.Ref(id=tid, version=library.template(tid).version), design=gold.design,
+                stratum=d.stratum,
                 inclusion_prob=d.inclusion_prob, outcome="labeled" if label else "unresolved", label=label,
                 labeler="owen", labeled_at=T, blind=True,
             ))  # fmt: skip
@@ -194,7 +209,7 @@ def test_a_phase1_answer_stands_over_a_refusal_of_the_same_question_and_state_an
         store = Store(tmp_path / str(len(list(tmp_path.iterdir()))), case="w")
         for j in order:
             store.commit_judgment(j)
-        assert wide._phase1(store) == {("voice_in_population.x", "ab" * 32): answered}
+        assert wide._phase1(store) == {("voice_in_population.x", 1, "ab" * 32): answered}
         assert wide.phase1_judgments(store) == [answered.content_hash()]
     other = answered.model_copy(update={"distribution": {"in_population": 0.1, "not_in_population": 0.9},
                                         "reported": {"in_population": 0.1, "not_in_population": 0.9},

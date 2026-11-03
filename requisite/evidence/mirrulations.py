@@ -46,6 +46,13 @@ def comment_key(comment_id: str) -> str:
     return f"raw-data/{agency}/{docket}/text-{docket}/comments/{comment_id}.json"
 
 
+def document_key(document_id: str) -> str:
+    """Where the mirror keeps a document's record: raw-data/<agency>/<docket>/text-<docket>/documents/<id>.json."""
+    docket = document_id.rsplit("-", 1)[0]
+    agency = docket.split("-", 1)[0]
+    return f"raw-data/{agency}/{docket}/text-{docket}/documents/{document_id}.json"
+
+
 @dataclass
 class Mirrulations:
     transport: httpx.BaseTransport | None = None
@@ -76,6 +83,17 @@ class Mirrulations:
     def comment(self, comment_id: str) -> Fetched | None:
         """A comment's record as the mirror holds it, or None where it holds none."""
         url = BUCKET + quote(comment_key(comment_id))
+
+        def live() -> tuple[Any, float]:
+            return self._send(url), 0.0
+
+        recorded = cassettes.call(PROVIDER, url, {}, live, budget=self.budget, estimate_usd=0.0, root=self.root)
+        got = fetched(SOURCE, url, recorded)
+        return got if got.status == 200 else None
+
+    def document(self, document_id: str) -> Fetched | None:
+        """A document's record (a rule, proposed rule or notice) as the mirror holds it, or None where it holds none."""
+        url = BUCKET + quote(document_key(document_id))
 
         def live() -> tuple[Any, float]:
             return self._send(url), 0.0

@@ -32,10 +32,11 @@ class _Stopped(Exception):
     """The labeller typed QUIT: nothing is recorded for the question asked."""
 
 
-def pending(store: Store, draw: core.SampleDraw, question_ids: Callable[[core.Item], list[str]]) -> list[core.DrawnItem]:
-    """The drawn items with any question still unlabelled, in the seed's order."""
+def pending(store: Store, draw: core.SampleDraw,
+            question_ids: Callable[[core.Item], list[tuple[str, int]]]) -> list[core.DrawnItem]:  # fmt: skip
+    """The drawn items with any question (its id and version) still unlabelled, in the seed's order."""
     done = {
-        (g.item, g.question.id)
+        (g.item, g.question.id, g.question.version)
         for g in store.all("gold_label", core.GoldLabel)
         if g.design == draw.design
     }
@@ -47,7 +48,7 @@ def pending(store: Store, draw: core.SampleDraw, question_ids: Callable[[core.It
         item = have.get(d.item)
         if item is None:
             raise Refused(f"drawn item {d.item} is not committed")
-        if any((d.item, q) not in done for q in question_ids(item)):
+        if any((d.item, *q) not in done for q in question_ids(item)):
             out.append(d)
     return out
 
@@ -57,6 +58,7 @@ def label_session(
     draw: core.SampleDraw,
     objective: core.WideObjective,
     measures: Mapping[str, core.ItemMeasure],
+    texts: Mapping[str, core.MeasureText],
     *,
     labeler: str,
     read: Callable[[str], str] = input,
@@ -66,8 +68,8 @@ def label_session(
     """Present each pending item's text and its questions; commit each answer as it is given. Returns how many labels
     were committed. `read` and `write` are the terminal's, injectable for tests."""
 
-    def qids(item: core.Item) -> list[str]:
-        return [q.id for q in labels.questions(objective, measures, item).values()]
+    def qids(item: core.Item) -> list[tuple[str, int]]:
+        return [(q.id, q.version) for q in labels.questions(objective, measures, texts, item).values()]
 
     todo = pending(store, draw, qids)
     write(f"{len(todo)} of {len(draw.items)} drawn items still need labels. You will not see any model's answer.")
@@ -76,20 +78,24 @@ def label_session(
     write("\nEvent class (the second question refers to it):\n" + objective.events)
     write("\nLoss definition (the second question refers to it):\n" + objective.loss_definition)
     committed = 0
-    labelled = {(g.item, g.question.id) for g in store.all("gold_label", core.GoldLabel) if g.design == draw.design}
+    labelled = {(g.item, g.question.id, g.question.version) for g in store.all("gold_label", core.GoldLabel)
+                if g.design == draw.design}  # fmt: skip
     have = read_items_of(store, [d.item for d in todo])
     for n, drawn in enumerate(todo, 1):
         item = have[drawn.item]  # pending() checked
         write("\n" + "=" * 110)
         write(f"Item {n} of {len(todo)}  ·  {item.id}  ·  docket {item.container}  ·  posted {item.posted_at.date()}")
         write(f"Measure: {measures[item.id].statement}")
+        write(labels.measure_said(texts[measures[item.id].document]))
         write("-" * 110)
         write(item.text)
         write("-" * 110)
-        for q in labels.questions(objective, measures, item).values():
-            if (item.id, q.id) in labelled:
+        said = labels.measure_said(texts[measures[item.id].document])
+        for q in labels.questions(objective, measures, texts, item).values():
+            if (item.id, q.id, q.version) in labelled:
                 continue
-            target = (q.target.replace(objective.population, "(the population definition shown at the start)")
+            target = (q.target.replace(said, "(what the measure's text states, shown above)")
+                      .replace(objective.population, "(the population definition shown at the start)")
                       .replace(objective.events, "(the event class shown at the start)")
                       .replace(objective.loss_definition, "(the loss definition shown at the start)"))  # fmt: skip
 

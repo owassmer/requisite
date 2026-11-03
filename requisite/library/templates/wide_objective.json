@@ -29,15 +29,16 @@
     },
     {
       "id": "exposure_to_measure",
-      "version": 2,
+      "version": 3,
       "task": "interpret",
       "slots": [
         "measure",
+        "measure_text",
         "events",
         "horizon",
         "loss_definition"
       ],
-      "target": "Does the filing under OBSERVED say or clearly imply that the measure below would cause its author the loss defined below, and through which costs? Count it only if the measure, with its status as stated, is in the event class defined below, and only costs paid within the horizon.\nMeasure: {measure}\nEvent class: {events}\nHorizon: {horizon}\nLoss definition: {loss_definition}",
+      "target": "Does the filing under OBSERVED say or clearly imply that the measure below would cause its author the loss defined below, and through which costs? Count it only if the measure, with its status as stated, is in the event class defined below, and only costs paid within the horizon. Judge what the measure does, and who must pay what under it, from what its own published text states, given below.\nMeasure: {measure}\nWhat the measure's text states: {measure_text}\nEvent class: {events}\nHorizon: {horizon}\nLoss definition: {loss_definition}",
       "answers": [
         {
           "value": "labor",

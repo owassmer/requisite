@@ -20,15 +20,17 @@ from pathlib import Path
 import pytest
 import test_harvest as th
 from doubles import Judges, Renderer
-from fake_api import KEY, FakeAPI, FakeTime, fixture_world
+from fake_api import KEY, FakeAPI, FakeTime, cost_reader, fixture_world
 from test_frame import criteria, register
 from test_run import IR, careful, prose
 from test_wide_flow import OBJECTIVE, stand_in
 
 from requisite import cassettes, core, secrets
+from requisite.agents import runner
 from requisite.agents.answers import ProseDraft, ProseSection
 from requisite.contract import harvest
 from requisite.discovery import gold, labels, wide
+from requisite.evidence import measure_text
 from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.frame import frame_gate
 from requisite.evidence.regulations_gov import Pacer, RegulationsGov
@@ -130,11 +132,15 @@ def wide_case(monkeypatch: pytest.MonkeyPatch, tmp: Path, *, objective: core.Wid
     assert frame.status == "active", frame.gates
     wide.draw_sample(store)
     wide.read_sample(store, client, workers=1, federal_register=federal_register)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(runner, "run", cost_reader)
+        wide.read_measure_texts(store, workers=1, federal_register=federal_register)
     wide.label_phase1(store, workers=1)
     wide.test_stability(store, workers=1)
     gold_draw = wide.draw_gold(store)
-    gold.label_session(store, gold_draw, wide.approved_objective(store),
-                       wide.measures(store, [d.item for d in gold_draw.items]), labeler="tester",
+    ms = wide.measures(store, [d.item for d in gold_draw.items])
+    gold.label_session(store, gold_draw, wide.approved_objective(store), ms,
+                       measure_text.measure_texts(store, sorted({m.document for m in ms.values()})), labeler="tester",
                        read=lambda _: "1", write=lambda _: None)  # fmt: skip
     store.close()
     return case_dir

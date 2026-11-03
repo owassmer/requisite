@@ -187,6 +187,44 @@ class ImpactsDraft(_Answer):
                              f"{missing}")  # fmt: skip
 
 
+class CostStatementDraft(_Answer):
+    """One statement a measure's text makes of who pays what (core.CostStatement): the text's words, and the reader's
+    reading of them."""
+
+    quote: str
+    payer: str
+    pays_for: str
+    direction: Literal["more", "less", "unchanged", "not_stated"]
+    amount: Money | None
+    currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")] | None
+    per: str | None
+
+
+class CostStatementsDraft(_Answer):
+    """cost_statements: what one part of a measure's published text says of who pays what, each statement quoted exactly;
+    none, with what the part covers instead, where it says nothing of it."""
+
+    statements: Sequence[CostStatementDraft]
+    none_why: str | None
+
+    @model_validator(mode="after")
+    def _quoted(self, info: ValidationInfo) -> CostStatementsDraft:
+        if bool(self.statements) == (self.none_why is not None):
+            raise ValueError("give the part's statements of who pays what, or, where it makes none, none_why; not both")
+        text = (info.context or {}).get("text")
+        if text is not None:
+            self.check_quotes(text)
+        return self
+
+    def check_quotes(self, text: str) -> None:
+        """Each quote is the measure's words: copied exactly from the part of its text the reader was given
+        (provenance, checked as text; who pays what is the reader's reading of those words, never matched by code)."""
+        missing = [s.quote for s in self.statements if not (s.quote.strip() and s.quote in text)]
+        if missing:
+            raise ValueError(f"each quote is copied character for character from the part of the text given; not "
+                             f"found: {missing}")  # fmt: skip
+
+
 class DraftAnswer(_Answer):
     """One answer of a drafted question (core.AnswerValue's fields): its value, what choosing it asserts, its status, and
     what it binds (the parent question's values it implies, or nothing where the next sub-question decides)."""

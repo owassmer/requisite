@@ -81,15 +81,36 @@ def horizon(window: core.TimeWindow) -> str:
             f"({'included' if window.end_closed else 'excluded'}), {window.tz}")  # fmt: skip
 
 
+def measure_said(mt: core.MeasureText) -> str:
+    """What a measure's own text states, as the exposure question binds it and the labeller reads it: the source's
+    summary, and each statement of who pays what, quoted, with the reader's reading after it (core.MeasureText)."""
+    src = "the Federal Register" if mt.fr_number else "regulations.gov"
+    lines = [f"Summary (the agency's own, as {src} publishes it): {mt.summary}" if mt.summary is not None
+             else f"Summary: none ({mt.summary_why})."]  # fmt: skip
+    if mt.statements:
+        lines.append("What its text says of who pays what (each statement quoted from the text; after the dash, an AI "
+                     "reader's reading of it):")  # fmt: skip
+        for n, c in enumerate(mt.statements, 1):
+            amount = f"; {c.amount} {c.currency}{f' {c.per}' if c.per else ''}" if c.amount is not None else ""
+            lines.append(f'{n}. "{c.quote}" - {c.payer}; {c.pays_for}; pays {c.direction.replace("_", " ")}{amount}')
+    else:
+        lines.append(f"What its text says of who pays what: nothing; {mt.none_why}")
+    return "\n".join(lines)
+
+
 def questions(
-    objective: core.WideObjective, measures: Mapping[str, core.ItemMeasure], item: core.Item
+    objective: core.WideObjective, measures: Mapping[str, core.ItemMeasure], texts: Mapping[str, core.MeasureText],
+    item: core.Item,
 ) -> dict[str, core.AtomicQuestion]:
     """The objective's two questions for one item: the population; and the exposure question with the measure the item
-    addresses (core.ItemMeasure) and the objective's event class, horizon and loss definition bound, each as the
-    approved objective states it, so the question asked is the one the estimand counts."""
+    addresses (core.ItemMeasure), what that measure's own text states (core.MeasureText), and the objective's event
+    class, horizon and loss definition bound, each as the approved objective states it, so the question asked is the one
+    the estimand counts."""
     if item.id not in measures:
         raise Refused(f"no measure is committed for item {item.id}")
     measure = measures[item.id]
+    if measure.document not in texts:
+        raise Refused(f"the text of measure {measure.document} is not read: run `requisite wide measure-text`")
     voice = library.instantiate(
         library.template("voice_in_population"),
         {"population": objective.population},
@@ -98,8 +119,8 @@ def questions(
     )
     exposure = library.instantiate(
         library.template("exposure_to_measure"),
-        {"measure": measure.statement, "events": objective.events, "horizon": horizon(objective.horizon),
-         "loss_definition": objective.loss_definition},
+        {"measure": measure.statement, "measure_text": measure_said(texts[measure.document]), "events": objective.events,
+         "horizon": horizon(objective.horizon), "loss_definition": objective.loss_definition},
         question_id=f"exposure_to_measure.{measure.document}",
         paraphrase_set="ps.exposure_to_measure",
     )  # fmt: skip

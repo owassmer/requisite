@@ -428,6 +428,23 @@ work is judged against this file; its writer is the coordinator (a worker's repo
   conditions alone; the settled-market check reads it as not checkable from market records (its conditions are judged).
   The contract reader's prompt no longer lists constructs the IR lacks: the schema it is given says what it expresses.
 
+- Question 2 is asked over what the measure's own text states (Owen and the coordinator, November 2, 20:45 ET, before
+  any estimate; Owen chose the grain). Cause: the exposure question asks whether a measure's "direct legal effect would
+  change what a business pays for labor or inputs", and judges and the gold labeller were shown only the measure's
+  title, type and status; Owen, labelling, could not see what the rule does. The coordinator read 45 of the 253 rules
+  the 1,200 phase-1 comments address (10 drawn at random by comments, seed 20261102; 35 whose titles name a fee, wage,
+  employment, tariff or standard): the agency's summary (the Federal Register abstract) settles class membership for
+  all but one of 31 read closely, and who bears a charge, and how much, is often only in the body (the $70,000 OPT fee
+  is paid by schools; employers' payroll taxes rise where OPT workers are replaced). So each measure is shown with its
+  summary and with its own statements of who pays what, quoted from its whole published text (core.MeasureText),
+  read by the cost_statements agent in consecutive parts of at most 300,000 characters, each quote checked as text
+  against its part (the reading of each quote is the agent's, shown as such); a measure whose text states no cost says
+  so, read. A measure without a Federal Register number is read from its regulations.gov record and file.
+  exposure_to_measure is v3, binding the measure's text. A question is its id and version: judgments and gold labels
+  of v2 answer another question and are not read for v3 (wide._phase1, gold.pending, results._gold); Owen's three
+  labels so far, two of the population question (unchanged, v1) and one of v2, stand as recorded. The phase-1 labels
+  are asked again, the gold sample redrawn by its recorded rule, and Owen labels from what the measures state.
+
 ## No escape routes, loud or quiet
 
 - Owen, November 1: "I am also uncompromisingly averse to 'loud failure' escape routes and deferrals/dismissals/shortcuts

@@ -29,7 +29,7 @@ from requisite.agents import runner
 from requisite.agents.answers import FrameDraft, ObjectiveDraft, ParaphrasesDraft
 from requisite.agents.trace import made_from, record_run
 from requisite.discovery import labels, sampling
-from requisite.evidence import extract
+from requisite.evidence import extract, measure_text
 from requisite.evidence import frame as framing
 from requisite.evidence.federal_register import FederalRegister
 from requisite.evidence.fetched import free_budget
@@ -446,7 +446,8 @@ def _judge(
     psets = {t: paraphrase_set(store, library_ref(t)) for t in labels.OBJECTIVE_TEMPLATES}
     states, unreadable = _states(store, ids)
     ms = measures(store, [st.item.id for st in states])
-    asks = [a for st in states for a in labels.asks(st, labels.questions(objective, ms, st.item), psets, configs)]
+    texts = measure_text.measure_texts(store, sorted({m.document for m in ms.values()}))
+    asks = [a for st in states for a in labels.asks(st, labels.questions(objective, ms, texts, st.item), psets, configs)]
     done = 0
     lock = threading.Lock()
 
@@ -495,7 +496,22 @@ def unreadable(store: Store) -> dict[str, str]:
     return _states(store, [d.item for d in drawn(store, 1).items])[1]
 
 
-def _phase1(store: Store) -> dict[tuple[str, str], core.Judgment]:
+def read_measure_texts(store: Store, *, workers: int = 4, on_done: Callable[[str], None] | None = None,
+                       federal_register: Callable[[], FederalRegister] = FederalRegister,
+                       mirror: Callable[[], Mirrulations] = Mirrulations,
+                       regulations_gov: Callable[[], RegulationsGov] = RegulationsGov) -> dict[str, core.MeasureText]:  # fmt: skip
+    """What each measure the phase-1 items address states of itself (core.MeasureText): its summary and its statements
+    of who pays what, read from its published text, so the exposure question is asked over what the measure does."""
+    ms = measures(store, [d.item for d in drawn(store, 1).items])
+    docs: dict[str, Mapping[str, Any]] = {}
+    for m in ms.values():
+        if m.document not in docs:
+            docs[m.document] = measure_text.listed(store, m)
+    return measure_text.read_text(store, docs, workers=workers, on_done=on_done, federal_register=federal_register,
+                                  mirror=mirror, regulations_gov=regulations_gov)
+
+
+def _phase1(store: Store) -> dict[tuple[str, int, str], core.Judgment]:
     """The phase-1 judgment of each question over each state. Two responses to one question over one state under one
     configuration exist only where the request changed (a response is a function of its request: cassettes); an answer
     stands over a refusal, since a refusal of one form of the request is not one of the question (providers.AS_TEXT),
@@ -503,23 +519,24 @@ def _phase1(store: Store) -> dict[tuple[str, str], core.Judgment]:
     spec = providers.PROVIDERS[labels.PHASE1_CONFIG[0]]
     phase1 = core.JudgeConfig(provider=spec.name, model=spec.model, model_cutoff=spec.model_cutoff,
                               paraphrase_id=labels.PHASE1_CONFIG[1], render_id=labels.PHASE1_CONFIG[2].id)  # fmt: skip
-    found: dict[tuple[str, str], core.Judgment] = {}
+    found: dict[tuple[str, int, str], core.Judgment] = {}
     for j in store.all("judgment", core.Judgment):
         if j.config != phase1:
             continue
-        key = (j.question.id, j.state_hash)
+        # A question is its id and version: a judgment of another version of a question answers another question.
+        key = (j.question.id, j.question.version, j.state_hash)
         have = found.get(key)
         if have is None or (have.distribution is None and j.distribution is not None):
             found[key] = j
         elif j.distribution is not None and j.distribution != have.distribution:
-            raise Refused(f"{key[0]} over state {key[1][:12]} has two answers under the phase-1 configuration")
+            raise Refused(f"{key[0]} v{key[1]} over state {key[2][:12]} has two answers under the phase-1 configuration")
     return found
 
 
 def phase1_judgments(store: Store) -> list[str]:
     """The content hashes of the phase-1 judgments the predictions read, in a stable order."""
-    asked = {q for q in labels.OBJECTIVE_TEMPLATES}
-    return sorted(j.content_hash() for (q, _), j in _phase1(store).items() if q.split(".")[0] in asked)
+    asked = {t: library.template(t).version for t in labels.OBJECTIVE_TEMPLATES}
+    return sorted(j.content_hash() for (q, v, _), j in _phase1(store).items() if asked.get(q.split(".")[0]) == v)
 
 
 def predictions(store: Store) -> dict[str, tuple[float, float]]:
@@ -532,15 +549,16 @@ def predictions(store: Store) -> dict[str, tuple[float, float]]:
     stratum = {d.item: d.stratum for d in draw.items}
     states, _ = _states(store, [d.item for d in draw.items])
     ms = measures(store, [st.item.id for st in states])
+    texts = measure_text.measure_texts(store, sorted({m.document for m in ms.values()}))
     found = _phase1(store)
     answered: dict[str, list[float | None]] = {}
     unasked = []
     for st in states:
-        qs = labels.questions(objective, ms, st.item)
+        qs = labels.questions(objective, ms, texts, st.item)
         h = st.state.content_hash()
         pair: list[float | None] = []
         for template, answers in (("voice_in_population", ("in_population",)), ("exposure_to_measure", EXPOSED)):
-            j = found.get((qs[template].id, h))
+            j = found.get((qs[template].id, qs[template].version, h))
             if j is None:
                 unasked.append(st.item.id)
                 break

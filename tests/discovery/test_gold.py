@@ -19,6 +19,13 @@ OBJECTIVE = core.WideObjective(
 )  # fmt: skip
 MEASURES = {f"C-{i}": core.ItemMeasure(item=f"C-{i}", document="D-1-0001",
                                          statement="A proposed rule raising the overtime salary threshold.", artifacts=[]) for i in range(10)}  # fmt: skip
+COST = "Employers would pay an estimated $1.2 billion more a year in overtime."
+TEXTS = {"D-1-0001": core.MeasureText(
+    document="D-1-0001", fr_number="2026-00001", summary="The Department proposes to raise the overtime salary threshold.",
+    statements=[core.CostStatement(quote=COST, payer="employers", pays_for="overtime pay", direction="more",
+                                   amount="1200000000", currency="USD", per="per year")],
+    artifacts=[artifact_id(b"record")], readings=["run"],
+)}  # fmt: skip
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +52,7 @@ def make_items(store: Store, n: int) -> core.SampleDraw:
 def session(store, draw, answers):
     shown: list[str] = []
     feed = iter(answers)
-    n = gold.label_session(store, draw, OBJECTIVE, MEASURES, labeler="owen", read=lambda _: next(feed),
+    n = gold.label_session(store, draw, OBJECTIVE, MEASURES, TEXTS, labeler="owen", read=lambda _: next(feed),
                            write=shown.append, now=lambda: T)  # fmt: skip
     return n, "\n".join(shown)
 
@@ -76,7 +83,19 @@ def test_a_session_labels_blind_in_the_seeds_order_and_keeps_unsure(tmp_path):
     n2, shown2 = session(store, draw, ["5", "1", "3", "2", "1"])
     assert n2 == 3 and "All drawn items are labelled" in shown2
     assert len(store.all("gold_label", core.GoldLabel)) == 6
-    assert gold.pending(store, draw, lambda item: ["voice_in_population", "exposure_to_measure.D-1-0001"]) == []
+    asked = [(q.id, q.version) for q in labels_of(draw, store)]
+    assert gold.pending(store, draw, lambda item: asked) == []
+    # The labeller is shown what the measure's own text states: its summary and its statement of who pays what.
+    assert TEXTS["D-1-0001"].summary in shown and COST in shown
+    # A label of another version of a question answers another question: the item is pending again under a new one.
+    assert gold.pending(store, draw, lambda item: [*asked[:1], (asked[1][0], asked[1][1] + 1)]) != []
+
+
+def labels_of(draw, store):
+    from requisite.discovery import labels
+
+    item = store.get("item", draw.items[0].item, core.Item)
+    return list(labels.questions(OBJECTIVE, MEASURES, TEXTS, item).values())
 
 
 def test_an_answer_out_of_range_is_asked_again(tmp_path):

@@ -103,6 +103,16 @@ def _show_labelled(done) -> None:  # noqa: ANN001
         print(f"  no judge asked about {item}: {why}")
 
 
+def _wide_measure_text(args: argparse.Namespace) -> int:
+    from requisite.discovery import wide
+
+    done = wide.read_measure_texts(_store(args), workers=args.workers, on_done=lambda doc: print(f"read {doc}", flush=True))
+    stated = sum(1 for mt in done.values() if mt.statements)
+    print(f"{len(done)} measure(s): {stated} whose text states who pays what, {len(done) - stated} whose text states no "
+          "cost to anyone")  # fmt: skip
+    return 0
+
+
 def _wide_label(args: argparse.Namespace) -> int:
     from requisite.discovery import wide
 
@@ -199,11 +209,12 @@ def _paraphrases(args: argparse.Namespace) -> int:
 
 def _gold(args: argparse.Namespace) -> int:
     from requisite.discovery import gold, wide
+    from requisite.evidence import measure_text
 
     store = _store(args)
-    gold.label_session(store, wide.drawn(store, 2), wide.approved_objective(store),
-                       wide.measures(store, [d.item for d in wide.drawn(store, 2).items]),
-                       labeler=args.labeler)  # fmt: skip
+    ms = wide.measures(store, [d.item for d in wide.drawn(store, 2).items])
+    texts = measure_text.measure_texts(store, sorted({m.document for m in ms.values()}))
+    gold.label_session(store, wide.drawn(store, 2), wide.approved_objective(store), ms, texts, labeler=args.labeler)
     return 0
 
 
@@ -471,6 +482,8 @@ def main(argv: list[str] | None = None) -> int:
     steps = (
         ("sample", "draw the phase-1 sample of the frozen frame, by the design's rule", _wide_sample, False),
         ("read", "read the phase-1 sample's items whole and freeze them", _wide_read, True),
+        ("measure-text", "what each measure the phase-1 items address states of itself: its summary and who pays what",
+         _wide_measure_text, True),
         ("label", "the phase-1 judge's labels on every phase-1 item", _wide_label, True),
         ("stability", "every judge configuration on the stability subsample (spec §2.1)", _wide_stability, True),
         ("gold-draw", "draw the gold sample from phase 1, by the judge's probabilities", _wide_gold_draw, False),
