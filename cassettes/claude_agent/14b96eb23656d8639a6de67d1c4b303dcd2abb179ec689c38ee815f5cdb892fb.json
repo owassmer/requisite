@@ -1,0 +1,168 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "paraphrase_writer",
+ "latency_ms": 6443,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T01:08:04.820993+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "template": {
+    "answers": [
+     {
+      "binds": {},
+      "meaning": "yes: it is written by or for one such entity, about its own operations",
+      "status": "affirmative",
+      "value": "in_population"
+     },
+     {
+      "binds": {},
+      "meaning": "no: its author is not such an entity, or it speaks for others (an association, advocate, consultant, worker, consumer, resident or public body)",
+      "status": "negative",
+      "value": "other_author"
+     },
+     {
+      "binds": {},
+      "meaning": "the filing does not establish who its author is or whether the author meets the definition",
+      "status": "not_established",
+      "value": "not_established"
+     }
+    ],
+    "id": "voice_in_population",
+    "paraphrase_set": null,
+    "slots": [
+     "population"
+    ],
+    "target": "Is the filing under OBSERVED written by or for a single entity that meets the population definition below, speaking about its own operations?\nPopulation definition: {population}",
+    "task": "classify",
+    "version": 1
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "paraphrase_writer",
+  "schema": {
+   "$defs": {
+    "ParaphraseDraft": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "meanings": {
+       "additionalProperties": {
+        "type": "string"
+       },
+       "title": "Meanings",
+       "type": "object"
+      },
+      "target": {
+       "title": "Target",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "target",
+      "meanings"
+     ],
+     "title": "ParaphraseDraft",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "paraphrase_writer: two rewordings of a template (core.ParaphraseSet holds them with the original, p0).",
+   "properties": {
+    "paraphrases": {
+     "items": {
+      "$ref": "#/$defs/ParaphraseDraft"
+     },
+     "title": "Paraphrases",
+     "type": "array"
+    }
+   },
+   "required": [
+    "paraphrases"
+   ],
+   "title": "ParaphrasesDraft",
+   "type": "object"
+  },
+  "system": "You write paraphrases of a question template for Requisite's stability harness. The harness asks the same question of\nseveral decision models in several wordings; if the answers move with the wording, the question is not yet precise\nenough. So each paraphrase must ask exactly the same question in different words: a reader who answers one wording\nmust give the same answer to every other wording, for every possible filing.\n\nYou are given a template: its target (the question, with slots written as {slot}) and its closed set of answers, each\nwith a value and a meaning. You produce two paraphrases (the original wording is the third), each rewording:\n- the target, keeping every slot exactly as written ({population}, {measure} and so on) and keeping every condition,\n  scope, time window and exception the original states, no more and no less;\n- each answer's meaning, keeping its value unchanged and its scope exactly the same.\n\nVary the words and the sentence structure, not the meaning. Do not add examples, explanations, hedges or emphasis the\noriginal lacks, and do not drop any. Where the original's wording is ambiguous, keep the same ambiguity; do not\nresolve it in one paraphrase and not another, since that would change the question.\n\nReturn the two paraphrases with ids p1 and p2.\n"
+ },
+ "response": {
+  "duration_ms": 4865,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 1950,
+    "cacheReadInputTokens": 0,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.025608,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 500,
+    "provider": "firstParty",
+    "thinkingTokens": 41,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "paraphrases": [
+    {
+     "id": "p1",
+     "meanings": {
+      "in_population": "yes: one such entity wrote it, or it was written on that entity's behalf, and it concerns that entity's own operations",
+      "not_established": "the filing does not establish who wrote it or whether the author satisfies the definition",
+      "other_author": "no: the author is not such an entity, or the filing speaks on behalf of others (an association, advocate, consultant, worker, consumer, resident or public body)"
+     },
+     "target": "Was the filing under OBSERVED written by, or on behalf of, one single entity that satisfies the population definition below, with that entity speaking about its own operations?\nPopulation definition: {population}"
+    },
+    {
+     "id": "p2",
+     "meanings": {
+      "in_population": "yes: it is written by or for one entity of this kind, concerning its own operations",
+      "not_established": "it cannot be determined from the filing who the author is or whether the author meets the definition",
+      "other_author": "no: either its author is not an entity of this kind, or it speaks for others (an association, advocate, consultant, worker, consumer, resident or public body)"
+     },
+     "target": "Considering the filing under OBSERVED: is it written by or for a single entity meeting the population definition below, and does that entity speak about its own operations?\nPopulation definition: {population}"
+    }
+   ]
+  },
+  "total_cost_usd": 0.025608,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 1950,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 1950,
+   "cache_read_input_tokens": 0,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1950,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 1950,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 2,
+     "output_tokens": 500,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 500,
+   "output_tokens_details": {
+    "thinking_tokens": 41
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

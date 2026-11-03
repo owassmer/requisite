@@ -1,0 +1,24 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/markets",
+ "latency_ms": 68,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:29:57.396420+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {
+   "limit": "1000",
+   "max_settled_ts": "1793577601",
+   "min_settled_ts": "1793454719",
+   "series_ticker": "KXTHUNEOUT"
+  }
+ },
+ "response": {
+  "headers": {
+   "content-length": "27",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"cursor\":\"\",\"markets\":[]}\n"
+ }
+}

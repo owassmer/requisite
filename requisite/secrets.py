@@ -60,15 +60,21 @@ def _keychain(name: str) -> str | None:
 
 
 @cache
-def secret(name: str) -> str:
-    if replay_only():
-        raise ReplayOnly(f"{name} requested in a replay-only process; record the cassette outside the sandbox")
+def _found(name: str) -> str | None:
+    """Where the key is, looked up once per process: a key found or not found stays so for the process's life (a cache
+    of the result, not of an exception, so a missing key does not repeat the Keychain lookup at every redaction)."""
     if os.environ.get(name):
         return os.environ[name]
     for path in DOTENVS:
         if value := _dotenv(path, name):
             return value
-    if value := _keychain(name):
+    return _keychain(name)
+
+
+def secret(name: str) -> str:
+    if replay_only():
+        raise ReplayOnly(f"{name} requested in a replay-only process; record the cassette outside the sandbox")
+    if value := _found(name):
         return value
     raise MissingSecret(f"{name} is not set in the environment, .env, Slope's .env or the Keychain")
 

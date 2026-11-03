@@ -1,0 +1,87 @@
+{
+ "request": {
+  "path": "comments",
+  "params": {
+   "filter[docketId]": "FAA-2026-2730",
+   "page[size]": 25
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "997"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "FAA-2026-2730-0005",
+    "type": "comments",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b92df25e",
+     "documentType": "Public Submission",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "postedDate": "2026-05-19T04:00:00Z",
+     "lastModifiedDate": "2026-05-19T16:23:05Z",
+     "title": "Comment from United Airlines, Inc"
+    }
+   },
+   {
+    "id": "FAA-2026-2730-0004",
+    "type": "comments",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b92d03f4",
+     "documentType": "Public Submission",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "postedDate": "2026-05-12T04:00:00Z",
+     "lastModifiedDate": "2026-05-12T16:40:47Z",
+     "title": "Comment from Aviation Partners Boeing"
+    }
+   },
+   {
+    "id": "FAA-2026-2730-0003",
+    "type": "comments",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b92c8c83",
+     "documentType": "Public Submission",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "postedDate": "2026-05-07T04:00:00Z",
+     "lastModifiedDate": "2026-05-07T22:31:47Z",
+     "title": "Comment from Boeing Commercial Airplanes"
+    }
+   }
+  ],
+  "meta": {
+   "aggregations": {
+    "agencyId": [
+     {
+      "docCount": 3,
+      "value": "FAA"
+     }
+    ],
+    "postedDate": []
+   },
+   "filters": {
+    "docketId": {
+     "label": "FAA-2026-2730",
+     "value": "FAA-2026-2730"
+    }
+   },
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "numberOfElements": 3,
+   "pageNumber": 1,
+   "pageSize": 25,
+   "totalElements": 3,
+   "totalPages": 1,
+   "firstPage": true,
+   "lastPage": true
+  }
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/markets",
+ "latency_ms": 71,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:30:26.662219+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {
+   "limit": "1",
+   "max_settled_ts": "1793577601",
+   "min_settled_ts": "1789689599",
+   "series_ticker": "KXCPLMATCH"
+  }
+ },
+ "response": {
+  "headers": {
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"cursor\":\"CgwImsfC1QYQmN7e-QESIEtYQ1BMTUFUQ0gtMjZTRVAyMDE5MDBKQU1BTlQtSkFN\",\"markets\":[{\"can_close_early\":true,\"close_time\":\"2026-09-21T03:20:07Z\",\"created_time\":\"2026-09-19T12:00:34.371628Z\",\"custom_strike\":{\"cricket_team\":\"03da9bc2-a5a0-4e69-af77-64a5e5993770\"},\"early_close_condition\":\"This market will close and expire after a winner is declared.\",\"event_ticker\":\"KXCPLMATCH-26SEP201900JAMANT\",\"exchange_index\":0,\"expected_expiration_time\":\"2026-09-21T03:00:00Z\",\"expiration_time\":\"2026-09-23T03:00:00Z\",\"expiration_value\":\"Antigua And Barbuda Falcons\",\"last_price_dollars\":\"0.0100\",\"latest_expiration_time\":\"2026-09-23T03:00:00Z\",\"market_type\":\"binary\",\"no_ask_dollars\":\"1.0000\",\"no_bid_dollars\":\"0.0000\",\"no_sub_title\":\"Jamaica Kingsmen\",\"notional_value_dollars\":\"1.0000\",\"occurrence_datetime\":\"2026-09-21T03:00:00Z\",\"open_interest_fp\":\"861646.25\",\"open_time\":\"2026-09-19T12:10:00Z\",\"previous_price_dollars\":\"0.0100\",\"previous_yes_ask_dollars\":\"1.0000\",\"previous_yes_bid_dollars\":\"0.0000\",\"price_level_structure\":\"linear_cent\",\"price_ranges\":[{\"end\":\"1.0000\",\"start\":\"0.0000\",\"step\":\"0.0100\"}],\"result\":\"no\",\"rules_primary\":\"If Jamaica Kingsmen wins the Antigua And Barbuda Falcons vs Jamaica Kingsmen men's professional Caribbean Premier League cricket match originally scheduled for Sep 20, 2026 at 7:00 PM EDT, then the market resolves to Yes.\",\"rules_secondary\":\"If the Antigua And Barbuda Falcons vs Jamaica Kingsmen men's professional Caribbean Premier League cricket match originally scheduled for Sep 20, 2026 at 7:00 PM EDT ends in a tie, draw, no result (NR), abandonment, or cancellation, and no official winner is declared, all markets will resolve to $0.50.\\nIn the event of a forfeit, disqualification, or concession:\\n  If it occurs before the match begins, all markets will resolve to $0.50.\\n  If it occurs after the match has begun, and the governing body declares an official winner, the market will resolve based on that result.\\nIf play begins but insufficient play occurs to determine an official result, all markets will resolve to $0.50.\\n\\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.\",\"settlement_bounds_type\":\"default\",\"settlement_timer_seconds\":240,\"settlement_ts\":\"2026-09-21T03:25:14.523743Z\",\"settlement_value_dollars\":\"0.0000\",\"status\":\"finalized\",\"strike_type\":\"structured\",\"ticker\":\"KXCPLMATCH-26SEP201900JAMANT-JAM\",\"title\":\"Jamaica Kingsmen wins\",\"updated_time\":\"2026-09-21T03:25:14.927234Z\",\"volume_24h_fp\":\"0.00\",\"volume_fp\":\"1867909.39\",\"yes_ask_dollars\":\"1.0000\",\"yes_ask_size_fp\":\"0.00\",\"yes_bid_dollars\":\"0.0000\",\"yes_bid_size_fp\":\"0.00\",\"yes_sub_title\":\"Jamaica Kingsmen\"}]}\n"
+ }
+}

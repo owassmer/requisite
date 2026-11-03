@@ -1,0 +1,24 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/markets",
+ "latency_ms": 67,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:30:27.000973+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {
+   "limit": "1000",
+   "max_settled_ts": "1793577601",
+   "min_settled_ts": "1793576639",
+   "series_ticker": "KXCPLMATCH"
+  }
+ },
+ "response": {
+  "headers": {
+   "content-length": "27",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"cursor\":\"\",\"markets\":[]}\n"
+ }
+}

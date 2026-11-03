@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/series/KXBRDEP",
+ "latency_ms": 51,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:31:40.625329+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {}
+ },
+ "response": {
+  "headers": {
+   "content-length": "978",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"series\":{\"additional_prohibitions\":[\"Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.\",\"Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract.\",\"Any candidate currently listed as a market within this event\"],\"categories\":[\"Elections\"],\"category\":\"Elections\",\"contract_terms_url\":\"https://assets.kalshi.com/contract_terms/ELECTION.pdf\",\"contract_url\":\"https://assets.kalshi.com/regulatory/product-certifications/ELECTION.pdf\",\"exchange_index\":0,\"fee_multiplier\":1,\"fee_type\":\"quadratic\",\"frequency\":\"one_off\",\"last_updated_ts\":\"2026-10-27T16:12:14.377687Z\",\"settlement_sources\":[{\"name\":\"the official electoral commission, constitutional court, or equivalent electoral authority of the relevant jurisdiction\",\"url\":\"https://kalshi.com/\"}],\"tags\":[\"International elections\",\"Brazil\"],\"ticker\":\"KXBRDEP\",\"title\":\"Brazil Chamber of Deputies Election: Most Seats Won\"}}\n"
+ }
+}

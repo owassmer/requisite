@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/markets/KXBRDEP-26OCT04-NOVO",
+ "latency_ms": 59,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:31:41.229054+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {}
+ },
+ "response": {
+  "headers": {
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"market\":{\"can_close_early\":true,\"close_time\":\"2026-10-05T15:55:45Z\",\"created_time\":\"2026-04-23T01:43:30.973292Z\",\"custom_strike\":{\"Option\":\"NOVO\"},\"early_close_condition\":\"This market will close and expire early if the election winner is officially declared or certified.\",\"event_ticker\":\"KXBRDEP-26OCT04\",\"exchange_index\":0,\"expected_expiration_time\":\"2027-01-01T05:00:00Z\",\"expiration_time\":\"2027-10-04T14:00:00Z\",\"expiration_value\":\"PL\",\"last_price_dollars\":\"0.0000\",\"latest_expiration_time\":\"2027-10-04T14:00:00Z\",\"market_type\":\"binary\",\"no_ask_dollars\":\"1.0000\",\"no_bid_dollars\":\"0.0000\",\"no_sub_title\":\"NOVO\",\"notional_value_dollars\":\"1.0000\",\"occurrence_datetime\":\"2026-10-05T15:41:45Z\",\"open_interest_fp\":\"0.00\",\"open_time\":\"2026-04-23T04:00:00Z\",\"previous_price_dollars\":\"0.0000\",\"previous_yes_ask_dollars\":\"1.0000\",\"previous_yes_bid_dollars\":\"0.0000\",\"price_level_structure\":\"linear_cent\",\"price_ranges\":[{\"end\":\"1.0000\",\"start\":\"0.0000\",\"step\":\"0.0100\"}],\"result\":\"no\",\"rules_primary\":\"If NOVO wins the 2026 Brazilian Chamber of Deputies elections, then the market resolves to Yes.\",\"rules_secondary\":\"For parliamentary/legislative elections, the winner is the party, coalition, or alliance winning the most seats in the specified chamber. If two parties have the same number of seats, the one entering government will resolve to Yes and all others to No; if both or neither enter government, the one with the higher share of the vote will resolve to Yes and all others to No.\\n\\nThis market may resolve early once a consensus of designated media sources has declared a winner. See full rules for details.\",\"settlement_bounds_type\":\"default\",\"settlement_timer_seconds\":1800,\"settlement_ts\":\"2026-10-05T16:25:47.120584Z\",\"settlement_value_dollars\":\"0.0000\",\"status\":\"finalized\",\"strike_type\":\"custom\",\"subtitle\":\"::\",\"ticker\":\"KXBRDEP-26OCT04-NOVO\",\"title\":\"Will NOVO win the 2026 Brazilian Chamber of Deputies elections?\",\"updated_time\":\"2026-10-12T05:51:27.254118Z\",\"volume_24h_fp\":\"0.00\",\"volume_fp\":\"0.00\",\"yes_ask_dollars\":\"1.0000\",\"yes_ask_size_fp\":\"0.00\",\"yes_bid_dollars\":\"0.0000\",\"yes_bid_size_fp\":\"0.00\",\"yes_sub_title\":\"NOVO\"}}\n"
+ }
+}

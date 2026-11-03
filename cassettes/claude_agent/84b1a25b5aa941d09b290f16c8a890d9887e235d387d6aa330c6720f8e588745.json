@@ -1,0 +1,189 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "objective_drafter",
+ "latency_ms": 37269,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T00:56:51.323263+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "brief": "Find small businesses exposed to a pending regulatory or legislative change in their labor or input costs.",
+   "today": "2026-11-01"
+  },
+  "model": "claude-opus-5-5",
+  "role": "objective_drafter",
+  "schema": {
+   "$defs": {
+    "TimeWindow": {
+     "additionalProperties": false,
+     "description": "A window of time (spec \u00a74), with each endpoint's inclusion stated (addendum A05 \u00a75.4: \"Define open/closed interval\nendpoints, timezone\"). `tz` is the IANA zone in which calendar days of the window are counted.",
+     "properties": {
+      "end": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      },
+      "end_closed": {
+       "title": "End Closed",
+       "type": "boolean"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      },
+      "start_closed": {
+       "title": "Start Closed",
+       "type": "boolean"
+      },
+      "tz": {
+       "default": "UTC",
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end",
+      "start_closed",
+      "end_closed"
+     ],
+     "title": "TimeWindow",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "objective_drafter: a wide run's objective for G1 (core.WideObjective's fields; its id and version are code's).",
+   "properties": {
+    "estimand": {
+     "title": "Estimand",
+     "type": "string"
+    },
+    "events": {
+     "title": "Events",
+     "type": "string"
+    },
+    "horizon": {
+     "$ref": "#/$defs/TimeWindow"
+    },
+    "loss_definition": {
+     "title": "Loss Definition",
+     "type": "string"
+    },
+    "open_questions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Open Questions",
+     "type": "array"
+    },
+    "population": {
+     "title": "Population",
+     "type": "string"
+    }
+   },
+   "required": [
+    "population",
+    "events",
+    "horizon",
+    "loss_definition",
+    "estimand",
+    "open_questions"
+   ],
+   "title": "ObjectiveDraft",
+   "type": "object"
+  },
+  "system": "You draft the objective of a wide discovery run for Requisite, a runtime that finds which entities are materially\nexposed to uncertain external events, and later builds instruments that hedge those exposures.\n\nA human states a brief in a sentence or two. You turn it into a precise objective that a person will approve, edit or\nreject at gate G1, before anything is read. The run will derive everything from your objective: which part of the public\nrecord it reads, what it asks of each item, and what it estimates. So every term must be specific enough that two\ncareful readers would apply it the same way, and no broader or narrower than the brief.\n\nYou produce:\n- population: whose exposure the run looks for, as the brief means it (for example, the kind and size of business and\n  where it operates). Do not narrow it beyond the brief.\n- events: the class of pending external change, stated so that a reader can tell for a given proposed rule, bill or\n  order whether it falls in the class. \"Pending\" means not yet final, or final but not yet in effect, as of the run.\n- horizon: the window over which the exposure matters, as an explicit start and end with time zone, and whether each end\n  is included.\n- loss_definition: what counts as the loss for an exposed entity, in cash terms, over the horizon.\n- estimand: what the run's prevalences estimate. The unit is the item (one public comment or filing), so the estimand is\n  a share of items: for example, the share of items written in a business's own voice that describe exposure to an event\n  of the class, by event family. A share of items is not a share of businesses; say so plainly if the brief asks for one.\n\nRules:\n- Use only the brief and the date you are given. Do not name a particular docket, rule, agency action, bill or company:\n  which ones the run reaches is for the run to find, not for you to choose.\n- Do not add conditions the brief does not ask for, and do not drop any it states.\n- Where the brief is ambiguous in a way that would change what the run reads or estimates, choose the reading closest to\n  its plain words and state the alternative in `open_questions`, so the human at G1 can choose.\n"
+ },
+ "response": {
+  "duration_ms": 36606,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 2297,
+    "cacheReadInputTokens": 0,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.086424,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 3402,
+    "provider": "firstParty",
+    "thinkingTokens": 1433,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "estimand": "The unit is the item: one public comment, filing or similar document in the public record.\n\nThe denominator is all items the run reads that are written in a small business's own voice. That means written by or for a single business that meets the population definition, speaking about its own operations.\n\nThe numerator is those items that describe the business as exposed to an event of the class. That is, the item says or clearly implies that a specific pending event would raise the business's own labor or input costs during the horizon.\n\nThe estimate is that share. It is reported overall and separately for each event family. An event family is a group of events that share a cost channel (labor or input) and a mechanism, for example minimum wage, overtime, mandated leave, tariffs or input excise taxes. Families are defined by the run from what it finds.\n\nThis is a share of items, not a share of small businesses. One business may file several items, or none, and businesses that write to the public record are not a random sample of small businesses. The estimate therefore does not measure what fraction of small businesses are exposed.",
+   "events": "A pending regulatory or legislative change: a legal measure from a government body (legislature, executive, agency or regulator, at any level and in any jurisdiction) that, as of 2026-11-01, is either (i) proposed but not final, for example a proposed rule, an introduced or pending bill, or a draft order, or (ii) final but not yet in effect. It is in the class only if its direct legal effect would change what a business pays for one of the following.\n\n(a) Labor: wages and salaries, including minimum wages; overtime pay or eligibility; required paid leave or other mandated benefits; payroll taxes or employer contributions; scheduling, staffing-level or worker-classification rules that change the hours, pay or headcount the business must provide.\n\n(b) Inputs: the price or availability of goods, materials, energy, services or other things the business buys to produce what it sells, for example tariffs, duties or quotas; excise or sales taxes on inputs; and product, energy or environmental standards that raise the price of inputs or limit which inputs can be bought.\n\nOut of the class:\n- measures already in effect as of 2026-11-01;\n- court decisions;\n- measures whose cost effect is only general compliance, reporting or paperwork burden, unless the item says the measure itself requires extra paid labor or purchased inputs;\n- measures that act only on the business's revenue, demand, financing or income taxes.",
+   "horizon": {
+    "end": "2027-11-01T00:00:00Z",
+    "end_closed": false,
+    "start": "2026-11-01T00:00:00Z",
+    "start_closed": true,
+    "tz": "UTC"
+   },
+   "loss_definition": "The loss is the increase in the business's cash spending on labor and/or inputs (as defined under events) during the horizon that would come from the event taking effect as proposed or enacted. It is measured against the same spending if the event did not take effect, and stated in the currency the item uses.\n\nOnly costs paid within the horizon count, so an event that takes effect after 2027-11-01 adds nothing to the loss. Decreases in labor or input costs are not a loss. So are lost revenue, lost sales and general compliance or paperwork costs that are not labor or input spending, and none of these count.",
+   "open_questions": [
+    "Size threshold: 'small' is taken to mean self-described small or under 500 employees. Should a different standard be used instead, such as an industry-specific size standard, a lower headcount (e.g. under 50 or under 100), or a revenue cap?",
+    "Geography: the brief names no jurisdiction, so businesses and measures anywhere are included. Should the run be limited to one country or level of government, e.g. US federal and state?",
+    "Direction of change: 'exposed to a change in their labor or input costs' is read as exposure to cost increases (loss). Should items describing expected cost decreases, or uncertainty in either direction, also count as exposure?",
+    "Executive actions: tariffs and similar measures set by executive order or proclamation are treated as regulatory and included. Should they be excluded as neither regulation nor legislation in the narrow sense?",
+    "Compliance burden: general compliance, reporting and paperwork costs are excluded unless the item says the measure itself requires extra paid labor or purchased inputs. Should all compliance costs count as labor costs instead?",
+    "Horizon: the brief gives none. Twelve months from 2026-11-01 (UTC) was chosen. Should it be longer, e.g. 24 months, to capture measures with later effective dates, or should it be tied to the effective dates of the events found?",
+    "Voice: items filed by trade associations or advocates on behalf of small-business members are excluded as not written in a business's own voice. Should they be included, or counted separately?",
+    "Share of businesses: the estimand is a share of items. If the brief wants the share of small businesses exposed, that needs a different design, e.g. deduplicating by business and weighting against a sampling frame of small businesses."
+   ],
+   "population": "Small businesses in any industry and any jurisdiction. The brief sets no geography or sector, so none is imposed. A business counts as small if either (a) the item describes it as a small business, or (b) the item gives a headcount of fewer than 500 employees (all its locations and affiliates combined, full- and part-time). A business counts as operating where the item says it has employees, facilities or sales. Sole proprietors and self-employed people running a business count as businesses. Individuals writing only as workers, consumers or residents do not count. Neither do trade associations, chambers, advocacy groups, law firms or consultants writing about businesses, and the same goes for government bodies and nonprofits that are not operating a business. An item that gives neither a small-business self-description nor a headcount under 500 does not show its author is in the population."
+  },
+  "total_cost_usd": 0.086424,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 2297,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 2297,
+   "cache_read_input_tokens": 0,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 2297,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 2297,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 2,
+     "output_tokens": 3402,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 3402,
+   "output_tokens_details": {
+    "thinking_tokens": 1433
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

@@ -1,0 +1,2506 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "contract_reader",
+ "latency_ms": 22473,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T03:28:08.858284+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "earlier_attempts_refused": [
+    {
+     "answer": {
+      "assumptions": [
+       "The two filings disagree. The product certification's Appendix A (March 14, 2024) defines the Underlying as 'a simple average of the CF Ethereum Real-Time Index (\"ERTI\") for the five minutes (300 seconds) prior to <time>, excluding the highest and lowest 20% of values', with 'Expiration time ... one hour after <time>'. The contract terms at contract_terms_url say 'a simple average of the CF Ethereum Real-Time Index (\"ERTI\") for the minute (60 seconds) prior to <time>', with 'Expiration time ... the first minute after <time> that data is available'. The IR follows the contract terms, which match the market's rules_primary ('the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST'). It treats the certification's Appendix A as superseded.",
+       "The observable eth_usd_erti_60s_avg is the Underlying itself: the simple average of the 60 one-second ERTI values before <time>, as published by the Source Agency, CF Benchmarks. The IR does not compute that average from the raw ERTI ticks.",
+       "The terms do not say how the 60-second average is rounded before it is compared with <price>. The observable's precision is set to 0.01 USD, following the listing's custom_strike.round_digits = \"2\" and the <price> increment of <0.01>. Under the strict 'above' comparison, rounding matters only when the average lands exactly on the strike.",
+       "Comparison: the terms say 'the index is <above/below/between> <price>', the market's rules_primary says 'is above 1449.99', and its strike_type is 'greater'. The IR carries this as a strict > against floor_strike. The strike value counts as not above.",
+       "<time> on <date> is 6 PM EST on Nov 1, 2026, which is 2026-11-01T23:00:00Z (US daylight saving time ends at 02:00 that day). This is the market's close_time and Last Trading Time. The IR reads the Underlying at that instant.",
+       "Expiration depends on events: 'The Expiration Date of the Contract shall be the sooner of the first minute after <time> on <date> that data is available or one week after <date>.' The IR takes the latest possible date, 2026-11-08T23:00:00Z (the market's expiration_time and latest_expiration_time), as both expiration and observation cutoff. If data is published earlier, the contract actually expires earlier, at about expected_expiration_time 2026-11-01T23:05:00Z. The outcome is the same either way.",
+       "'If no data is available on the Expiration Date at the Expiration Time, then the market resolves to No' is carried as on_unknown_at_expiry = no.",
+       "Settlement date is stated as a deadline: 'The Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.' The IR carries this as a fixed settlement lag of 1 calendar day and a payment lag of 0 days. It does not carry the 'no later than' bound or the Rule 7.1 review exception.",
+       "'Revisions to the Underlying made after Expiration will not be accounted for in determining the Expiration Value' is carried as revision_policy as_of_expiry.",
+       "'Contingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant to Rule 6.3(c) of the Rulebook.' This discretionary review lies outside the IR and is not modelled.",
+       "The market record has can_close_early = true, but the filed terms state no early-expiration condition tied to the Payout Criterion. early_expiration is none.",
+       "The terms state no void path. void_transfer is set to 'nothing' as a neutral value that never applies.",
+       "The terms state no payout rounding rule. The Settlement Value is $1.00 per contract; rounding quantum is 0.01 USD with half_even as a neutral mode.",
+       "Only one source is named ('The Source Agency is CF Benchmarks'), so the conflict policy is precedence_first_available over that single source."
+      ],
+      "bindings": [
+       {
+        "field": "floor_strike",
+        "node": "above_strike",
+        "slot": "threshold"
+       }
+      ],
+      "ir": {
+       "examples": [],
+       "exclusions": [
+        {
+         "operative": false,
+         "text": "Contingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant to Rule 6.3(c) of the Rulebook."
+        },
+        {
+         "operative": false,
+         "text": "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract."
+        },
+        {
+         "operative": false,
+         "text": "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+        }
+       ],
+       "id": "KXETHD-26NOV0118-T1449.99",
+       "observables": [
+        {
+         "description": "Spot price of one Ether in U.S. dollars at <time>: the simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks.",
+         "id": "eth_usd_erti_60s_avg",
+         "precision": "0.01",
+         "revision_policy": "as_of_expiry",
+         "schedule": "real-time, one-second index values",
+         "sources": [
+          {
+           "id": "cf_benchmarks",
+           "name": "CF Benchmarks (CF Ethereum Real-Time Index, ERTI)",
+           "rank": 1,
+           "role": "Source Agency",
+           "url": "https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI"
+          }
+         ],
+         "unit": "USD",
+         "value_type": "number"
+        }
+       ],
+       "payout": {
+        "currency": "USD",
+        "kind": "binary",
+        "payment": "at_settlement",
+        "periods": [],
+        "rounding_mode": "half_even",
+        "rounding_quantum": "0.01",
+        "unit_value": "1.00"
+       },
+       "resolution": {
+        "conflict_policy": {
+         "procedure": "precedence_first_available",
+         "sources": [
+          "cf_benchmarks"
+         ]
+        },
+        "early_expiration": "none",
+        "on_unknown_at_expiry": "no",
+        "precedence": [
+         "cf_benchmarks"
+        ],
+        "void_transfer": {
+         "returns": "nothing"
+        }
+       },
+       "timing": {
+        "close": "2026-11-01T23:00:00Z",
+        "expiration": "2026-11-08T23:00:00Z",
+        "holiday_calendar": null,
+        "lag_days": "calendar",
+        "observation_cutoff": "2026-11-08T23:00:00Z",
+        "open": "2026-11-01T22:00:00Z",
+        "payment_lag_days": 0,
+        "settlement_lag_days": 1,
+        "tz": "America/New_York"
+       },
+       "trigger": {
+        "at": "2026-11-01T23:00:00Z",
+        "expr": {
+         "id": "above_strike",
+         "kind": "cmp",
+         "observable": "eth_usd_erti_60s_avg",
+         "op": ">",
+         "value": {
+          "kind": "number",
+          "value": "1449.99"
+         }
+        },
+        "id": "at_time",
+        "kind": "at"
+       },
+       "version": 1
+      },
+      "settlement": {
+       "at_field": "close_time",
+       "observable": "eth_usd_erti_60s_avg"
+      },
+      "support": "supported_with_explicit_assumptions",
+      "unsupported_terms": []
+     },
+     "refused_because": [
+      {
+       "at": "ir.resolution.conflict_policy",
+       "error": "Value error, precedence_first_available follows the procedure's precedence; it names no sources"
+      }
+     ]
+    }
+   ],
+   "filings": [
+    {
+     "document": "contract terms",
+     "text": "[page 1 of 2: text layer]\nETH\nScope: These rules shall apply to this contract.\nUnderlying: The Underlying for this Contract is the spot price of one Ether in U.S. dollars at\n<time>, according to a simple average of the CF Ethereum Real-Time Index (\u201cERTI\u201d) for the\nminute (60 seconds) prior to <time>. Revisions to the Underlying made after Expiration will\nnot be accounted for in determining the Expiration Value.\nSource Agency: The Source Agency is CF Benchmarks.\nType: The type of Contract is an Event Contract.\nIssuance:The Contract is based on the outcome of a recurrent data release, which is issued on\na real-time basis. Thus, Contract iterations will be issued on a recurring basis, and future\nContract iterations will generally correspond to the next day and year.\n<price>: Kalshi may list iterations of the Contract with <price> levels that fall within an\ninclusive range between 0 and 100,000,000 at consecutive increments of <0.01>. Due to the\npotential for variability in the Underlying, the Exchange may modify <price> levels in\nresponse to suggestions by Members.\n<date>: <date> refers to a calendar date specified by Kalshi. Kalshi may list iterations of the\nContract corresponding to different statistical periods of <date>.\n<time>: <time> refers to a time on a calendar date specified by Kalshi. Kalshi may list\niterations of the Contract corresponding to different statistical periods of <time>.\nPayout Criterion: The Payout Criterion for the Contract encompasses the Expiration Values\nthat the index is <above/below/between> <price> on <date> at <time>. If the value of\n<above/below/between> is \u201cbetween\u201d, then <price> shall be a pair of prices, and an Expiration\nValue that is greater than or equal to the lower value of the degree pair and less than or equal\nto the greater value of the degree pair are encompassed in the Payout Criterion. If no data is\navailable on the Expiration Date at the Expiration Time, then the market resolves to No.\nMinimum Tick: The Minimum Tick size for the referred Contract shall be $0.01.\nPosition Accountability Level: The Position Accountability Level for the $1 referred\nContract shall be $25,000 per strike, per Member.\nLast Trading Date: The Last Trading Date of the Contract will be <date>. The Last Trading\nTime will be <time>.\n\n[page 2 of 2: text layer]\nSettlement Date: The Settlement Date of the Contract shall be no later than the day after the\nExpiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.\nExpiration Date: The Expiration Date of the Contract shall be the sooner of the first minute\nafter <time> on <date> that data is available or one week after <date>.\nExpiration time: The Expiration time of the Contract shall be the first minute after <time>\nthat data is available.\nSettlement Value: The Settlement Value for this Contract is $1.00.\nExpiration Value: The Expiration Value is the value of the Underlying as documented by the\nSource Agency on the Expiration Date at the Expiration time.\nContingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market\nOutcome Review Process pursuant to Rule 6.3(c) of the Rulebook.",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/contract_terms/ETH.pdf"
+    },
+    {
+     "document": "product certification",
+     "text": "[page 1 of 8: text layer]\nKalshiEX LLC\nMarch 14, 2024\nSUBMITTED VIA CFTC PORTAL\nSecretary of the Commission\nOffice of the Secretariat\nU.S. Commodity Futures Trading Commission\nThree Lafayette Centre\n1155 21st Street, N.W.\nWashington, D.C. 20581\nRe: KalshiEX LLC \u2013 CFTC Regulation 40.2(a) Notification Regarding the Initial Listing\nof the \u201cWill the spot price of Ether be <above/below/between> <price> on <date> at\n<time>?\u201d Contract\nDear Sir or Madam,\nPursuant to Section 5c(c) of the Commodity Exchange Act and Section 40.2(a) of the regulations of the\nCommodity Futures Trading Commission, KalshiEX LLC (Kalshi) hereby notifies the Commission that\nit is self-certifying the \u201cWill the spot price of Ether be <above/below/between> <price> on <date> at\n<time>?\u201d contract (Contract). The Exchange intends to list the contract on a roughly daily basis. The\nContract\u2019s terms and conditions (Appendix A) includes the following strike conditions:\n\u25cf <above/below/between>\n\u25cf <price> (the target Ether price)\n\u25cf <date> (the target date)\n\u25cf <time> (the target time)\nAlong with this letter, Kalshi submits the following documents:\n\u25cf A concise explanation and analysis of the Contract;\n\u25cf Certification;\n\u25cf Appendix A with the Contract\u2019s Terms and Conditions;\n\u25cf Confidential Appendices with further information; and\n\u25cf A request for FOIA confidential treatment.\nIf you have any questions, please do not hesitate to contact me.\nSincerely,\nXavier Sottile\nHead of Markets\nKalshiEX LLC\nxsottile@kalshi.com\nKalshiEX LLC\n\n[page 2 of 8: text layer]\nKalshiEX LLC\nKalshiEX LLC\nOfficial Product Name: Will the spot price of Ether be <above/below/between> <price> on <date> at <time>?\nRulebook: ETH\nKalshi Contract Category: Commodity\nEther price\nMarch 14, 2024\nCONCISE EXPLANATION AND ANALYSIS OF THE PRODUCT AND ITS\nCOMPLIANCE WITH APPLICABLE PROVISIONS OF THE ACT, INCLUDING CORE\nPRINCIPLES AND THE COMMISSION'S REGULATIONS THEREUNDER\nPursuant to Commission Rule 40.2(a)(3)(v), the following is a concise explanation and analysis\nof the product and its compliance with the Act, including the relevant Core Principles, and the\nCommission's regulations thereunder.\nI. Introduction\nThe \u201cWill the spot price of Ether be <above/below/between> <price> on <date> at\n<time>?\u201d Contract is a contract relating to the price of Ether, a major digital asset. After\ncareful analysis, Kalshi (hereafter referred to as \u201cExchange\u201d) has determined that the\nContract complies with its vetting framework.\nKalshi has also determined that its Contract complies with staff advisory 18-14 regarding\ncontracts whose underlying are digital asset products. It will be able to access data from\nthe underlying spot markets that make up the cash-settlement prices, including\ninformation relating to the identity of the trader, prices, volumes, times, and quotes from\nthe relevant market makers or traders.\nFurther information about the Contract, including an analysis of its risk mitigation and\nprice basing utility, as well as additional considerations related to the Contract, is\nincluded in Confidential Appendices B, C, and D.\nPursuant to Section 5c(c) of the Act and CFTC Regulations 40.2(a), the Exchange hereby\ncertifies that the listing of the Contract complies with the Act and Commission\nregulations under the Act.\nGeneral Contract Terms and Conditions: The Contract operates similar to other event\ncontracts that the Exchange lists for trading. The minimum price fluctuation is $0.01 (one\ncent). Price bands will apply so that Contracts may only be listed at values of at least\n$0.01 and at most $0.99. Further, the Contract is sized with a one-dollar notional value\nand has a minimum price fluctuation of $0.01 to enable Members to match the size of the\nKalshiEX LLC\n\n[page 3 of 8: text layer]\nKalshiEX LLC\ncontracts purchased to their economic risks. The Exchange has further imposed position\nlimits (defined as maximum loss exposure) of $25,000 USD on the Contract. As outlined\nin Rule 5.12 of the Rulebook, trading shall be available at all times outside of any\nmaintenance windows, which will be announced in advance by the Exchange. Members\nwill be charged fees in accordance with Rule 3.6 of the Rulebook. Fees are charged in\nsuch amounts as may be revised from time to time to be reflected on the Exchange\u2019s\nWebsite. A new Source Agency can be added via a Part 40 amendment. All instructions\non how to access the Underlying are non-binding and are provided for convenience only\nand are not part of the binding Terms and Conditions of the Contract. They may be\nclarified at any time. Furthermore, the Contract\u2019s payout structure is characterized by the\npayment of an absolute amount to the holder of one side of the option and no payment to\nthe counterparty. During the time that trading on the Contract is open, Members are able\nto adjust their positions and trade freely. After trading on the Contract has closed, the\nExpiration Value and Market Outcome are determined. The market is then settled by the\nExchange, and the long position holders and short position holders are paid according to\nthe Market Outcome. In this case, \u201clong position holders\u201d refers to Members who\npurchased the \u201cYes\u201d side of the Contract and \u201cshort position holders\u201d refers to Members\nwho purchased the \u201cNo\u201d side of the Contract. If the Market Outcome is \u201cYes,\u201d meaning\nthat the CF Ether-Dollar Real Time Index is <above/below/between> price on <date> at\n<time>, then the long position holders are paid an absolute amount proportional to the\nsize of their position and the short position holders receive no payment. If the Market\nOutcome is \u201cNo,\u201d then the short position holders are paid an absolute amount\nproportional to the size of their position and the long position holders receive no\npayment. Specification of the circumstances that would trigger a Market Outcome of\n\u201cYes\u201d are included below in the section titled \u201cPayout Criterion\u201d in Appendix A.\nKalshiEX LLC\n\n[page 4 of 8: text layer]\nKalshiEX LLC\nCERTIFICATIONS PURSUANT TO SECTION 5c OF THE COMMODITY EXCHANGE\nACT, 7 U.S.C. \u00a7 7A-2 AND COMMODITY FUTURES TRADING COMMISSION RULE\n40.2, 17 C.F.R. \u00a7 40.2\nBased on the above analysis, the Exchange certifies that:\n\u274f The Contract complies with the Act and Commission regulations thereunder.\n\u274f This submission (other than those appendices for which confidential treatment has been\nrequested) has been concurrently posted on the Exchange\u2019s website at\nhttps://kalshi.com/regulatory/filings .\nShould you have any questions concerning the above, please contact the exchange at\nProductFilings@kalshi.com .\n______________________\nBy: Xavier Sottile\nTitle: Head of Markets\nDate: March 14, 2024\nKalshiEX LLC\n\n[page 5 of 8: text layer]\nKalshiEX LLC\nAttachments:\nAppendix A - Contract Terms and Conditions\nAppendix B (Confidential) - Further Considerations\nAppendix C (Confidential) - Source Agency\nAppendix D (Confidential) - Compliance with Core Principles\nAppendix E (Confidential) - Agreement with Source Agency\nKalshiEX LLC\n\n[page 6 of 8: text layer]\nKalshiEX LLC\nAPPENDIX A \u2013 CONTRACT TERMS AND CONDITIONS\nOfficial Product Name: Will the spot price of Ether be <above/below/between> <price> on\n<date> at <time>?\nRulebook: ETH\nKalshiEX LLC\n\n[page 7 of 8: text layer]\nKalshiEX LLC\nETH\nScope: These rules shall apply to this contract.\nUnderlying: The Underlying for this Contract is the spot price of one Ether in U.S. dollars at\n<time>, according to a simple average of the CF Ethereum Real-Time Index (\u201cERTI\u201d) for the\nfive minutes (300 seconds) prior to <time>, excluding the highest and lowest 20% of values.\nRevisions to the Underlying made after Expiration will not be accounted for in determining the\nExpiration Value.\nSource Agency: The Source Agency is CF Benchmarks.\nType: The type of Contract is an Event Contract.\nIssuance: The Contract is based on the outcome of a recurrent data release, which is issued on a\nreal-time basis. Thus, Contract iterations will be issued on a recurring basis, and future Contract\niterations will generally correspond to the next day and year.\n<price>: Kalshi may list iterations of the Contract with <price> levels that fall within an\ninclusive range between 0 and 100,000,000 at consecutive increments of <0.01>. Due to the\npotential for variability in the Underlying, the Exchange may modify <price> levels in response\nto suggestions by Members.\n<date> : <date> refers to a calendar date specified by Kalshi. Kalshi may list iterations of the\nContract corresponding to different statistical periods of <date>.\n< time >: <time> refers to a time on a calendar date specified by Kalshi. Kalshi may list iterations\nof the Contract corresponding to different statistical periods of <time>.\nPayout Criterion: The Payout Criterion for the Contract encompasses the Expiration Values that\nthe index is <above/below/between> <price> on <date> at <time>. If the value of\n<above/below/between> is \u201cbetween\u201d, then <price> shall be a pair of prices, and an Expiration\nValue that is greater than or equal to the lower value of the degree pair and less than or equal to\nthe greater value of the degree pair are encompassed in the Payout Criterion. If no data is\navailable on the Expiration Date at the Expiration Time, then the market resolves to No.\nMinimum Tick: The Minimum Tick size for the referred Contract shall be $0.01.\nPosition Limit: The Position Limit for the $1 referred Contract shall be $25,000 per strike, per\nMember.\nKalshiEX LLC\n\n[page 8 of 8: text layer]\nKalshiEX LLC\nLast Trading Date: The Last Trading Date of the Contract will be <date>. The Last Trading\nTime will be <time>.\nSettlement Date: The Settlement Date of the Contract shall be no later than the day after the\nExpiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.\nExpiration Date: The Expiration Date of the Contract shall be the sooner of the first hour after\n<time> on <date> that data is available or one week after <date>.\nExpiration time: The Expiration time of the Contract shall be one hour after <time>.\nSettlement Value: The Settlement Value for this Contract is $1.00.\nExpiration Value: The Expiration Value is the value of the Underlying as documented by the\nSource Agency on the Expiration Date at the Expiration time.\nContingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market\nOutcome Review Process pursuant to Rule 6.3(c) of the Rulebook.\nKalshiEX LLC",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/regulatory/product-certifications/ETH.pdf"
+    }
+   ],
+   "listing_fields": [
+    "ticker",
+    "event_ticker",
+    "market_type",
+    "title",
+    "subtitle",
+    "yes_sub_title",
+    "no_sub_title",
+    "rules_primary",
+    "rules_secondary",
+    "early_close_condition",
+    "can_close_early",
+    "strike_type",
+    "floor_strike",
+    "cap_strike",
+    "functional_strike",
+    "custom_strike",
+    "notional_value_dollars",
+    "open_time",
+    "close_time",
+    "expiration_time",
+    "expected_expiration_time",
+    "latest_expiration_time",
+    "occurrence_datetime",
+    "settlement_timer_seconds"
+   ],
+   "markets": {
+    "count": 300,
+    "tickers": [
+     "KXETHD-26NOV0118-T1449.99",
+     "KXETHD-26NOV0118-T1454.99",
+     "KXETHD-26NOV0118-T1459.99",
+     "KXETHD-26NOV0118-T1464.99",
+     "KXETHD-26NOV0118-T1469.99",
+     "KXETHD-26NOV0118-T1474.99",
+     "KXETHD-26NOV0118-T1479.99",
+     "KXETHD-26NOV0118-T1484.99",
+     "KXETHD-26NOV0118-T1489.99",
+     "KXETHD-26NOV0118-T1494.99",
+     "KXETHD-26NOV0118-T1499.99",
+     "KXETHD-26NOV0118-T1504.99",
+     "KXETHD-26NOV0118-T1509.99",
+     "KXETHD-26NOV0118-T1514.99",
+     "KXETHD-26NOV0118-T1519.99",
+     "KXETHD-26NOV0118-T1524.99",
+     "KXETHD-26NOV0118-T1529.99",
+     "KXETHD-26NOV0118-T1534.99",
+     "KXETHD-26NOV0118-T1539.99",
+     "KXETHD-26NOV0118-T1544.99",
+     "KXETHD-26NOV0118-T1549.99",
+     "KXETHD-26NOV0118-T1554.99",
+     "KXETHD-26NOV0118-T1559.99",
+     "KXETHD-26NOV0118-T1564.99",
+     "KXETHD-26NOV0118-T1569.99",
+     "KXETHD-26NOV0118-T1574.99",
+     "KXETHD-26NOV0118-T1579.99",
+     "KXETHD-26NOV0118-T1584.99",
+     "KXETHD-26NOV0118-T1589.99",
+     "KXETHD-26NOV0118-T1594.99",
+     "KXETHD-26NOV0118-T1599.99",
+     "KXETHD-26NOV0118-T1604.99",
+     "KXETHD-26NOV0118-T1609.99",
+     "KXETHD-26NOV0118-T1614.99",
+     "KXETHD-26NOV0118-T1619.99",
+     "KXETHD-26NOV0118-T1624.99",
+     "KXETHD-26NOV0118-T1629.99",
+     "KXETHD-26NOV0118-T1634.99",
+     "KXETHD-26NOV0118-T1639.99",
+     "KXETHD-26NOV0118-T1644.99",
+     "KXETHD-26NOV0118-T1649.99",
+     "KXETHD-26NOV0118-T1654.99",
+     "KXETHD-26NOV0118-T1659.99",
+     "KXETHD-26NOV0118-T1664.99",
+     "KXETHD-26NOV0118-T1669.99",
+     "KXETHD-26NOV0118-T1674.99",
+     "KXETHD-26NOV0118-T1679.99",
+     "KXETHD-26NOV0118-T1684.99",
+     "KXETHD-26NOV0118-T1689.99",
+     "KXETHD-26NOV0118-T1694.99",
+     "KXETHD-26NOV0118-T1699.99",
+     "KXETHD-26NOV0118-T1704.99",
+     "KXETHD-26NOV0118-T1709.99",
+     "KXETHD-26NOV0118-T1714.99",
+     "KXETHD-26NOV0118-T1719.99",
+     "KXETHD-26NOV0118-T1724.99",
+     "KXETHD-26NOV0118-T1729.99",
+     "KXETHD-26NOV0118-T1734.99",
+     "KXETHD-26NOV0118-T1739.99",
+     "KXETHD-26NOV0118-T1744.99",
+     "KXETHD-26NOV0118-T1749.99",
+     "KXETHD-26NOV0118-T1754.99",
+     "KXETHD-26NOV0118-T1759.99",
+     "KXETHD-26NOV0118-T1764.99",
+     "KXETHD-26NOV0118-T1769.99",
+     "KXETHD-26NOV0118-T1774.99",
+     "KXETHD-26NOV0118-T1779.99",
+     "KXETHD-26NOV0118-T1784.99",
+     "KXETHD-26NOV0118-T1789.99",
+     "KXETHD-26NOV0118-T1794.99",
+     "KXETHD-26NOV0118-T1799.99",
+     "KXETHD-26NOV0118-T1804.99",
+     "KXETHD-26NOV0118-T1809.99",
+     "KXETHD-26NOV0118-T1814.99",
+     "KXETHD-26NOV0118-T1819.99",
+     "KXETHD-26NOV0118-T1824.99",
+     "KXETHD-26NOV0118-T1829.99",
+     "KXETHD-26NOV0118-T1834.99",
+     "KXETHD-26NOV0118-T1839.99",
+     "KXETHD-26NOV0118-T1844.99",
+     "KXETHD-26NOV0118-T1849.99",
+     "KXETHD-26NOV0118-T1854.99",
+     "KXETHD-26NOV0118-T1859.99",
+     "KXETHD-26NOV0118-T1864.99",
+     "KXETHD-26NOV0118-T1869.99",
+     "KXETHD-26NOV0118-T1874.99",
+     "KXETHD-26NOV0118-T1879.99",
+     "KXETHD-26NOV0118-T1884.99",
+     "KXETHD-26NOV0118-T1889.99",
+     "KXETHD-26NOV0118-T1894.99",
+     "KXETHD-26NOV0118-T1899.99",
+     "KXETHD-26NOV0118-T1904.99",
+     "KXETHD-26NOV0118-T1909.99",
+     "KXETHD-26NOV0118-T1914.99",
+     "KXETHD-26NOV0118-T1919.99",
+     "KXETHD-26NOV0118-T1924.99",
+     "KXETHD-26NOV0118-T1929.99",
+     "KXETHD-26NOV0118-T1934.99",
+     "KXETHD-26NOV0118-T1939.99",
+     "KXETHD-26NOV0118-T1944.99",
+     "KXETHD-26NOV0118-T1949.99",
+     "KXETHD-26NOV0118-T1954.99",
+     "KXETHD-26NOV0118-T1959.99",
+     "KXETHD-26NOV0118-T1964.99",
+     "KXETHD-26NOV0118-T1969.99",
+     "KXETHD-26NOV0118-T1974.99",
+     "KXETHD-26NOV0118-T1979.99",
+     "KXETHD-26NOV0118-T1984.99",
+     "KXETHD-26NOV0118-T1989.99",
+     "KXETHD-26NOV0118-T1994.99",
+     "KXETHD-26NOV0118-T1999.99",
+     "KXETHD-26NOV0118-T2004.99",
+     "KXETHD-26NOV0118-T2009.99",
+     "KXETHD-26NOV0118-T2014.99",
+     "KXETHD-26NOV0118-T2019.99",
+     "KXETHD-26NOV0118-T2024.99",
+     "KXETHD-26NOV0118-T2029.99",
+     "KXETHD-26NOV0118-T2034.99",
+     "KXETHD-26NOV0118-T2039.99",
+     "KXETHD-26NOV0118-T2044.99",
+     "KXETHD-26NOV0118-T2049.99",
+     "KXETHD-26NOV0118-T2054.99",
+     "KXETHD-26NOV0118-T2059.99",
+     "KXETHD-26NOV0118-T2064.99",
+     "KXETHD-26NOV0118-T2069.99",
+     "KXETHD-26NOV0118-T2074.99",
+     "KXETHD-26NOV0118-T2079.99",
+     "KXETHD-26NOV0118-T2084.99",
+     "KXETHD-26NOV0118-T2089.99",
+     "KXETHD-26NOV0118-T2094.99",
+     "KXETHD-26NOV0118-T2099.99",
+     "KXETHD-26NOV0118-T2104.99",
+     "KXETHD-26NOV0118-T2109.99",
+     "KXETHD-26NOV0118-T2114.99",
+     "KXETHD-26NOV0118-T2119.99",
+     "KXETHD-26NOV0118-T2124.99",
+     "KXETHD-26NOV0118-T2129.99",
+     "KXETHD-26NOV0118-T2134.99",
+     "KXETHD-26NOV0118-T2139.99",
+     "KXETHD-26NOV0118-T2144.99",
+     "KXETHD-26NOV0118-T2149.99",
+     "KXETHD-26NOV0118-T2154.99",
+     "KXETHD-26NOV0118-T2159.99",
+     "KXETHD-26NOV0118-T2164.99",
+     "KXETHD-26NOV0118-T2169.99",
+     "KXETHD-26NOV0118-T2174.99",
+     "KXETHD-26NOV0118-T2179.99",
+     "KXETHD-26NOV0118-T2184.99",
+     "KXETHD-26NOV0118-T2189.99",
+     "KXETHD-26NOV0118-T2194.99",
+     "KXETHD-26NOV0118-T2199.99",
+     "KXETHD-26NOV0118-T2204.99",
+     "KXETHD-26NOV0118-T2209.99",
+     "KXETHD-26NOV0118-T2214.99",
+     "KXETHD-26NOV0118-T2219.99",
+     "KXETHD-26NOV0118-T2224.99",
+     "KXETHD-26NOV0118-T2229.99",
+     "KXETHD-26NOV0118-T2234.99",
+     "KXETHD-26NOV0118-T2239.99",
+     "KXETHD-26NOV0118-T2244.99",
+     "KXETHD-26NOV0118-T2249.99",
+     "KXETHD-26NOV0118-T2254.99",
+     "KXETHD-26NOV0118-T2259.99",
+     "KXETHD-26NOV0118-T2264.99",
+     "KXETHD-26NOV0118-T2269.99",
+     "KXETHD-26NOV0118-T2274.99",
+     "KXETHD-26NOV0118-T2279.99",
+     "KXETHD-26NOV0118-T2284.99",
+     "KXETHD-26NOV0118-T2289.99",
+     "KXETHD-26NOV0118-T2294.99",
+     "KXETHD-26NOV0118-T2299.99",
+     "KXETHD-26NOV0118-T2304.99",
+     "KXETHD-26NOV0118-T2309.99",
+     "KXETHD-26NOV0118-T2314.99",
+     "KXETHD-26NOV0118-T2319.99",
+     "KXETHD-26NOV0118-T2324.99",
+     "KXETHD-26NOV0118-T2329.99",
+     "KXETHD-26NOV0118-T2334.99",
+     "KXETHD-26NOV0118-T2339.99",
+     "KXETHD-26NOV0118-T2344.99",
+     "KXETHD-26NOV0118-T2349.99",
+     "KXETHD-26NOV0118-T2354.99",
+     "KXETHD-26NOV0118-T2359.99",
+     "KXETHD-26NOV0118-T2364.99",
+     "KXETHD-26NOV0118-T2369.99",
+     "KXETHD-26NOV0118-T2374.99",
+     "KXETHD-26NOV0118-T2379.99",
+     "KXETHD-26NOV0118-T2384.99",
+     "KXETHD-26NOV0118-T2389.99",
+     "KXETHD-26NOV0118-T2394.99",
+     "KXETHD-26NOV0118-T2399.99",
+     "KXETHD-26NOV0118-T2404.99",
+     "KXETHD-26NOV0118-T2409.99",
+     "KXETHD-26NOV0118-T2414.99",
+     "KXETHD-26NOV0118-T2419.99",
+     "KXETHD-26NOV0118-T2424.99",
+     "KXETHD-26NOV0118-T2429.99",
+     "KXETHD-26NOV0118-T2434.99",
+     "KXETHD-26NOV0118-T2439.99",
+     "KXETHD-26NOV0118-T2444.99",
+     "KXETHD-26NOV0118-T2449.99",
+     "KXETHD-26NOV0118-T2454.99",
+     "KXETHD-26NOV0118-T2459.99",
+     "KXETHD-26NOV0118-T2464.99",
+     "KXETHD-26NOV0118-T2469.99",
+     "KXETHD-26NOV0118-T2474.99",
+     "KXETHD-26NOV0118-T2479.99",
+     "KXETHD-26NOV0118-T2484.99",
+     "KXETHD-26NOV0118-T2489.99",
+     "KXETHD-26NOV0118-T2494.99",
+     "KXETHD-26NOV0118-T2499.99",
+     "KXETHD-26NOV0118-T2504.99",
+     "KXETHD-26NOV0118-T2509.99",
+     "KXETHD-26NOV0118-T2514.99",
+     "KXETHD-26NOV0118-T2519.99",
+     "KXETHD-26NOV0118-T2524.99",
+     "KXETHD-26NOV0118-T2529.99",
+     "KXETHD-26NOV0118-T2534.99",
+     "KXETHD-26NOV0118-T2539.99",
+     "KXETHD-26NOV0118-T2544.99",
+     "KXETHD-26NOV0118-T2549.99",
+     "KXETHD-26NOV0118-T2554.99",
+     "KXETHD-26NOV0118-T2559.99",
+     "KXETHD-26NOV0118-T2564.99",
+     "KXETHD-26NOV0118-T2569.99",
+     "KXETHD-26NOV0118-T2574.99",
+     "KXETHD-26NOV0118-T2579.99",
+     "KXETHD-26NOV0118-T2584.99",
+     "KXETHD-26NOV0118-T2589.99",
+     "KXETHD-26NOV0118-T2594.99",
+     "KXETHD-26NOV0118-T2599.99",
+     "KXETHD-26NOV0118-T2604.99",
+     "KXETHD-26NOV0118-T2609.99",
+     "KXETHD-26NOV0118-T2614.99",
+     "KXETHD-26NOV0118-T2619.99",
+     "KXETHD-26NOV0118-T2624.99",
+     "KXETHD-26NOV0118-T2629.99",
+     "KXETHD-26NOV0118-T2634.99",
+     "KXETHD-26NOV0118-T2639.99",
+     "KXETHD-26NOV0118-T2644.99",
+     "KXETHD-26NOV0118-T2649.99",
+     "KXETHD-26NOV0118-T2654.99",
+     "KXETHD-26NOV0118-T2659.99",
+     "KXETHD-26NOV0118-T2664.99",
+     "KXETHD-26NOV0118-T2669.99",
+     "KXETHD-26NOV0118-T2674.99",
+     "KXETHD-26NOV0118-T2679.99",
+     "KXETHD-26NOV0118-T2684.99",
+     "KXETHD-26NOV0118-T2689.99",
+     "KXETHD-26NOV0118-T2694.99",
+     "KXETHD-26NOV0118-T2699.99",
+     "KXETHD-26NOV0118-T2704.99",
+     "KXETHD-26NOV0118-T2709.99",
+     "KXETHD-26NOV0118-T2714.99",
+     "KXETHD-26NOV0118-T2719.99",
+     "KXETHD-26NOV0118-T2724.99",
+     "KXETHD-26NOV0118-T2729.99",
+     "KXETHD-26NOV0118-T2734.99",
+     "KXETHD-26NOV0118-T2739.99",
+     "KXETHD-26NOV0118-T2744.99",
+     "KXETHD-26NOV0118-T2749.99",
+     "KXETHD-26NOV0118-T2754.99",
+     "KXETHD-26NOV0118-T2759.99",
+     "KXETHD-26NOV0118-T2764.99",
+     "KXETHD-26NOV0118-T2769.99",
+     "KXETHD-26NOV0118-T2774.99",
+     "KXETHD-26NOV0118-T2779.99",
+     "KXETHD-26NOV0118-T2784.99",
+     "KXETHD-26NOV0118-T2789.99",
+     "KXETHD-26NOV0118-T2794.99",
+     "KXETHD-26NOV0118-T2799.99",
+     "KXETHD-26NOV0118-T2804.99",
+     "KXETHD-26NOV0118-T2809.99",
+     "KXETHD-26NOV0118-T2814.99",
+     "KXETHD-26NOV0118-T2819.99",
+     "KXETHD-26NOV0118-T2824.99",
+     "KXETHD-26NOV0118-T2829.99",
+     "KXETHD-26NOV0118-T2834.99",
+     "KXETHD-26NOV0118-T2839.99",
+     "KXETHD-26NOV0118-T2844.99",
+     "KXETHD-26NOV0118-T2849.99",
+     "KXETHD-26NOV0118-T2854.99",
+     "KXETHD-26NOV0118-T2859.99",
+     "KXETHD-26NOV0118-T2864.99",
+     "KXETHD-26NOV0118-T2869.99",
+     "KXETHD-26NOV0118-T2874.99",
+     "KXETHD-26NOV0118-T2879.99",
+     "KXETHD-26NOV0118-T2884.99",
+     "KXETHD-26NOV0118-T2889.99",
+     "KXETHD-26NOV0118-T2894.99",
+     "KXETHD-26NOV0118-T2899.99",
+     "KXETHD-26NOV0118-T2904.99",
+     "KXETHD-26NOV0118-T2909.99",
+     "KXETHD-26NOV0118-T2914.99",
+     "KXETHD-26NOV0118-T2919.99",
+     "KXETHD-26NOV0118-T2924.99",
+     "KXETHD-26NOV0118-T2929.99",
+     "KXETHD-26NOV0118-T2934.99",
+     "KXETHD-26NOV0118-T2939.99",
+     "KXETHD-26NOV0118-T2944.99"
+    ],
+    "varying_fields": {
+     "floor_strike": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": 1449.99,
+       "KXETHD-26NOV0118-T1824.99": 1824.99,
+       "KXETHD-26NOV0118-T2199.99": 2199.99,
+       "KXETHD-26NOV0118-T2569.99": 2569.99,
+       "KXETHD-26NOV0118-T2944.99": 2944.99
+      }
+     },
+     "no_sub_title": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": "$1,450 or above",
+       "KXETHD-26NOV0118-T1824.99": "$1,825 or above",
+       "KXETHD-26NOV0118-T2199.99": "$2,200 or above",
+       "KXETHD-26NOV0118-T2569.99": "$2,570 or above",
+       "KXETHD-26NOV0118-T2944.99": "$2,945 or above"
+      }
+     },
+     "rules_primary": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 1449.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.",
+       "KXETHD-26NOV0118-T1824.99": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 1824.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.",
+       "KXETHD-26NOV0118-T2199.99": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 2199.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.",
+       "KXETHD-26NOV0118-T2569.99": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 2569.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.",
+       "KXETHD-26NOV0118-T2944.99": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 2944.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes."
+      }
+     },
+     "subtitle": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": "$1,450 or above",
+       "KXETHD-26NOV0118-T1824.99": "$1,825 or above",
+       "KXETHD-26NOV0118-T2199.99": "$2,200 or above",
+       "KXETHD-26NOV0118-T2569.99": "$2,570 or above",
+       "KXETHD-26NOV0118-T2944.99": "$2,945 or above"
+      }
+     },
+     "ticker": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": "KXETHD-26NOV0118-T1449.99",
+       "KXETHD-26NOV0118-T1824.99": "KXETHD-26NOV0118-T1824.99",
+       "KXETHD-26NOV0118-T2199.99": "KXETHD-26NOV0118-T2199.99",
+       "KXETHD-26NOV0118-T2569.99": "KXETHD-26NOV0118-T2569.99",
+       "KXETHD-26NOV0118-T2944.99": "KXETHD-26NOV0118-T2944.99"
+      }
+     },
+     "yes_sub_title": {
+      "distinct": 300,
+      "examples": {
+       "KXETHD-26NOV0118-T1449.99": "$1,450 or above",
+       "KXETHD-26NOV0118-T1824.99": "$1,825 or above",
+       "KXETHD-26NOV0118-T2199.99": "$2,200 or above",
+       "KXETHD-26NOV0118-T2569.99": "$2,570 or above",
+       "KXETHD-26NOV0118-T2944.99": "$2,945 or above"
+      }
+     }
+    }
+   },
+   "representative_market": {
+    "can_close_early": true,
+    "close_time": "2026-11-01T23:00:00Z",
+    "custom_strike": {
+     "round_digits": "2"
+    },
+    "event_ticker": "KXETHD-26NOV0118",
+    "expected_expiration_time": "2026-11-01T23:05:00Z",
+    "expiration_time": "2026-11-08T23:00:00Z",
+    "floor_strike": 1449.99,
+    "latest_expiration_time": "2026-11-08T23:00:00Z",
+    "market_type": "binary",
+    "no_sub_title": "$1,450 or above",
+    "notional_value_dollars": "1.0000",
+    "occurrence_datetime": "2026-11-01T23:05:00Z",
+    "open_time": "2026-11-01T22:00:00Z",
+    "rules_primary": "If the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST is above 1449.99 at 6 PM EST on Nov 1, 2026, then the market resolves to Yes.",
+    "rules_secondary": "Not all cryptocurrency price data is the same. While checking a source like Google or Coinbase may help guide your decision, the price used to determine this market is based on CF Benchmarks' corresponding Real Time Index (RTI). At the last minute before expiration, 60 RTI prices are collected. The official and final value is the average of these prices.",
+    "settlement_timer_seconds": 60,
+    "strike_type": "greater",
+    "subtitle": "$1,450 or above",
+    "ticker": "KXETHD-26NOV0118-T1449.99",
+    "title": "Ethereum price at Nov 1, 2026 at 6pm EST?",
+    "yes_sub_title": "$1,450 or above"
+   },
+   "series": {
+    "additional_prohibitions": [
+     "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+     "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+     "Crypto"
+    ],
+    "category": "Crypto",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/ETH.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/ETH.pdf",
+    "exchange_index": 2,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "hourly",
+    "last_updated_ts": "2026-10-21T18:21:09.201464Z",
+    "product_metadata": {
+     "important_info": {
+      "id": "KXETHD-2026-04-09",
+      "markdown": "**Important information:** The price used to determine this market is based on CF Benchmarks' corresponding Real Time Index (RTI). At the last minute before expiration, 60 RTI prices are collected. The official and final value is the average of these prices.",
+      "message": "",
+      "title": ""
+     }
+    },
+    "settlement_sources": [
+     {
+      "name": "CF Benchmarks",
+      "url": "https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI"
+     }
+    ],
+    "tags": [
+     "Crypto",
+     "Hourly",
+     "Ethereum",
+     "ETH"
+    ],
+    "ticker": "KXETHD",
+    "title": "Ethereum price Above/below"
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "contract_reader",
+  "schema": {
+   "$defs": {
+    "And": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "and",
+       "default": "and",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "And",
+     "type": "object"
+    },
+    "At": {
+     "additionalProperties": false,
+     "description": "The condition holds at the instant `at` (spec \u00a74).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "at",
+       "default": "at",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "at"
+     ],
+     "title": "At",
+     "type": "object"
+    },
+    "By": {
+     "additionalProperties": false,
+     "description": "The condition holds at some observation up to the deadline, which is included or not as `closed` says (spec \u00a74\n\"By(expr, t)\"; A05 \u00a75.4 endpoint inclusion). `since` is the earliest observation that counts, with its own\ninclusion, or None where every earlier observation counts: the sources give By no lower bound, so the contract\nstates it (ours).",
+     "properties": {
+      "closed": {
+       "title": "Closed",
+       "type": "boolean"
+      },
+      "deadline": {
+       "format": "date-time",
+       "title": "Deadline",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "by",
+       "default": "by",
+       "title": "Kind",
+       "type": "string"
+      },
+      "since": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      },
+      "since_closed": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since Closed"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "since",
+      "since_closed",
+      "deadline",
+      "closed"
+     ],
+     "title": "By",
+     "type": "object"
+    },
+    "Category": {
+     "additionalProperties": false,
+     "description": "A category or text value, compared as given.",
+     "properties": {
+      "kind": {
+       "const": "text",
+       "default": "text",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Category",
+     "type": "object"
+    },
+    "Cmp": {
+     "additionalProperties": false,
+     "description": "observable op value, at the instant or day its enclosing temporal operator gives (spec \u00a74). The value's type is\nthe observable's (`VALUE_KIND`); a numeric value is compared at the observable's declared precision (A09 \u00a710.3).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "cmp",
+       "default": "cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Number"
+        },
+        {
+         "$ref": "#/$defs/Category"
+        },
+        {
+         "$ref": "#/$defs/Flag"
+        },
+        {
+         "$ref": "#/$defs/OnDay"
+        }
+       ],
+       "title": "Value"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "op",
+      "value"
+     ],
+     "title": "Cmp",
+     "type": "object"
+    },
+    "Computed": {
+     "additionalProperties": false,
+     "description": "A number computed by a registered consequence node from numeric sub-expressions (spec \u00a75: \"The contract IR\ncompiles into the computation layer, so the settlement function and the hedge payoff are the same code\"; I7: code\nowns consequences). The node is pure and registered (spec \u00a74 @node), so the same arithmetic settles, prices and\nfuzzes; over interval inputs its value is the interval of its outputs.",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "inputs": {
+       "additionalProperties": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/CountTrue"
+         },
+         {
+          "$ref": "#/$defs/DurationIn"
+         },
+         {
+          "$ref": "#/$defs/ReadValue"
+         },
+         {
+          "$ref": "#/$defs/ValueAt"
+         },
+         {
+          "$ref": "#/$defs/Computed"
+         }
+        ]
+       },
+       "title": "Inputs",
+       "type": "object"
+      },
+      "kind": {
+       "const": "computed",
+       "default": "computed",
+       "title": "Kind",
+       "type": "string"
+      },
+      "node": {
+       "$ref": "#/$defs/Ref"
+      }
+     },
+     "required": [
+      "id",
+      "node",
+      "inputs"
+     ],
+     "title": "Computed",
+     "type": "object"
+    },
+    "ConflictPolicy": {
+     "additionalProperties": false,
+     "description": "How disagreeing sources are reconciled: a registered procedure and its parameters (A05 \u00a75.4: \"Use a registered\nprocedure ID plus parameters, or an explicit typed policy\"). The two procedures registered so far are ours, the\ntwo readings of spec \u00a74's precedence list that an evaluator can apply deterministically: precedence_first_available,\nthe highest-ranked source in the procedure's precedence that has published settles; require_agreement, the sources\nnamed in `sources` must agree, or the result is disputed. A contract whose rule is neither is not supported exactly\n(A05 \u00a75.5) until its procedure is registered here.",
+     "properties": {
+      "procedure": {
+       "enum": [
+        "precedence_first_available",
+        "require_agreement"
+       ],
+       "title": "Procedure",
+       "type": "string"
+      },
+      "sources": {
+       "default": [],
+       "items": {
+        "type": "string"
+       },
+       "title": "Sources",
+       "type": "array"
+      }
+     },
+     "required": [
+      "procedure"
+     ],
+     "title": "ConflictPolicy",
+     "type": "object"
+    },
+    "ContractIR": {
+     "additionalProperties": false,
+     "description": "A contract in the IR (spec \u00a74). Every observable the trigger or payout references is declared.",
+     "properties": {
+      "examples": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/ScenarioExample"
+       },
+       "title": "Examples",
+       "type": "array"
+      },
+      "exclusions": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/Exclusion"
+       },
+       "title": "Exclusions",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "observables": {
+       "items": {
+        "$ref": "#/$defs/Observable"
+       },
+       "title": "Observables",
+       "type": "array"
+      },
+      "payout": {
+       "$ref": "#/$defs/Payout"
+      },
+      "resolution": {
+       "$ref": "#/$defs/ResolutionProcedure"
+      },
+      "timing": {
+       "$ref": "#/$defs/Timing"
+      },
+      "trigger": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Trigger"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version",
+      "observables",
+      "trigger",
+      "payout",
+      "timing",
+      "resolution"
+     ],
+     "title": "ContractIR",
+     "type": "object"
+    },
+    "CountTrue": {
+     "additionalProperties": false,
+     "description": "The number of calendar days of `days` on which the condition holds, counted in the window's time zone (spec \u00a74).\nIts value over three-valued days is an interval [k, k + u] (A05 \u00a75.3).",
+     "properties": {
+      "days": {
+       "$ref": "#/$defs/TimeWindow"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "count_true",
+       "default": "count_true",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "days"
+     ],
+     "title": "CountTrue",
+     "type": "object"
+    },
+    "DurationIn": {
+     "additionalProperties": false,
+     "description": "The time within the window during which the condition holds, in `unit` (spec \u00a74); an interval over unknowns, as\nCountTrue's is. calendar_day counts calendar days of the window's time zone; elapsed_day counts 24-hour periods, so\na daylight-saving change does not change it (A05 \u00a75.4: \"Define ... day-count conventions\").",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "duration_in",
+       "default": "duration_in",
+       "title": "Kind",
+       "type": "string"
+      },
+      "unit": {
+       "enum": [
+        "calendar_day",
+        "elapsed_day",
+        "hour"
+       ],
+       "title": "Unit",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window",
+      "unit"
+     ],
+     "title": "DurationIn",
+     "type": "object"
+    },
+    "Exclusion": {
+     "additionalProperties": false,
+     "description": "An exclusion clause. One that changes settlement is operative and names the IR or interpretive node that carries\nit; a disclosure note is marked non-operative (A05 \u00a75.4).",
+     "properties": {
+      "ir_node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Ir Node"
+      },
+      "operative": {
+       "title": "Operative",
+       "type": "boolean"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      }
+     },
+     "required": [
+      "text",
+      "operative"
+     ],
+     "title": "Exclusion",
+     "type": "object"
+    },
+    "Flag": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "bool",
+       "default": "bool",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Flag",
+     "type": "object"
+    },
+    "Interpretive": {
+     "additionalProperties": false,
+     "description": "A condition a resolver must judge from text (spec \u00a74): a question template and its bindings, answered by decision\nmodels and mapped to a truth by its answer's status (spec \u00a76.3).",
+     "properties": {
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "interpretive",
+       "default": "interpretive",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings"
+     ],
+     "title": "Interpretive",
+     "type": "object"
+    },
+    "ListingBinding": {
+     "additionalProperties": false,
+     "description": "One per-market listing field of a series and the IR value it fills (ours; spec \u00a79.3's per-market fields). `field`\nis the market record's field, a dotted path into its objects where the value is nested (custom_strike.Option).\n`node` and `slot` name the value it fills: a node's threshold (Cmp, NumCmp), the instant it reads (At, ValueAt), a\nBy's bounds (since, deadline), or a window's ends (Throughout, CountTrue, DurationIn); or, with no node, one of the\ntiming's dates (open, close, expiration, observation_cutoff). The field's value enters as it is, in the slot's type:\na threshold takes the number, text or date its comparison's value is, an instant slot an instant.",
+     "properties": {
+      "field": {
+       "title": "Field",
+       "type": "string"
+      },
+      "node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Node"
+      },
+      "slot": {
+       "enum": [
+        "threshold",
+        "at",
+        "since",
+        "deadline",
+        "window_start",
+        "window_end",
+        "open",
+        "close",
+        "expiration",
+        "observation_cutoff"
+       ],
+       "title": "Slot",
+       "type": "string"
+      }
+     },
+     "required": [
+      "field",
+      "node",
+      "slot"
+     ],
+     "title": "ListingBinding",
+     "type": "object"
+    },
+    "Not": {
+     "additionalProperties": false,
+     "properties": {
+      "arg": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Arg"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "not",
+       "default": "not",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "arg"
+     ],
+     "title": "Not",
+     "type": "object"
+    },
+    "NumCmp": {
+     "additionalProperties": false,
+     "description": "A count or duration compared with a threshold, e.g. CountTrue(...) >= 20 (ours: spec \u00a74 puts CountTrue and\nDurationIn in the Expr union, and a trigger on them, such as spec \u00a72.5's \"how many days ... will station S record at\nleast X inches\", compares their value).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/CountTrue"
+        },
+        {
+         "$ref": "#/$defs/DurationIn"
+        },
+        {
+         "$ref": "#/$defs/ReadValue"
+        },
+        {
+         "$ref": "#/$defs/ValueAt"
+        },
+        {
+         "$ref": "#/$defs/Computed"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "num_cmp",
+       "default": "num_cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "op",
+      "value"
+     ],
+     "title": "NumCmp",
+     "type": "object"
+    },
+    "Number": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "number",
+       "default": "number",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Number",
+     "type": "object"
+    },
+    "Observable": {
+     "additionalProperties": false,
+     "description": "A quantity a contract settles on (spec \u00a74).\n\nrevision_policy: which vintage settles (spec \u00a74). \"final\" is a finite rule only with a declared resolution deadline\nor a fallback (addendum A05 \u00a75.4: \"An unlimited `final` vintage is not a finite settlement rule unless 'final' has a\ndeclared resolution deadline or fallback\"): `final_deadline` is the instant by which the value must be final, and\n`final_fallback` the vintage that settles if no final value is published by the settlement determination. unit and precision: what a numeric value is measured in and the precision at which it is published\n(A05 \u00a75.4 unit conversions; A09 \u00a710.3 thresholds at declared precision).",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "final_deadline": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Deadline"
+      },
+      "final_fallback": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_print",
+          "as_of_expiry"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Fallback"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "precision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Precision"
+      },
+      "revision_policy": {
+       "enum": [
+        "first_print",
+        "as_of_expiry",
+        "final"
+       ],
+       "title": "Revision Policy",
+       "type": "string"
+      },
+      "schedule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Schedule"
+      },
+      "sources": {
+       "items": {
+        "$ref": "#/$defs/Source"
+       },
+       "title": "Sources",
+       "type": "array"
+      },
+      "unit": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Unit"
+      },
+      "value_type": {
+       "enum": [
+        "bool",
+        "number",
+        "date",
+        "category",
+        "text"
+       ],
+       "title": "Value Type",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "description",
+      "value_type",
+      "sources",
+      "revision_policy"
+     ],
+     "title": "Observable",
+     "type": "object"
+    },
+    "OnDay": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "date",
+       "default": "date",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "format": "date",
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "OnDay",
+     "type": "object"
+    },
+    "Or": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "or",
+       "default": "or",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "Or",
+     "type": "object"
+    },
+    "Payout": {
+     "additionalProperties": false,
+     "description": "Per unit (spec \u00a74). currency, and rounding to `rounding_quantum` by `rounding_mode`, are explicit (A05 \u00a75.1,\n\u00a75.4: \"Define ... rounding\"). payment: paid once at settlement, or per\nperiod of `periods`, each period's amount paid after its end (A05 \u00a75.3: \"A count paid once at expiry and a strip paid\nperiodically can have identical terminal amounts and very different liquidity consequences\").",
+     "properties": {
+      "cap": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Cap"
+      },
+      "currency": {
+       "title": "Currency",
+       "type": "string"
+      },
+      "kind": {
+       "enum": [
+        "binary",
+        "per_unit",
+        "capped_linear"
+       ],
+       "title": "Kind",
+       "type": "string"
+      },
+      "payment": {
+       "enum": [
+        "at_settlement",
+        "per_period"
+       ],
+       "title": "Payment",
+       "type": "string"
+      },
+      "periods": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/TimeWindow"
+       },
+       "title": "Periods",
+       "type": "array"
+      },
+      "quantity": {
+       "anyOf": [
+        {
+         "oneOf": [
+          {
+           "$ref": "#/$defs/CountTrue"
+          },
+          {
+           "$ref": "#/$defs/DurationIn"
+          },
+          {
+           "$ref": "#/$defs/ReadValue"
+          },
+          {
+           "$ref": "#/$defs/ValueAt"
+          },
+          {
+           "$ref": "#/$defs/Computed"
+          }
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Quantity"
+      },
+      "rounding_mode": {
+       "enum": [
+        "half_even",
+        "half_up",
+        "down",
+        "up"
+       ],
+       "title": "Rounding Mode",
+       "type": "string"
+      },
+      "rounding_quantum": {
+       "title": "Rounding Quantum",
+       "type": "string"
+      },
+      "unit_value": {
+       "title": "Unit Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind",
+      "unit_value",
+      "currency",
+      "rounding_quantum",
+      "rounding_mode",
+      "payment"
+     ],
+     "title": "Payout",
+     "type": "object"
+    },
+    "ReadValue": {
+     "additionalProperties": false,
+     "description": "A number a resolver reads from text, with its unit: a term an instrument sets (an alternative monthly wage, a\nmodified overtime threshold). Decision models answer it as a closed set of bands (spec \u00a74: a question answered by a\ndistribution over a closed set), so its value is the interval of the band the resolved answer names, and unknown is\nthe whole range (A05 \u00a75.3: a number left open by unknowns is an interval, never a guess). Each band is [low, high),\nthe last [low, high], so a value on a shared endpoint belongs to the band above it (A05 \u00a75.4: \"Define open/closed\ninterval endpoints\"). Ours: spec \u00a79.3's specimen tests a cost computed from such terms, and spec \u00a74's Interpretive\nyields only a truth.",
+     "properties": {
+      "bands": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "type": "array"
+       },
+       "title": "Bands",
+       "type": "array"
+      },
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "read_value",
+       "default": "read_value",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      },
+      "unit": {
+       "title": "Unit",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings",
+      "unit",
+      "bands"
+     ],
+     "title": "ReadValue",
+     "type": "object"
+    },
+    "Ref": {
+     "additionalProperties": false,
+     "description": "A versioned reference to another record or policy (addendum \u00a75.1 VersionedRef).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version"
+     ],
+     "title": "Ref",
+     "type": "object"
+    },
+    "ResolutionProcedure": {
+     "additionalProperties": false,
+     "description": "How the contract resolves (spec \u00a74, amended by A05 \u00a75.2 and \u00a75.4). on_unknown_at_expiry says what an unknown\ntrigger means at settlement without changing the trigger's truth (A05 \u00a75.2). early_expiration: \"when_true\" when the\ncontract expires early once its trigger is true (spec \u00a79.3: \"early_close_condition\"; the Western Grazers terms: \"If\nan event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance\nwith Rule 7.2\"). Its timing is what the contract states: \"first_true\" where the contract itself fixes the instant at\nwhich the trigger is first true on the observations then published; \"per_exchange_rule\" where it defers to a rule\noutside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is\ntrue while the early date stays unresolved, named, until that rule is supplied (A05 \u00a75.2: \"Unsupported procedure\ndetails must be reported, not guessed\"). An extension names its length and what happens if the trigger is still\nunknown after it.",
+     "properties": {
+      "after_extension": {
+       "anyOf": [
+        {
+         "enum": [
+          "no",
+          "yes",
+          "void"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "After Extension"
+      },
+      "conflict_policy": {
+       "$ref": "#/$defs/ConflictPolicy"
+      },
+      "early_expiration": {
+       "enum": [
+        "none",
+        "when_true"
+       ],
+       "title": "Early Expiration",
+       "type": "string"
+      },
+      "early_expiration_at": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_true",
+          "per_exchange_rule"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration At"
+      },
+      "early_expiration_rule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration Rule"
+      },
+      "extension_days": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Extension Days"
+      },
+      "on_unknown_at_expiry": {
+       "enum": [
+        "no",
+        "yes",
+        "extend",
+        "void"
+       ],
+       "title": "On Unknown At Expiry",
+       "type": "string"
+      },
+      "precedence": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Precedence",
+       "type": "array"
+      },
+      "void_transfer": {
+       "$ref": "#/$defs/VoidTransfer"
+      }
+     },
+     "required": [
+      "precedence",
+      "conflict_policy",
+      "on_unknown_at_expiry",
+      "early_expiration",
+      "void_transfer"
+     ],
+     "title": "ResolutionProcedure",
+     "type": "object"
+    },
+    "ScenarioExample": {
+     "additionalProperties": false,
+     "description": "A published example: a scenario that passed fuzzing, with the evaluator's outcome (spec \u00a78.5, I8). `evaluation`\nis the content hash of the ResolutionEvaluation that produced `expected`.",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "evaluation": {
+       "title": "Evaluation",
+       "type": "string"
+      },
+      "expected": {
+       "enum": [
+        "resolved_yes",
+        "resolved_no",
+        "pending",
+        "extended",
+        "void",
+        "disputed"
+       ],
+       "title": "Expected",
+       "type": "string"
+      },
+      "scenario_id": {
+       "title": "Scenario Id",
+       "type": "string"
+      }
+     },
+     "required": [
+      "scenario_id",
+      "description",
+      "expected",
+      "evaluation"
+     ],
+     "title": "ScenarioExample",
+     "type": "object"
+    },
+    "SettlementBinding": {
+     "additionalProperties": false,
+     "description": "What a market record's settlement value reports (ours; spec \u00a79.3: \"settled markets supplying known outcomes\"):\nthe observable whose value the exchange settled on, and the market field (`at_field`) giving the instant that value\nis for.",
+     "properties": {
+      "at_field": {
+       "title": "At Field",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "observable",
+      "at_field"
+     ],
+     "title": "SettlementBinding",
+     "type": "object"
+    },
+    "Source": {
+     "additionalProperties": false,
+     "description": "A source of an observable's values, ranked by authority (spec \u00a74: rank 1 is highest).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "rank": {
+       "title": "Rank",
+       "type": "integer"
+      },
+      "role": {
+       "title": "Role",
+       "type": "string"
+      },
+      "url": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Url"
+      }
+     },
+     "required": [
+      "id",
+      "name",
+      "rank",
+      "role"
+     ],
+     "title": "Source",
+     "type": "object"
+    },
+    "Throughout": {
+     "additionalProperties": false,
+     "description": "The condition holds at every observation in the window (spec \u00a74).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "throughout",
+       "default": "throughout",
+       "title": "Kind",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window"
+     ],
+     "title": "Throughout",
+     "type": "object"
+    },
+    "TimeWindow": {
+     "additionalProperties": false,
+     "description": "A window of time (spec \u00a74), with each endpoint's inclusion stated (addendum A05 \u00a75.4: \"Define open/closed interval\nendpoints, timezone\"). `tz` is the IANA zone in which calendar days of the window are counted.",
+     "properties": {
+      "end": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      },
+      "end_closed": {
+       "title": "End Closed",
+       "type": "boolean"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      },
+      "start_closed": {
+       "title": "Start Closed",
+       "type": "boolean"
+      },
+      "tz": {
+       "default": "UTC",
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end",
+      "start_closed",
+      "end_closed"
+     ],
+     "title": "TimeWindow",
+     "type": "object"
+    },
+    "Timing": {
+     "additionalProperties": false,
+     "description": "The contract's dates (spec \u00a74), with the cutoff for observations and the payment lag distinguished from the\nsettlement determination (A05 \u00a75.3: event, publication, observation cutoff, settlement determination and payment\ndates are different dates). Lags count calendar days or business days, in the time zone `tz` (A05 \u00a75.4: \"Define ...\ntimezone, day-count conventions\"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose\none registered calendar is the United States federal holidays of 5 U.S.C. \u00a76103 (ours: the calendar the contracts\nwe build settle against; another is registered here before a contract can use it, A05 \u00a75.4 \"Mechanical policies\nmust be executable\").",
+     "properties": {
+      "close": {
+       "format": "date-time",
+       "title": "Close",
+       "type": "string"
+      },
+      "expiration": {
+       "format": "date-time",
+       "title": "Expiration",
+       "type": "string"
+      },
+      "holiday_calendar": {
+       "anyOf": [
+        {
+         "const": "us_federal",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Holiday Calendar"
+      },
+      "lag_days": {
+       "enum": [
+        "calendar",
+        "business"
+       ],
+       "title": "Lag Days",
+       "type": "string"
+      },
+      "observation_cutoff": {
+       "format": "date-time",
+       "title": "Observation Cutoff",
+       "type": "string"
+      },
+      "open": {
+       "format": "date-time",
+       "title": "Open",
+       "type": "string"
+      },
+      "payment_lag_days": {
+       "title": "Payment Lag Days",
+       "type": "integer"
+      },
+      "settlement_lag_days": {
+       "title": "Settlement Lag Days",
+       "type": "integer"
+      },
+      "tz": {
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "open",
+      "close",
+      "expiration",
+      "observation_cutoff",
+      "settlement_lag_days",
+      "payment_lag_days",
+      "lag_days",
+      "holiday_calendar",
+      "tz"
+     ],
+     "title": "Timing",
+     "type": "object"
+    },
+    "ValueAt": {
+     "additionalProperties": false,
+     "description": "A numeric observable's value at an instant, selected by the contract's revision and conflict policies (spec \u00a74\nObservable; ours: a computed test reads published rates, such as a minimum wage in effect on a day).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "value_at",
+       "default": "value_at",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "at"
+     ],
+     "title": "ValueAt",
+     "type": "object"
+    },
+    "VoidTransfer": {
+     "additionalProperties": false,
+     "description": "What a void returns per unit (A05 \u00a75.2: \"A void result does not imply a particular refund\").",
+     "properties": {
+      "amount": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Amount"
+      },
+      "returns": {
+       "enum": [
+        "premium",
+        "nothing",
+        "fixed_amount"
+       ],
+       "title": "Returns",
+       "type": "string"
+      }
+     },
+     "required": [
+      "returns"
+     ],
+     "title": "VoidTransfer",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "contract_reader: a filed series read into the IR as an instrument family (core.ContractFamily's fields that are\nthe reader's): the support classification with its assumptions and unsupported terms (core.HarvestedContract), the\nrepresentative market's IR (its id and version are code's), the bindings that say which IR value each per-market\nlisting field fills (core.ListingBinding), and what a market record's settlement value reports\n(core.SettlementBinding). Validated as the core family it drafts, so an answer the definition refuses is refused\nhere, with the definition's reasons.",
+   "properties": {
+    "assumptions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Assumptions",
+     "type": "array"
+    },
+    "bindings": {
+     "items": {
+      "$ref": "#/$defs/ListingBinding"
+     },
+     "title": "Bindings",
+     "type": "array"
+    },
+    "ir": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ContractIR"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "settlement": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/SettlementBinding"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "support": {
+     "enum": [
+      "supported_exact",
+      "supported_with_explicit_assumptions",
+      "unsupported"
+     ],
+     "title": "Support",
+     "type": "string"
+    },
+    "unsupported_terms": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Unsupported Terms",
+     "type": "array"
+    }
+   },
+   "required": [
+    "support",
+    "assumptions",
+    "unsupported_terms",
+    "ir",
+    "bindings",
+    "settlement"
+   ],
+   "title": "HarvestDraft",
+   "type": "object"
+  },
+  "system": "You read a listed event contract series' filed terms into Requisite's contract IR, a formal representation that one evaluator settles in three-valued logic. A series is one set of filed terms listed as many markets that differ only in their listing fields (a strike, their times, the event). You read it as an instrument family: one representative market's IR, and bindings that say which IR value each per-market listing field fills, from which code gives every market its IR. Code validates and tests what you propose; you only propose.\n\nYou are given:\n- series: the exchange's series record.\n- filings: the filed documents' text as extracted from their PDFs (the contract terms, and the product certification where there is one), with anything that could not be read.\n- representative_market: the listing fields of the market whose IR you write.\n- markets: how many markets the series has, their tickers, and each listing field whose value varies across them, with its number of distinct values and its values at a few markets.\n- listing_fields: the market fields a binding may read.\nYou are not shown how any market settled, nor any price. Your IRs are checked afterwards against how the settled markets settled.\n\nProduce:\n- support: \"supported_exact\" when the IR carries every operative term as filed; \"supported_with_explicit_assumptions\" when it carries them only under assumptions you list; \"unsupported\" when a term that decides settlement cannot be expressed, which you name in unsupported_terms. Never simplify a term silently: a term you could not carry exactly is an assumption or an unsupported term, stated in the filing's own words.\n- ir: the representative market's contract in the IR, or null when unsupported. Code sets its id and version.\n- bindings: for each listing field that varies across the markets and that the IR depends on, the IR value it fills: field, node, slot. A slot is a node's \"threshold\" (Cmp, NumCmp), the instant a node reads (\"at\": At, ValueAt), a By's \"since\" or \"deadline\", a window's \"window_start\" or \"window_end\" (Throughout, CountTrue, DurationIn), or, with node null, one of the timing's dates (\"open\", \"close\", \"expiration\", \"observation_cutoff\"). field is one of listing_fields, a dotted path where the value is nested (custom_strike.<key>). The field's value fills the slot exactly as listed, in the slot's type: a number fills a number threshold, a text a text threshold, a timestamp an instant. Write the representative IR with the representative market's own values in every bound slot; code checks that the bindings reproduce it from that market's record. No bindings when unsupported.\n- settlement: what a market's settlement value reports. The exchange's record of a settled market states \"the value that was considered for the settlement\"; name the IR observable whose value that is, and the listing field giving the instant that value is for, the instant the IR reads it at. null where the settlement value is no observable of the IR (for instance, the outcome of a criterion a resolver judges from text), or when unsupported.\n\nHow to read the terms into the IR:\n- Observables are the quantities the terms settle on (a published value, a status, a date), each with the sources the terms name, ranked as the terms rank them, its revision policy as the terms state it, and for a number its unit and published precision.\n- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs.\n- The comparison, and whether its bound is included, come from the filed terms and the market's rules text, never from a field's name; a strike field supplies only the value.\n- Every node has an id, unique in the contract, short and descriptive.\n- Timing, the resolution procedure (source precedence, conflict rule, what an unknown at expiry means, early expiration and its timing, extensions, voids) and the payout follow the terms exactly. Where the terms defer to an exchange rule outside the filing, name the rule (early_expiration_rule) rather than inventing its content. Where a date depends on events (an expiration that is the sooner of when data is available and a latest date), state the date the IR takes as an assumption, quoting the term.\n- Exclusions that change settlement are operative and name the node that carries them; disclosure notes are not.\n\nRead the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR: list it as an assumption with both readings.\n\nWhere carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as\nan assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no\nfaithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:\n- a condition quantified over documents (\"any instrument that ...\", \"a qualifying action\"), where the IR can only\n  read one named instrument;\n- a reading whose answer is a single value other than the top of its range (bands are [low, high));\n- a date read from text and compared;\n- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;\n- an unknown-at-expiry outcome left to the exchange's discretion;\n- a settlement or payment date stated as a deadline (\"no later than\");\n- a known payment whose date is left to an exchange rule;\n- a missing-data rule for a payout quantity;\n- what a binary or capped payout pays per period;\n- an early expiration when the outcome is decided either way (the IR expires early only when its trigger is true).\nWhere the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the\nneutral value and list it as an assumption that the terms state no such rule.\n"
+ },
+ "response": {
+  "duration_ms": 21712,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 16769,
+    "cacheReadInputTokens": 14503,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.19496059999999998,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 2895,
+    "provider": "firstParty",
+    "thinkingTokens": 348,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "assumptions": [
+    "The two filings disagree. The product certification's Appendix A (March 14, 2024) defines the Underlying as 'a simple average of the CF Ethereum Real-Time Index (\"ERTI\") for the five minutes (300 seconds) prior to <time>, excluding the highest and lowest 20% of values', with 'Expiration time ... one hour after <time>'. The contract terms at contract_terms_url say 'a simple average of the CF Ethereum Real-Time Index (\"ERTI\") for the minute (60 seconds) prior to <time>', with 'Expiration time ... the first minute after <time> that data is available'. The IR follows the contract terms, which match the market's rules_primary ('the simple average of the sixty seconds of CF Benchmarks' Ethereum Real-Time Index (ERTI) before 6 PM EST'). It treats the certification's Appendix A as superseded.",
+    "The observable eth_usd_erti_60s_avg is the Underlying itself: the simple average of the 60 one-second ERTI values before <time>, as documented by the Source Agency, CF Benchmarks. The IR takes this average as the observable's value; it does not compute it from the raw ERTI ticks.",
+    "The terms do not say how the 60-second average is rounded before it is compared with <price>. The observable's precision is set to 0.01 USD, following the listing's custom_strike.round_digits = \"2\" and the <price> increment of <0.01>. Under the strict 'above' comparison, rounding matters only when the average lands exactly on the strike.",
+    "Comparison: the terms say 'the index is <above/below/between> <price>', the market's rules_primary says 'is above 1449.99', and its strike_type is 'greater'. The IR carries this as a strict > against floor_strike, so a value equal to the strike is not above it.",
+    "<time> on <date> is 6 PM EST on Nov 1, 2026, which is 2026-11-01T23:00:00Z (US daylight saving time ends at 02:00 that day). This is the market's close_time and Last Trading Time. The IR reads the Underlying at that instant.",
+    "Expiration depends on events: 'The Expiration Date of the Contract shall be the sooner of the first minute after <time> on <date> that data is available or one week after <date>.' The IR takes the latest possible date, 2026-11-08T23:00:00Z (the market's expiration_time and latest_expiration_time), as both expiration and observation cutoff. If data is published sooner, the contract actually expires sooner, at about expected_expiration_time 2026-11-01T23:05:00Z. The value read, and so the outcome, is the same either way.",
+    "'If no data is available on the Expiration Date at the Expiration Time, then the market resolves to No' is carried as on_unknown_at_expiry = no.",
+    "The settlement date is stated as a deadline, which the IR cannot carry: 'The Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.' The IR carries it instead as a fixed settlement lag of 1 calendar day and a payment lag of 0 days. It does not carry the 'no later than' bound or the Rule 7.1 review exception.",
+    "'Revisions to the Underlying made after Expiration will not be accounted for in determining the Expiration Value' is carried as revision_policy as_of_expiry.",
+    "'Contingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant to Rule 6.3(c) of the Rulebook.' This discretionary review lies outside the IR and is not modelled.",
+    "The market record has can_close_early = true, but the filed terms state no early-expiration condition tied to the Payout Criterion, so early_expiration is none.",
+    "The terms state no void path. void_transfer is set to 'nothing' as a neutral value that never applies.",
+    "The terms state no payout rounding rule. The Settlement Value is $1.00 per contract; rounding_quantum is 0.01 USD with half_even as a neutral mode.",
+    "Only one source is named ('The Source Agency is CF Benchmarks'), so the conflict policy is precedence_first_available, with precedence [cf_benchmarks]."
+   ],
+   "bindings": [
+    {
+     "field": "floor_strike",
+     "node": "above_strike",
+     "slot": "threshold"
+    }
+   ],
+   "ir": {
+    "examples": [],
+    "exclusions": [
+     {
+      "operative": false,
+      "text": "Contingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant to Rule 6.3(c) of the Rulebook."
+     },
+     {
+      "operative": false,
+      "text": "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract."
+     },
+     {
+      "operative": false,
+      "text": "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+     }
+    ],
+    "id": "KXETHD-26NOV0118-T1449.99",
+    "observables": [
+     {
+      "description": "Spot price of one Ether in U.S. dollars at <time>: the simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks.",
+      "id": "eth_usd_erti_60s_avg",
+      "precision": "0.01",
+      "revision_policy": "as_of_expiry",
+      "schedule": "real-time, one-second index values",
+      "sources": [
+       {
+        "id": "cf_benchmarks",
+        "name": "CF Benchmarks (CF Ethereum Real-Time Index, ERTI)",
+        "rank": 1,
+        "role": "Source Agency",
+        "url": "https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI"
+       }
+      ],
+      "unit": "USD",
+      "value_type": "number"
+     }
+    ],
+    "payout": {
+     "currency": "USD",
+     "kind": "binary",
+     "payment": "at_settlement",
+     "periods": [],
+     "rounding_mode": "half_even",
+     "rounding_quantum": "0.01",
+     "unit_value": "1.00"
+    },
+    "resolution": {
+     "conflict_policy": {
+      "procedure": "precedence_first_available",
+      "sources": []
+     },
+     "early_expiration": "none",
+     "on_unknown_at_expiry": "no",
+     "precedence": [
+      "cf_benchmarks"
+     ],
+     "void_transfer": {
+      "returns": "nothing"
+     }
+    },
+    "timing": {
+     "close": "2026-11-01T23:00:00Z",
+     "expiration": "2026-11-08T23:00:00Z",
+     "holiday_calendar": null,
+     "lag_days": "calendar",
+     "observation_cutoff": "2026-11-08T23:00:00Z",
+     "open": "2026-11-01T22:00:00Z",
+     "payment_lag_days": 0,
+     "settlement_lag_days": 1,
+     "tz": "America/New_York"
+    },
+    "trigger": {
+     "at": "2026-11-01T23:00:00Z",
+     "expr": {
+      "id": "above_strike",
+      "kind": "cmp",
+      "observable": "eth_usd_erti_60s_avg",
+      "op": ">",
+      "value": {
+       "kind": "number",
+       "value": "1449.99"
+      }
+     },
+     "id": "at_time",
+     "kind": "at"
+    },
+    "version": 1
+   },
+   "settlement": {
+    "at_field": "close_time",
+    "observable": "eth_usd_erti_60s_avg"
+   },
+   "support": "supported_with_explicit_assumptions",
+   "unsupported_terms": []
+  },
+  "total_cost_usd": 0.19496059999999998,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 16769,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 16769,
+   "cache_read_input_tokens": 14503,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 16769,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 16769,
+     "cache_read_input_tokens": 14503,
+     "input_tokens": 2,
+     "output_tokens": 2895,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 2895,
+   "output_tokens_details": {
+    "thinking_tokens": 348
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

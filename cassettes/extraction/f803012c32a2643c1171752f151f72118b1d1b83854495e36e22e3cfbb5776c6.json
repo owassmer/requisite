@@ -1,0 +1,22 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "pdf",
+ "latency_ms": 24,
+ "provider": "extraction",
+ "recorded_at": "2026-11-02T03:27:02.380325+00:00",
+ "request": {
+  "artifact": "art_74bae3f5bed2f91798eeab0c23dea093d43a2c311c3a541aa77266c5859363ae",
+  "extractor": "requisite.evidence.extract.pdf",
+  "version": 1
+ },
+ "response": {
+  "id": "pdf/1 pypdf 6.21.4",
+  "pages": [
+   "text layer",
+   "text layer"
+  ],
+  "reader": "pdf",
+  "text": "[page 1 of 2: text layer]\nETH\nScope: These rules shall apply to this contract.\nUnderlying: The Underlying for this Contract is the spot price of one Ether in U.S. dollars at\n<time>, according to a simple average of the CF Ethereum Real-Time Index (\u201cERTI\u201d) for the\nminute (60 seconds) prior to <time>. Revisions to the Underlying made after Expiration will\nnot be accounted for in determining the Expiration Value.\nSource Agency: The Source Agency is CF Benchmarks.\nType: The type of Contract is an Event Contract.\nIssuance:The Contract is based on the outcome of a recurrent data release, which is issued on\na real-time basis. Thus, Contract iterations will be issued on a recurring basis, and future\nContract iterations will generally correspond to the next day and year.\n<price>: Kalshi may list iterations of the Contract with <price> levels that fall within an\ninclusive range between 0 and 100,000,000 at consecutive increments of <0.01>. Due to the\npotential for variability in the Underlying, the Exchange may modify <price> levels in\nresponse to suggestions by Members.\n<date>: <date> refers to a calendar date specified by Kalshi. Kalshi may list iterations of the\nContract corresponding to different statistical periods of <date>.\n<time>: <time> refers to a time on a calendar date specified by Kalshi. Kalshi may list\niterations of the Contract corresponding to different statistical periods of <time>.\nPayout Criterion: The Payout Criterion for the Contract encompasses the Expiration Values\nthat the index is <above/below/between> <price> on <date> at <time>. If the value of\n<above/below/between> is \u201cbetween\u201d, then <price> shall be a pair of prices, and an Expiration\nValue that is greater than or equal to the lower value of the degree pair and less than or equal\nto the greater value of the degree pair are encompassed in the Payout Criterion. If no data is\navailable on the Expiration Date at the Expiration Time, then the market resolves to No.\nMinimum Tick: The Minimum Tick size for the referred Contract shall be $0.01.\nPosition Accountability Level: The Position Accountability Level for the $1 referred\nContract shall be $25,000 per strike, per Member.\nLast Trading Date: The Last Trading Date of the Contract will be <date>. The Last Trading\nTime will be <time>.\n\n[page 2 of 2: text layer]\nSettlement Date: The Settlement Date of the Contract shall be no later than the day after the\nExpiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.\nExpiration Date: The Expiration Date of the Contract shall be the sooner of the first minute\nafter <time> on <date> that data is available or one week after <date>.\nExpiration time: The Expiration time of the Contract shall be the first minute after <time>\nthat data is available.\nSettlement Value: The Settlement Value for this Contract is $1.00.\nExpiration Value: The Expiration Value is the value of the Underlying as documented by the\nSource Agency on the Expiration Date at the Expiration time.\nContingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market\nOutcome Review Process pursuant to Rule 6.3(c) of the Rulebook.",
+  "unreadable": []
+ }
+}

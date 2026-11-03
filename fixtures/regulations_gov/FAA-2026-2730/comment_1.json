@@ -1,0 +1,83 @@
+{
+ "request": {
+  "path": "comments/FAA-2026-2730-0004",
+  "params": {
+   "include": "attachments"
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/vnd.api+json;charset=utf-8",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "993"
+ },
+ "body": {
+  "data": {
+   "id": "FAA-2026-2730-0004",
+   "type": "comments",
+   "links": {
+    "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0004"
+   },
+   "attributes": {
+    "commentOn": "09000064b924b533",
+    "commentOnDocumentId": "FAA-2026-2730-0001",
+    "duplicateComments": 0,
+    "address1": null,
+    "address2": null,
+    "agencyId": "FAA",
+    "city": null,
+    "category": null,
+    "comment": "APB has reviewed the NPRM and has determined that the incorporation of STC ST01518SE for installation of blended winglets on Boeing Company Model 757-300 series airplanes does not affect compliance with the mandated actions in the proposed rule. Boeing has delegation from APB to review and approve data in areas affected by STC ST01518SE for the blended winglet configuration. The provisions of NPRM paragraph (i)(2) remain applicable to Boeing Company Model 757-300 series airplanes modified by STC ST01518SE, with blended winglets or production wingtips installed (winglets never installed after modification or winglets installed and subsequently removed).",
+    "country": null,
+    "displayProperties": null,
+    "docAbstract": null,
+    "docketId": "FAA-2026-2730",
+    "documentType": "Public Submission",
+    "email": null,
+    "fax": null,
+    "field1": null,
+    "field2": null,
+    "fileFormats": null,
+    "firstName": null,
+    "govAgency": null,
+    "govAgencyType": null,
+    "objectId": "09000064b92d03f4",
+    "lastName": null,
+    "legacyId": null,
+    "modifyDate": "2026-05-12T16:40:47Z",
+    "organization": "Aviation Partners Boeing",
+    "originalDocumentId": null,
+    "pageCount": 0,
+    "phone": null,
+    "postedDate": "2026-05-12T04:00:00Z",
+    "postmarkDate": null,
+    "reasonWithdrawn": null,
+    "receiveDate": "2026-05-11T04:00:00Z",
+    "restrictReason": null,
+    "restrictReasonType": null,
+    "stateProvinceRegion": null,
+    "submitterRep": null,
+    "submitterRepAddress": null,
+    "submitterRepCityState": null,
+    "subtype": "Comment(s)",
+    "title": "Comment from Aviation Partners Boeing",
+    "trackingNbr": "mp1-pgp3-063x",
+    "withdrawn": false,
+    "zip": null,
+    "openForComment": false
+   },
+   "relationships": {
+    "attachments": {
+     "data": [],
+     "links": {
+      "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0004/relationships/attachments",
+      "related": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0004/attachments"
+     }
+    }
+   }
+  },
+  "links": {
+   "self": "https://regulations.gov/v4/comments/FAA-2026-2730-0004?include=attachments"
+  }
+ }
+}

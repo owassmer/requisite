@@ -1,0 +1,115 @@
+{
+ "request": {
+  "path": "comments/FAA-2026-2730-0005",
+  "params": {
+   "include": "attachments"
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/vnd.api+json;charset=utf-8",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "994"
+ },
+ "body": {
+  "data": {
+   "id": "FAA-2026-2730-0005",
+   "type": "comments",
+   "links": {
+    "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0005"
+   },
+   "attributes": {
+    "commentOn": "09000064b924b533",
+    "commentOnDocumentId": "FAA-2026-2730-0001",
+    "duplicateComments": 0,
+    "address1": null,
+    "address2": null,
+    "agencyId": "FAA",
+    "city": null,
+    "category": null,
+    "comment": "Docket No. FAA&ndash;2026&ndash;2730; Project Identifier AD&ndash;2025&ndash;01579&ndash;T.  United Airlines (UA) has reviewed and provides comments in attached letter.  Thanks.",
+    "country": null,
+    "displayProperties": null,
+    "docAbstract": null,
+    "docketId": "FAA-2026-2730",
+    "documentType": "Public Submission",
+    "email": null,
+    "fax": null,
+    "field1": null,
+    "field2": null,
+    "fileFormats": null,
+    "firstName": null,
+    "govAgency": null,
+    "govAgencyType": null,
+    "objectId": "09000064b92df25e",
+    "lastName": null,
+    "legacyId": null,
+    "modifyDate": "2026-05-19T16:23:05Z",
+    "organization": "United Airlines, Inc",
+    "originalDocumentId": null,
+    "pageCount": 0,
+    "phone": null,
+    "postedDate": "2026-05-19T04:00:00Z",
+    "postmarkDate": null,
+    "reasonWithdrawn": null,
+    "receiveDate": "2026-05-18T04:00:00Z",
+    "restrictReason": null,
+    "restrictReasonType": null,
+    "stateProvinceRegion": null,
+    "submitterRep": null,
+    "submitterRepAddress": null,
+    "submitterRepCityState": null,
+    "subtype": "Comment(s)",
+    "title": "Comment from United Airlines, Inc",
+    "trackingNbr": "mpb-rcbr-yn28",
+    "withdrawn": false,
+    "zip": null,
+    "openForComment": false
+   },
+   "relationships": {
+    "attachments": {
+     "data": [
+      {
+       "id": "09000064b92df25f",
+       "type": "attachments"
+      }
+     ],
+     "links": {
+      "self": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0005/relationships/attachments",
+      "related": "https://api.regulations.gov/v4/comments/FAA-2026-2730-0005/attachments"
+     }
+    }
+   }
+  },
+  "included": [
+   {
+    "id": "09000064b92df25f",
+    "type": "attachments",
+    "links": {
+     "self": "https://api.regulations.gov/v4/attachments/09000064b92df25f"
+    },
+    "attributes": {
+     "agencyNote": null,
+     "authors": null,
+     "docAbstract": null,
+     "docOrder": 1,
+     "fileFormats": [
+      {
+       "fileUrl": "https://downloads.regulations.gov/FAA-2026-2730-0005/attachment_1.pdf",
+       "format": "pdf",
+       "size": 165519
+      }
+     ],
+     "modifyDate": "2026-05-18T22:10:21Z",
+     "publication": null,
+     "restrictReason": null,
+     "restrictReasonType": null,
+     "title": "UA Comments FAA-2026-01579-T"
+    }
+   }
+  ],
+  "links": {
+   "self": "https://regulations.gov/v4/comments/FAA-2026-2730-0005?include=attachments"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/series/KXMAMDANIPOLL",
+ "latency_ms": 59,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:31:39.140929+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {}
+ },
+ "response": {
+  "headers": {
+   "content-length": "864",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"series\":{\"additional_prohibitions\":[\"Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.\",\"Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract.\",\"Any candidate currently listed as a market within this event.\"],\"categories\":[\"Politics\"],\"category\":\"Politics\",\"contract_terms_url\":\"https://assets.kalshi.com/contract_terms/POLITICALSTAT.pdf\",\"contract_url\":\"https://assets.kalshi.com/regulatory/product-certifications/POLITICALSTAT.pdf\",\"exchange_index\":0,\"fee_multiplier\":1,\"fee_type\":\"quadratic\",\"frequency\":\"one_off\",\"last_updated_ts\":\"2026-11-01T17:42:40.08954Z\",\"settlement_sources\":[{\"name\":\"Siena University\",\"url\":\"https://sri.siena.edu/\"}],\"tags\":[\"NYC\"],\"ticker\":\"KXMAMDANIPOLL\",\"title\":\"Mamdani\u2019s NYC favorability in the next Siena poll?\"}}\n"
+ }
+}

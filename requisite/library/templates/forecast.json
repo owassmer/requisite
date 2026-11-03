@@ -1,0 +1,14 @@
+{
+  "source": "The forecast that gives a pending event its probability (spec §6.4: \"Every forecast states its event and window precisely, receives conditioning facts only through ASSUMED, and is logged with as_of\"; spec §5: \"a forecast judgment supplies a branch probability\"; addendum A04 §4.1: a future-event probability is its own object, never an interpretation's answer or an evidence status). The window is the question's own (core.AtomicQuestion.window, the event proposition's), rendered with the target. A forecast's answers are the event's branches, so it has no not_established answer (spec §4); each binds the branch it asserts. Ours (worker on 003-1, November 2), in spec §6.4's words.",
+  "templates": [
+    {
+      "id": "event_occurs", "version": 1, "task": "forecast",
+      "slots": ["event"],
+      "target": "Will the event below happen within the question's time window, judging from the evidence under OBSERVED as of the state's AS OF instant?\nEvent: {event}",
+      "answers": [
+        {"value": "occurs", "meaning": "the event happens within the window", "status": "affirmative", "binds": {"occurs": true}},
+        {"value": "does_not_occur", "meaning": "the event does not happen within the window", "status": "negative", "binds": {"occurs": false}}
+      ]
+    }
+  ]
+}

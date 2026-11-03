@@ -1,0 +1,700 @@
+{
+ "request": {
+  "path": "documents",
+  "params": {
+   "filter[agencyId]": "FAA",
+   "filter[searchTerm]": "Airworthiness Directives",
+   "filter[postedDate][ge]": "2026-10-01",
+   "filter[postedDate][le]": "2026-10-31",
+   "page[size]": 25,
+   "sort": "postedDate"
+  }
+ },
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "x-ratelimit-limit": "1000",
+  "x-ratelimit-remaining": "999"
+ },
+ "body": {
+  "data": [
+   {
+    "type": "documents",
+    "id": "FAA-2026-3487-0003",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa770",
+     "frDocNum": "2026-20103",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:37:47Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters",
+     "docketId": "FAA-2026-3487",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-2730-0006",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa64c",
+     "frDocNum": "2026-20120",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:42:20Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: The Boeing Company Airplanes",
+     "docketId": "FAA-2026-2730",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-1328-0005",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa698",
+     "frDocNum": "2026-20119",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:41:13Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus SAS Airplanes",
+     "docketId": "FAA-2026-1328",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11789-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa76c",
+     "frDocNum": "2026-20100",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-17T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:38:52Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: Leonardo S.p.a. Helicopters",
+     "docketId": "FAA-2026-11789",
+     "subtype": "Final Rule with Request for Comments",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11796-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa882",
+     "frDocNum": "2026-20076",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-17T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:34:34Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: Embraer S.A. Airplanes",
+     "docketId": "FAA-2026-11796",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-4657-0004",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b95fa7f7",
+     "frDocNum": "2026-20098",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "lastModifiedDate": "2026-10-01T16:36:20Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters",
+     "docketId": "FAA-2026-4657",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11800-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b961d105",
+     "frDocNum": "2026-20411",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-20T04:59:59Z",
+     "commentStartDate": "2026-10-05T04:00:00Z",
+     "lastModifiedDate": "2026-10-07T09:00:31Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-05T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters",
+     "docketId": "FAA-2026-11800",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11798-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b961d0bc",
+     "frDocNum": "2026-20393",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-20T04:59:59Z",
+     "commentStartDate": "2026-10-05T04:00:00Z",
+     "lastModifiedDate": "2026-10-05T16:40:43Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-05T04:00:00Z",
+     "title": "Airworthiness Directives: DG Aviation GmbH (Type Certificate Previously Held by DG Flugzeugbau GmbH) Gliders",
+     "docketId": "FAA-2026-11798",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-1338-0004",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9648333",
+     "frDocNum": "2026-20543",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-07T04:00:00Z",
+     "lastModifiedDate": "2026-10-07T16:36:42Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-07T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus SAS Airplanes",
+     "docketId": "FAA-2026-1338",
+     "subtype": "Supplemental Notice of Proposed Rulemaking (SNPRM)",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-2712-0007",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9651ed3",
+     "frDocNum": "2026-20680",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-08T04:00:00Z",
+     "lastModifiedDate": "2026-10-08T16:33:39Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-08T04:00:00Z",
+     "title": "Airworthiness Directives: The Boeing Company Airplanes",
+     "docketId": "FAA-2026-2712",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11802-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9651ed7",
+     "frDocNum": "2026-20701",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-08T04:00:00Z",
+     "lastModifiedDate": "2026-10-30T09:01:03Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-08T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus SAS Airplanes",
+     "docketId": "FAA-2026-11802",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11799-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9651e30",
+     "frDocNum": "2026-20677",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-08T04:00:00Z",
+     "lastModifiedDate": "2026-10-08T16:34:17Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-08T04:00:00Z",
+     "title": "Airworthiness Directives: Various Helicopters",
+     "docketId": "FAA-2026-11799",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11803-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9651d98",
+     "frDocNum": "2026-20700",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-08T04:00:00Z",
+     "lastModifiedDate": "2026-10-15T09:00:40Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-08T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus SAS Airplanes",
+     "docketId": "FAA-2026-11803",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11801-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9651de7",
+     "frDocNum": "2026-20666",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-08T04:00:00Z",
+     "lastModifiedDate": "2026-10-08T16:35:14Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-08T04:00:00Z",
+     "title": "Airworthiness Directives: Engine Alliance Engines",
+     "docketId": "FAA-2026-11801",
+     "subtype": "Final Rule with Request for Comments",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11805-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9653e74",
+     "frDocNum": "2026-20722",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-10-09T04:00:00Z",
+     "lastModifiedDate": "2026-10-24T11:18:22Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-09T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+     "docketId": "FAA-2026-11805",
+     "subtype": "Final Rule with Request for Comments",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-4648-0004",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b965c74c",
+     "frDocNum": "2026-20869",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-13T04:00:00Z",
+     "lastModifiedDate": "2026-10-13T16:54:10Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-13T04:00:00Z",
+     "title": "Airworthiness Directives: Rolls-Royce Deutschland Ltd and Co KG Engines",
+     "docketId": "FAA-2026-4648",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11806-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b965c839",
+     "frDocNum": "2026-20885",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-10-13T04:00:00Z",
+     "lastModifiedDate": "2026-10-23T09:00:42Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-13T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters",
+     "docketId": "FAA-2026-11806",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11804-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b965c6f3",
+     "frDocNum": "2026-20818",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-10-13T04:00:00Z",
+     "lastModifiedDate": "2026-10-24T11:18:24Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-13T04:00:00Z",
+     "title": "Airworthiness Directives: Elixir Aircraft",
+     "docketId": "FAA-2026-11804",
+     "subtype": "Final Rule with Request for Comments",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2025-0204-0016",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b966b040",
+     "frDocNum": "2026-21009",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-14T04:00:00Z",
+     "lastModifiedDate": "2026-10-14T16:53:20Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-14T04:00:00Z",
+     "title": "Airworthiness Directives; The Boeing Company Airplanes",
+     "docketId": "FAA-2025-0204",
+     "subtype": "Withdrawal",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11808-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b966af74",
+     "frDocNum": "2026-21012",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-14T04:00:00Z",
+     "lastModifiedDate": "2026-10-15T09:00:41Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-14T04:00:00Z",
+     "title": "Airworthiness Directives; Leonardo S.p.a. Helicopters",
+     "docketId": "FAA-2026-11808",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11807-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b966aefa",
+     "frDocNum": "2026-20930",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-14T04:00:00Z",
+     "lastModifiedDate": "2026-10-24T11:18:27Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-14T04:00:00Z",
+     "title": "Airworthiness Directives; Leonardo S.p.A. Helicopters",
+     "docketId": "FAA-2026-11807",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-2289-0010",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b966af2c",
+     "frDocNum": "2026-21010",
+     "documentType": "Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": null,
+     "commentStartDate": "2026-10-14T04:00:00Z",
+     "lastModifiedDate": "2026-10-14T16:53:17Z",
+     "openForComment": false,
+     "withinCommentPeriod": false,
+     "postedDate": "2026-10-14T04:00:00Z",
+     "title": "Airworthiness Directives; Bombardier, Inc., Airplanes",
+     "docketId": "FAA-2026-2289",
+     "subtype": "Final Rule",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11809-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b966af75",
+     "frDocNum": "2026-21008",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-14T04:00:00Z",
+     "lastModifiedDate": "2026-10-24T11:18:27Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-14T04:00:00Z",
+     "title": "Airworthiness Directives; Baykar Piaggio Aerospace S.p.A. (Type Certificate Previously Held by Piaggio Aviation S.p.A.) Airplanes",
+     "docketId": "FAA-2026-11809",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11810-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b9671673",
+     "frDocNum": "2026-21047",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-15T04:00:00Z",
+     "lastModifiedDate": "2026-10-16T09:00:33Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-15T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus SAS Airplanes",
+     "docketId": "FAA-2026-11810",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   },
+   {
+    "type": "documents",
+    "id": "FAA-2026-11812-0001",
+    "attributes": {
+     "agencyId": "FAA",
+     "objectId": "09000064b96717b0",
+     "frDocNum": "2026-21123",
+     "documentType": "Proposed Rule",
+     "withdrawn": false,
+     "highlightedContent": "",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-15T04:00:00Z",
+     "lastModifiedDate": "2026-10-29T09:00:42Z",
+     "openForComment": true,
+     "withinCommentPeriod": true,
+     "postedDate": "2026-10-15T04:00:00Z",
+     "title": "Airworthiness Directives: Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+     "docketId": "FAA-2026-11812",
+     "subtype": "Request for Comment",
+     "allowLateComments": false
+    }
+   }
+  ],
+  "meta": {
+   "aggregations": {
+    "documentType": [
+     {
+      "docCount": 29,
+      "label": "Rule"
+     },
+     {
+      "docCount": 20,
+      "label": "Proposed Rule"
+     }
+    ],
+    "subtype": [
+     {
+      "docCount": 22,
+      "label": "Final Rule"
+     },
+     {
+      "docCount": 18,
+      "label": "Request for Comment"
+     },
+     {
+      "docCount": 6,
+      "label": "Final Rule with Request for Comments"
+     },
+     {
+      "docCount": 1,
+      "label": "Correction"
+     },
+     {
+      "docCount": 1,
+      "label": "Supplemental Notice of Proposed Rulemaking (SNPRM)"
+     },
+     {
+      "docCount": 1,
+      "label": "Withdrawal"
+     }
+    ],
+    "withinCommentPeriod": [
+     {
+      "docCount": 25,
+      "label": "true"
+     },
+     {
+      "docCount": 24,
+      "label": "false"
+     }
+    ],
+    "agencyId": [
+     {
+      "docCount": 49,
+      "value": "FAA"
+     }
+    ],
+    "commentEndDate": [
+     {
+      "label": "Next 30 Days",
+      "fromDate": "2026-11-01 00:00:00",
+      "toDate": "2026-11-30 23:59:58",
+      "docCount": 14
+     },
+     {
+      "label": "Next 90 Days",
+      "fromDate": "2026-11-01 00:00:00",
+      "toDate": "2027-01-29 23:59:58",
+      "docCount": 25
+     }
+    ],
+    "openForComment": [
+     {
+      "docCount": 0,
+      "label": "true"
+     },
+     {
+      "docCount": 49,
+      "label": "false"
+     }
+    ],
+    "postedDate": [
+     {
+      "label": "Last 7 Days",
+      "fromDate": "2026-10-26 00:00:00",
+      "toDate": "2026-11-01 23:59:59",
+      "docCount": 11
+     },
+     {
+      "label": "Last 15 Days",
+      "fromDate": "2026-10-18 00:00:00",
+      "toDate": "2026-11-01 23:59:59",
+      "docCount": 24
+     },
+     {
+      "label": "Last 30 Days",
+      "fromDate": "2026-10-03 00:00:00",
+      "toDate": "2026-11-01 23:59:59",
+      "docCount": 43
+     },
+     {
+      "label": "Last 90 Days",
+      "fromDate": "2026-08-04 00:00:00",
+      "toDate": "2026-11-01 23:59:59",
+      "docCount": 153
+     }
+    ]
+   },
+   "filters": {
+    "postedDate": {
+     "fromDate": "2026-10-01",
+     "toDate": "2026-10-31"
+    },
+    "agencyId": [
+     {
+      "label": "FAA",
+      "value": "FAA"
+     }
+    ]
+   },
+   "hasNextPage": true,
+   "hasPreviousPage": false,
+   "numberOfElements": 25,
+   "pageNumber": 1,
+   "pageSize": 25,
+   "totalElements": 49,
+   "totalPages": 2,
+   "firstPage": true,
+   "lastPage": false
+  }
+ }
+}

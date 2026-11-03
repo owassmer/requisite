@@ -1,0 +1,81 @@
+{
+ "cost_usd": 3.16e-05,
+ "endpoint": "openai/v1/decisions",
+ "latency_ms": 713,
+ "provider": "openai_decisions",
+ "recorded_at": "2026-11-02T00:02:23.683859+00:00",
+ "request": {
+  "input": [
+   {
+    "content": [
+     {
+      "data": {
+       "state": "AS OF: 2026-11-01T12:00:00+00:00\nOBSERVED (sourced; may be relied on):\n  [C1] Crews must stop outdoor work on any day with at least 0.10 inches of rain. \u2014 a city ordinance (fixture), published 2026-03-01, artifact 1c184595838e\nASSUMED FOR THIS QUESTION (hypothetical; not established):\n  (none)\nDEFINITIONS:\n  (none)"
+      },
+      "type": "input_json"
+     }
+    ],
+    "role": "user"
+   }
+  ],
+  "model": "gpt-6-luna",
+  "questions": [
+   {
+    "choices": [
+     {
+      "description": "the rule requires crews to stop that day",
+      "value": "yes"
+     },
+     {
+      "description": "the rule does not require it",
+      "value": "no"
+     },
+     {
+      "description": "the state does not establish it",
+      "value": "not_established"
+     }
+    ],
+    "instructions": "Does the rule require crews to stop outdoor work on a day with 0.15 inches of rain?\nAnswer from the state alone. Rely on what is under OBSERVED; treat what is under ASSUMED as hypothetical, given only for this question. If the state does not establish the answer, choose the answer that says so.",
+    "name": "fixture.stop_at_0.15.v1",
+    "type": "choice"
+   }
+  ]
+ },
+ "response": {
+  "answers": [
+   {
+    "choice": "yes",
+    "confidence": 0.99,
+    "name": "fixture.stop_at_0.15.v1",
+    "probabilities": [
+     {
+      "probability": 0.99,
+      "value": "yes"
+     },
+     {
+      "probability": 0.0,
+      "value": "no"
+     },
+     {
+      "probability": 0.01,
+      "value": "not_established"
+     }
+    ],
+    "type": "choice"
+   }
+  ],
+  "model": "gpt-6-luna",
+  "usage": {
+   "input_tokens": 316,
+   "input_tokens_details": {
+    "cache_write_tokens": 0,
+    "cached_tokens": 0
+   },
+   "output_tokens": 0,
+   "output_tokens_details": {
+    "reasoning_tokens": 0
+   },
+   "total_tokens": 316
+  }
+ }
+}

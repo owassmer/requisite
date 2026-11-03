@@ -1,0 +1,43 @@
+{
+ "cost_usd": 0.00037848,
+ "endpoint": "workers-ai/run/@cf/cloudflare/clef",
+ "latency_ms": 452,
+ "provider": "clef",
+ "recorded_at": "2026-11-02T04:06:28.375179+00:00",
+ "request": {
+  "model": "clef",
+  "questions": {
+   "fuzz.KXETHD-26NOV0118-T1449.99.v2.resolve.31af94b13cf1.v1": {
+    "criteria": {
+     "ambiguous": "the rules, applied to this evidence, do not determine whether it resolves YES or NO",
+     "resolved_no": "the contract resolves NO",
+     "resolved_yes": "the contract resolves YES"
+    },
+    "instructions": "Under the contract rules below, and given the documents under OBSERVED as the evidence available at expiration, does the contract resolve YES or NO, or do the rules and the evidence leave it ambiguous?\nContract rules:\nUnderlying and definitions\nThe Underlying is the spot price of one Ether (ETH) in U.S. dollars (USD) at a given time. CF Benchmarks documents it as the simple average of the CF Ethereum Real-Time Index (ERTI) over the minute (60 seconds) before that time. It is published in USD to a precision of $0.01. In this contract, the \"Price\" means this value for the time 2026-11-01 23:00:00 UTC, which is 6:00:00 PM Eastern Standard Time (America/New_York) on November 1, 2026. The averaging window is the 60 seconds ending at that time. The terms do not say whether the window's endpoints are included or excluded, so CF Benchmarks' documentation of the index decides this. The \"Strike\" is $1,449.99.\n\nSource hierarchy and conflict rule\nThere is one Source Agency: CF Benchmarks, which publishes the CF Ethereum Real-Time Index at https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI. It is ranked first and is the only source. The conflict rule is to take the value from the highest-ranked source that has one available. Because CF Benchmarks is the only source, sources cannot disagree. If CF Benchmarks has no value available, the Price cannot be established, and the Unknown at expiry rule applies.\n\nTrigger\nThe contract resolves Yes if the Price is strictly greater than $1,449.99. The Price is the simple average of the ERTI over the 60 seconds before 2026-11-01 23:00:00 UTC (6:00:00 PM EST, America/New_York, November 1, 2026), at its published precision of $0.01. The condition is checked once, for that single time. A Price of exactly $1,449.99 does not meet it. Otherwise, the contract resolves No. A Yes contract pays $1.00 in USD and a No contract pays nothing. Payout amounts are rounded to the nearest $0.01, with exact halves rounded to the even cent.\n\nTiming\nAll times are given in UTC, with Eastern Standard Time (America/New_York) in brackets. Trading opens at 2026-11-01 22:00:00 UTC (5:00:00 PM EST, November 1, 2026). Trading closes at 2026-11-01 23:00:00 UTC (6:00:00 PM EST, November 1, 2026), which is also the time the Price is measured for. Expiration is 2026-11-08 23:00:00 UTC (6:00:00 PM EST, November 8, 2026). The observation cutoff is the same time: a value of the Underlying must be available by then to count. Settlement takes place one calendar day after expiration. Payment is made at settlement, with no further lag (0 days). The contract has no early expiration.\n\nUnknown at expiry\nIf the Price cannot be established by expiration (2026-11-08 23:00:00 UTC, 6:00:00 PM EST), the contract resolves No. There is no extension.\n\nRevisions\nThe Price used for settlement is the value as published at expiration (2026-11-08 23:00:00 UTC, 6:00:00 PM EST). Any revision CF Benchmarks publishes after expiration does not affect the outcome.\nAnswer from the state alone. Rely on what is under OBSERVED; treat what is under ASSUMED as hypothetical, given only for this question. If the state does not establish the answer, choose the answer that says so.",
+    "type": "choice"
+   }
+  },
+  "state": {
+   "state": "AS OF: 2026-11-08T23:00:00+00:00\nOBSERVED (sourced; may be relied on):\n  [C1] CF Ethereum Real-Time Index (ETHUSD_RTI): 60-Second Average Data Record, Window Ending 2026-11-01 23:00:00 UTC\nIssued by: CF Benchmarks\nPublished: 2026-11-01T23:00:00+00:00\n\nCF BENCHMARKS LTD\nIndex Data Service: Real-Time Index Derived Values\n\nIndex: CF Ethereum Real-Time Index\nTicker: ETHUSD_RTI\nQuote currency: USD\nCalculation: Simple arithmetic mean of index values published at one-second intervals during the averaging window\n\nAveraging window start (exclusive): 2026-11-01 22:59:00 UTC\nAveraging window end (inclusive): 2026-11-01 23:00:00 UTC\nWindow length: 60 seconds\nIndex observations in window: 60\n\n| Window End (UTC)       | Observations | 60-Second Simple Average (USD) |\n|------------------------|--------------|--------------------------------|\n| 2026-11-01 23:00:00    | 60           | 1449.98                        |\n\nValue rounded to 2 decimal places.\nRecord status: Final\nRecord generated: 2026-11-01 23:00:00 UTC\n\nCF Benchmarks Ltd is authorised and regulated by the UK Financial Conduct Authority as a benchmark administrator. Index methodology documents are available at cfbenchmarks.com. \u2014 CF Benchmarks, published as stated in the document, artifact f7698ea9449f\nASSUMED FOR THIS QUESTION (hypothetical; not established):\n  (none)\nDEFINITIONS:\n  (none)"
+  }
+ },
+ "response": {
+  "answers": {
+   "fuzz.KXETHD-26NOV0118-T1449.99.v2.resolve.31af94b13cf1.v1": {
+    "choice": "resolved_no",
+    "confidence": 0.7127,
+    "probabilities": {
+     "ambiguous": 0.085,
+     "resolved_no": 0.8949,
+     "resolved_yes": 0.0201
+    },
+    "type": "choice"
+   }
+  },
+  "model": "clef",
+  "usage": {
+   "input_tokens": 1577,
+   "output_tokens": 0
+  }
+ }
+}

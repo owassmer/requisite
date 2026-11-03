@@ -1,0 +1,168 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "paraphrase_writer",
+ "latency_ms": 4818,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T02:43:35.035252+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "template": {
+    "answers": [
+     {
+      "binds": {},
+      "meaning": "the documents establish that the condition holds",
+      "status": "affirmative",
+      "value": "holds"
+     },
+     {
+      "binds": {},
+      "meaning": "the documents establish that the condition does not hold",
+      "status": "negative",
+      "value": "does_not_hold"
+     },
+     {
+      "binds": {},
+      "meaning": "the documents do not establish whether the condition holds",
+      "status": "not_established",
+      "value": "not_established"
+     }
+    ],
+    "id": "condition_holds",
+    "paraphrase_set": null,
+    "slots": [
+     "condition"
+    ],
+    "target": "According to the documents under OBSERVED, does the following condition hold?\nCondition: {condition}",
+    "task": "classify",
+    "version": 1
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "paraphrase_writer",
+  "schema": {
+   "$defs": {
+    "ParaphraseDraft": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "meanings": {
+       "additionalProperties": {
+        "type": "string"
+       },
+       "title": "Meanings",
+       "type": "object"
+      },
+      "target": {
+       "title": "Target",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "target",
+      "meanings"
+     ],
+     "title": "ParaphraseDraft",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "paraphrase_writer: two rewordings of a template (core.ParaphraseSet holds them with the original, p0).",
+   "properties": {
+    "paraphrases": {
+     "items": {
+      "$ref": "#/$defs/ParaphraseDraft"
+     },
+     "title": "Paraphrases",
+     "type": "array"
+    }
+   },
+   "required": [
+    "paraphrases"
+   ],
+   "title": "ParaphrasesDraft",
+   "type": "object"
+  },
+  "system": "You write paraphrases of a question template for Requisite's stability harness. The harness asks the same question of\nseveral decision models in several wordings; if the answers move with the wording, the question is not yet precise\nenough. So each paraphrase must ask exactly the same question in different words: a reader who answers one wording\nmust give the same answer to every other wording, for every possible filing.\n\nYou are given a template: its target (the question, with slots written as {slot}) and its closed set of answers, each\nwith a value and a meaning. You produce two paraphrases (the original wording is the third), each rewording:\n- the target, keeping every slot exactly as written ({population}, {measure} and so on) and keeping every condition,\n  scope, time window and exception the original states, no more and no less;\n- each answer's meaning, keeping its value unchanged and its scope exactly the same.\n\nVary the words and the sentence structure, not the meaning. Do not add examples, explanations, hedges or emphasis the\noriginal lacks, and do not drop any. Where the original's wording is ambiguous, keep the same ambiguity; do not\nresolve it in one paraphrase and not another, since that would change the question.\n\nReturn the two paraphrases with ids p1 and p2.\n"
+ },
+ "response": {
+  "duration_ms": 3483,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 786,
+    "cacheReadInputTokens": 1102,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.0122164,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 285,
+    "provider": "firstParty",
+    "thinkingTokens": 0,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "paraphrases": [
+    {
+     "id": "p1",
+     "meanings": {
+      "does_not_hold": "the documents show that the condition is not met",
+      "holds": "the documents show that the condition is met",
+      "not_established": "the documents do not show whether or not the condition is met"
+     },
+     "target": "Based on the documents under OBSERVED, is the following condition met?\nCondition: {condition}"
+    },
+    {
+     "id": "p2",
+     "meanings": {
+      "does_not_hold": "it is established by the documents that the condition fails to hold",
+      "holds": "it is established by the documents that the condition holds",
+      "not_established": "whether the condition holds is not established by the documents"
+     },
+     "target": "Taking the documents under OBSERVED as the source, is it the case that the condition below holds?\nCondition: {condition}"
+    }
+   ]
+  },
+  "total_cost_usd": 0.0122164,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 786,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 786,
+   "cache_read_input_tokens": 1102,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 786,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 786,
+     "cache_read_input_tokens": 1102,
+     "input_tokens": 2,
+     "output_tokens": 285,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 285,
+   "output_tokens_details": {
+    "thinking_tokens": 0
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

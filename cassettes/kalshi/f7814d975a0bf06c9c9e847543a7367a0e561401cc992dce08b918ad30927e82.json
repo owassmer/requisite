@@ -1,0 +1,22 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "/historical/markets",
+ "latency_ms": 55,
+ "provider": "kalshi",
+ "recorded_at": "2026-11-02T02:30:19.639781+00:00",
+ "request": {
+  "as_of": "2026-11-02T00:00:00+00:00",
+  "params": {
+   "event_ticker": "KXBRDEP-26OCT04",
+   "limit": "1000"
+  }
+ },
+ "response": {
+  "headers": {
+   "content-length": "27",
+   "content-type": "application/json"
+  },
+  "status": 200,
+  "text": "{\"cursor\":\"\",\"markets\":[]}\n"
+ }
+}

@@ -1,0 +1,216 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "frame_drafter",
+ "latency_ms": 40955,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T01:05:25.506151+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "as_of": "2026-11-02T01:04:44+00:00",
+   "objective": {
+    "estimand": "The unit is the item: one public comment, filing or similar document in the public record.\n\nThe denominator is all items the run reads that are written in a small business's own voice. That means written by or for a single business that meets the population definition, speaking about its own operations.\n\nThe numerator is those items that describe the business as exposed to an event of the class. That is, the item says or clearly implies that a specific pending event would raise the business's own labor or input costs during the horizon.\n\nThe estimate is that share. It is reported overall and separately for each event family. An event family is a group of events that share a cost channel (labor or input) and a mechanism, for example minimum wage, overtime, mandated leave, tariffs or input excise taxes. Families are defined by the run from what it finds.\n\nThis is a share of items, not a share of small businesses. One business may file several items, or none, and businesses that write to the public record are not a random sample of small businesses. The estimate therefore does not measure what fraction of small businesses are exposed.",
+    "events": "A pending regulatory or legislative change: a legal measure from a government body (legislature, executive, agency or regulator, at any level and in any jurisdiction) that, as of 2026-11-01, is either (i) proposed but not final, for example a proposed rule, an introduced or pending bill, or a draft order, or (ii) final but not yet in effect. It is in the class only if its direct legal effect would change what a business pays for one of the following.\n\n(a) Labor: wages and salaries, including minimum wages; overtime pay or eligibility; required paid leave or other mandated benefits; payroll taxes or employer contributions; scheduling, staffing-level or worker-classification rules that change the hours, pay or headcount the business must provide.\n\n(b) Inputs: the price or availability of goods, materials, energy, services or other things the business buys to produce what it sells, for example tariffs, duties or quotas; excise or sales taxes on inputs; and product, energy or environmental standards that raise the price of inputs or limit which inputs can be bought.\n\nOut of the class:\n- measures already in effect as of 2026-11-01;\n- court decisions;\n- measures whose cost effect is only general compliance, reporting or paperwork burden, unless the item says the measure itself requires extra paid labor or purchased inputs;\n- measures that act only on the business's revenue, demand, financing or income taxes.",
+    "horizon": {
+     "end": "2027-11-01T00:00:00Z",
+     "end_closed": false,
+     "start": "2026-11-01T00:00:00Z",
+     "start_closed": true,
+     "tz": "UTC"
+    },
+    "id": "objective",
+    "loss_definition": "The loss is the increase in the business's cash spending on labor and/or inputs (as defined under events) during the horizon that would come from the event taking effect as proposed or enacted. It is measured against the same spending if the event did not take effect, and stated in the currency the item uses.\n\nOnly costs paid within the horizon count, so an event that takes effect after 2027-11-01 adds nothing to the loss. Decreases in labor or input costs are not a loss. So are lost revenue, lost sales and general compliance or paperwork costs that are not labor or input spending, and none of these count.",
+    "population": "Small businesses in any industry and any jurisdiction. The brief sets no geography or sector, so none is imposed. A business counts as small if either (a) the item describes it as a small business, or (b) the item gives a headcount of fewer than 500 employees (all its locations and affiliates combined, full- and part-time). A business counts as operating where the item says it has employees, facilities or sales. Sole proprietors and self-employed people running a business count as businesses. Individuals writing only as workers, consumers or residents do not count. Neither do trade associations, chambers, advocacy groups, law firms or consultants writing about businesses, and the same goes for government bodies and nonprofits that are not operating a business. An item that gives neither a small-business self-description nor a headcount under 500 does not show its author is in the population.",
+    "unit": "item",
+    "version": 1
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "frame_drafter",
+  "schema": {
+   "additionalProperties": false,
+   "description": "frame_drafter: the frame criteria an approved objective implies (core.FrameCriteria's fields; its id, objective,\nsource and as_of are code's).",
+   "properties": {
+    "agencies": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Agencies",
+     "type": "array"
+    },
+    "comment_status": {
+     "enum": [
+      "open",
+      "closed_pending_final",
+      "either"
+     ],
+     "title": "Comment Status",
+     "type": "string"
+    },
+    "document_types": {
+     "items": {
+      "enum": [
+       "Proposed Rule",
+       "Rule",
+       "Notice"
+      ],
+      "type": "string"
+     },
+     "title": "Document Types",
+     "type": "array"
+    },
+    "expected_misses": {
+     "title": "Expected Misses",
+     "type": "string"
+    },
+    "min_comments": {
+     "title": "Min Comments",
+     "type": "integer"
+    },
+    "posted_from": {
+     "format": "date",
+     "title": "Posted From",
+     "type": "string"
+    },
+    "posted_to": {
+     "anyOf": [
+      {
+       "format": "date",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Posted To"
+    },
+    "rationale": {
+     "title": "Rationale",
+     "type": "string"
+    },
+    "search_terms": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Search Terms",
+     "type": "array"
+    }
+   },
+   "required": [
+    "search_terms",
+    "document_types",
+    "posted_from",
+    "posted_to",
+    "agencies",
+    "comment_status",
+    "min_comments",
+    "rationale",
+    "expected_misses"
+   ],
+   "title": "FrameDraft",
+   "type": "object"
+  },
+  "system": "You derive the frame of a wide discovery run from its approved objective: the criteria by which code will search the\npublic record of regulatory comments (the regulations.gov v4 API) and freeze what it finds. You do not search; code runs\nyour criteria exactly, at a pinned instant, and the frame is whatever they return.\n\nThe search reaches documents (proposed rules, rules, notices) by full-text search terms, document type, posting window,\nand optionally agency; each document belongs to a docket, and the frame is the public comments of the dockets reached.\nCode then keeps dockets with at least `min_comments` comments and with the comment status you choose.\n\nYou produce criteria that reach every docket in the objective's class of events and as few others as possible:\n- search_terms: words and short phrases that a document in the class would use in its title or text. Terms are combined\n  as alternatives (a document matching any is reached). Prefer the plain terms agencies use for the costs the objective\n  names. Several narrow terms reach more of the class with less noise than one broad term.\n- document_types: the types that state a pending change (proposed rules; rules not yet in effect; notices that propose\n  or seek comment on a change).\n- posted_from and posted_to: the posting window in which a still-pending change would have been proposed, given the\n  objective's horizon.\n- agencies: leave empty unless the objective's class of events is defined by the agency that acts.\n- comment_status: open, closed_pending_final (comments closed, no final rule yet), or either.\n- min_comments: the fewest comments a docket needs for a prevalence over its items to mean anything.\n\nRules:\n- Derive everything from the objective you are given. Do not name a particular docket, document, rule or company, and do\n  not choose terms to reach one you have in mind: the run's findings must be its own.\n- State in `rationale` why each choice follows from the objective, and in `expected_misses` what kinds of in-class\n  dockets your terms could miss, so the reviewer can judge the frame's reach.\n"
+ },
+ "response": {
+  "duration_ms": 39530,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 3471,
+    "cacheReadInputTokens": 0,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.10679599999999999,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 3951,
+    "provider": "firstParty",
+    "thinkingTokens": 1935,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "agencies": [],
+   "comment_status": "either",
+   "document_types": [
+    "Proposed Rule",
+    "Rule",
+    "Notice"
+   ],
+   "expected_misses": "State and local measures: state and local minimum-wage, leave, scheduling, sales-tax and energy measures, and pending bills in any legislature. These mostly do not appear on regulations.gov, so the frame is in practice limited to federal US agency actions, whatever the objective's jurisdiction scope.\n\nFederal actions not on regulations.gov: antidumping and countervailing duty proceedings (handled in Commerce's ACCESS system and at the ITC), many tariff proclamations issued without a comment docket, and agencies that run their own comment systems (for example FCC, SEC and some FERC matters).\n\nInput-cost standards outside the listed terms:\n- vehicle and engine emission standards, which raise equipment prices\n- chemical use restrictions or bans (for example TSCA risk-management rules)\n- food, packaging or pesticide-tolerance revocations that remove inputs\n- drug and medical-device pricing rules\n- USDA marketing orders and import rules that limit supply\n\nThese would be reached only if their text happens to use \"excise tax\", \"tariff\", \"efficiency standards\" or similar.\n\nMandated benefits and wage rules phrased differently: health-coverage mandates for employers, retirement-plan mandates, unemployment-insurance contribution changes, federal-contractor pay rules worded as \"pay transparency\" or \"wage determination\", and immigration-program fee or wage rules for programs other than H-2A and H-2B.\n\nGovernment fee increases that businesses pay as inputs (user fees, filing fees), which were left out to limit noise.\n\nOlder proposals: pending proposals posted before 2024-11-01 that are still live and could take effect within the horizon.\n\nSmall dockets: in-class dockets with fewer than 20 comments.\n\nNoise: The terms will also reach many dockets outside the class or outside the horizon, for example federal-employee pay and leave rules, rules already in effect, and tariff notices that lower duties. These must be screened out at item coding.",
+   "min_comments": 20,
+   "posted_from": "2024-11-01",
+   "posted_to": "2026-11-01",
+   "rationale": "Search terms: The objective's event class is defined by cost channel, not by which agency acts. So the terms name the plain words agencies use for each labor and input mechanism the objective lists. For labor, that means minimum wage, overtime, salary threshold and tipped employees. It also covers mandated leave (paid leave, paid sick leave, family and medical leave), prevailing and program wages (prevailing wage, Davis-Bacon, adverse effect wage rate, H-2A, H-2B) and worker-classification rules (independent contractor, joint employer, worker classification). Staffing-level and scheduling rules are covered by minimum staffing, staffing ratio and rest breaks, and payroll costs by payroll tax and employer contribution. For inputs, that means tariffs, duties and quotas (tariff, import duties, tariff-rate quota, Section 301, Section 232) and excise taxes. It also means product, energy or environmental standards that raise input prices or limit which inputs can be bought (energy conservation standards, efficiency standards, hydrofluorocarbon, refrigerant, renewable fuel standard). Using several narrow terms reaches more of each family than broad words like \"wage\", \"cost\" or \"small business\". Those broad words would reach nearly every docket, because almost all proposed rules include a Regulatory Flexibility Act small-business analysis.\n\nDocument types: Proposed Rule is the main way a pending change shows up. Rule is included because the class covers final rules not yet in effect, and interim final or direct final rules that invite comment. Notice is included because tariff actions and exclusion processes (for example USTR and Commerce requests for comment) and some agency proposals are posted as notices.\n\nPosting window: The window runs from 2024-11-01 to 2026-11-01, the two years before the as-of date. A change still pending on 2026-11-01 that could take effect and raise costs before 2027-11-01 was most likely proposed in this period. Older proposals that are still open are less likely to take effect within the one-year horizon, and many were withdrawn or overtaken.\n\nAgencies: Left empty because the class is not defined by agency.\n\nComment status: Set to \"either\". Open dockets are pending by definition. Dockets with comments closed and no final rule are also pending. Dockets with a final rule not yet in effect are in the class too, so neither narrower status would cover the whole class. Whether a measure is already in effect is left to item-level coding.\n\nMinimum comments: Set to 20. A docket needs enough items for its small-business-voice subset to be more than a few anecdotes. A higher floor would drop narrow tariff and standards dockets, where small businesses often file directly but in small numbers.",
+   "search_terms": [
+    "minimum wage",
+    "overtime",
+    "salary threshold",
+    "tipped employees",
+    "paid leave",
+    "paid sick leave",
+    "family and medical leave",
+    "prevailing wage",
+    "Davis-Bacon",
+    "adverse effect wage rate",
+    "H-2A",
+    "H-2B",
+    "independent contractor",
+    "joint employer",
+    "worker classification",
+    "minimum staffing",
+    "staffing ratio",
+    "rest breaks",
+    "payroll tax",
+    "employer contribution",
+    "tariff",
+    "import duties",
+    "tariff-rate quota",
+    "Section 301",
+    "Section 232",
+    "excise tax",
+    "energy conservation standards",
+    "efficiency standards",
+    "hydrofluorocarbon",
+    "refrigerant",
+    "renewable fuel standard"
+   ]
+  },
+  "total_cost_usd": 0.10679599999999999,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 3471,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 3471,
+   "cache_read_input_tokens": 0,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 3471,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 3471,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 2,
+     "output_tokens": 3951,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 3951,
+   "output_tokens_details": {
+    "thinking_tokens": 1935
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

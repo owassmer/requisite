@@ -1,0 +1,285 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "clause_drafter",
+ "latency_ms": 29644,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T04:02:30.798542+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "ir": {
+    "examples": [],
+    "exclusions": [
+     {
+      "ir_node": null,
+      "operative": false,
+      "text": "Contingencies: Before Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant to Rule 6.3(c) of the Rulebook."
+     },
+     {
+      "ir_node": null,
+      "operative": false,
+      "text": "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract."
+     },
+     {
+      "ir_node": null,
+      "operative": false,
+      "text": "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+     }
+    ],
+    "id": "KXETHD-26NOV0118-T1449.99",
+    "observables": [
+     {
+      "description": "Spot price of one Ether in U.S. dollars at <time>: simple average of the CF Ethereum Real-Time Index (ERTI) for the minute (60 seconds) prior to <time>, as documented by CF Benchmarks",
+      "final_deadline": null,
+      "final_fallback": null,
+      "id": "eth_usd_erti_60s",
+      "precision": "0.01",
+      "revision_policy": "as_of_expiry",
+      "schedule": "real-time",
+      "sources": [
+       {
+        "id": "cf_benchmarks",
+        "name": "CF Benchmarks",
+        "rank": 1,
+        "role": "Source Agency",
+        "url": "https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI"
+       }
+      ],
+      "unit": "USD",
+      "value_type": "number"
+     }
+    ],
+    "payout": {
+     "cap": null,
+     "currency": "USD",
+     "kind": "binary",
+     "payment": "at_settlement",
+     "periods": [],
+     "quantity": null,
+     "rounding_mode": "half_even",
+     "rounding_quantum": "0.01",
+     "unit_value": "1.00"
+    },
+    "resolution": {
+     "after_extension": null,
+     "conflict_policy": {
+      "procedure": "precedence_first_available",
+      "sources": []
+     },
+     "early_expiration": "none",
+     "early_expiration_at": null,
+     "early_expiration_rule": null,
+     "extension_days": null,
+     "on_unknown_at_expiry": "no",
+     "precedence": [
+      "cf_benchmarks"
+     ],
+     "void_transfer": {
+      "amount": null,
+      "returns": "nothing"
+     }
+    },
+    "timing": {
+     "close": "2026-11-01T23:00:00Z",
+     "expiration": "2026-11-08T23:00:00Z",
+     "holiday_calendar": null,
+     "lag_days": "calendar",
+     "observation_cutoff": "2026-11-08T23:00:00Z",
+     "open": "2026-11-01T22:00:00Z",
+     "payment_lag_days": 0,
+     "settlement_lag_days": 1,
+     "tz": "America/New_York"
+    },
+    "trigger": {
+     "at": "2026-11-01T23:00:00Z",
+     "expr": {
+      "id": "eth_above_strike",
+      "kind": "cmp",
+      "observable": "eth_usd_erti_60s",
+      "op": ">",
+      "value": {
+       "kind": "number",
+       "value": "1449.99"
+      }
+     },
+     "id": "at_time",
+     "kind": "at"
+    },
+    "version": 2
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "clause_drafter",
+  "schema": {
+   "$defs": {
+    "ProseSection": {
+     "additionalProperties": false,
+     "properties": {
+      "ir_nodes": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Ir Nodes",
+       "type": "array"
+      },
+      "name": {
+       "enum": [
+        "underlying_and_definitions",
+        "source_hierarchy_and_conflict_rule",
+        "trigger",
+        "examples",
+        "timing",
+        "unknown_at_expiry",
+        "revisions"
+       ],
+       "title": "Name",
+       "type": "string"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      }
+     },
+     "required": [
+      "name",
+      "text",
+      "ir_nodes"
+     ],
+     "title": "ProseSection",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "clause_drafter: the rulebook prose of an IR, its sections in spec \u00a78.5's order, each naming the IR nodes it states.",
+   "properties": {
+    "sections": {
+     "items": {
+      "$ref": "#/$defs/ProseSection"
+     },
+     "title": "Sections",
+     "type": "array"
+    }
+   },
+   "required": [
+    "sections"
+   ],
+   "title": "ProseDraft",
+   "type": "object"
+  },
+  "system": "You compile a contract's formal representation (its IR) into rulebook prose for Requisite. The IR is what settles the\ncontract; your prose is what a future resolver will read. The two must mean the same thing for every possible state of\nthe world, so you write what the IR says, exactly, and nothing it does not say.\n\nYou are given the IR (observables with their sources and revision policies, the trigger, the payout, the timing, the\nresolution procedure and the exclusions) and, where one exists, the filed terms the IR was read from, as a reference for\nan exchange's drafting conventions. Write these sections, in this order (spec \u00a78.5):\n1. Underlying and definitions: each observable, its unit and published precision, and every term the trigger uses.\n2. Source hierarchy and conflict rule: the sources in their order, and what happens when they disagree.\n3. Trigger: the payout criterion, every condition, with each time window's endpoints stated as included or excluded and\n   its time zone, each threshold at its published precision, each count with what is counted and over which days.\n4. Qualifying and non-qualifying examples: leave this section's text empty. Examples are not written by hand; they are\n   the scenarios that pass fuzzing, rendered with the evaluator's outcomes, and code inserts them.\n5. Timing: open, close, expiration, the observation cutoff, settlement and payment, with their lags and day counts.\n6. Unknown at expiry: what happens when a condition cannot be established by expiration, and any extension.\n7. Revisions: which vintage of a revised value settles.\n\nFor every section, list the ids of the IR nodes it states (ir_nodes), so each clause links to its node. Every IR node\nthat decides settlement appears in at least one section. Do not add a condition, exception, example or interpretation\nthe IR lacks, and do not leave out one it has. Where the IR has an Interpretive node, state its question in the words\nof its template and bindings; do not answer it.\n"
+ },
+ "response": {
+  "duration_ms": 28134,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 2919,
+    "cacheReadInputTokens": 0,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.086,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 3132,
+    "provider": "firstParty",
+    "thinkingTokens": 1580,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "sections": [
+    {
+     "ir_nodes": [
+      "eth_usd_erti_60s",
+      "eth_above_strike",
+      "payout"
+     ],
+     "name": "underlying_and_definitions",
+     "text": "Contract: KXETHD-26NOV0118-T1449.99.\n\nUnderlying (observable eth_usd_erti_60s): the spot price of one Ether in U.S. dollars at a stated time. It is the simple average of the CF Ethereum Real-Time Index (ERTI) over the minute (60 seconds) before that time, as documented by CF Benchmarks. Unit: USD. Value type: number. Published precision: 0.01 (one cent). Publication schedule: real-time.\n\nReference time: 6:00:00 PM Eastern Standard Time (America/New_York) on November 1, 2026, which is 23:00:00 UTC on November 1, 2026. The Underlying is evaluated at this time.\n\nStrike: 1449.99 USD, stated to the Underlying's published precision of 0.01.\n\nPayout: binary. Each contract pays 1.00 USD if the trigger is met and nothing otherwise. Amounts are rounded to 0.01 USD using round-half-to-even."
+    },
+    {
+     "ir_nodes": [
+      "cf_benchmarks",
+      "eth_usd_erti_60s",
+      "resolution"
+     ],
+     "name": "source_hierarchy_and_conflict_rule",
+     "text": "Source Agency: CF Benchmarks (rank 1), https://www.cfbenchmarks.com/data/indices/ETHUSD_RTI. It is the only source.\n\nConflict rule: precedence, first available. The value comes from the highest-ranked source that has published it. CF Benchmarks is the only source in the precedence list, so no other source is consulted and there is no second source that could disagree with it. If CF Benchmarks has not made the value available, the rule in \"Unknown at expiry\" applies."
+    },
+    {
+     "ir_nodes": [
+      "at_time",
+      "eth_above_strike",
+      "eth_usd_erti_60s"
+     ],
+     "name": "trigger",
+     "text": "The contract resolves Yes if the Underlying, evaluated at the Reference time of 6:00:00 PM EST (America/New_York) on November 1, 2026 (23:00:00 UTC), is strictly greater than 1449.99 USD. Otherwise it resolves No.\n\nThe Underlying evaluated at that time is the simple average of the CF Ethereum Real-Time Index over the minute (60 seconds) before 6:00:00 PM EST on November 1, 2026, as documented by CF Benchmarks. The comparison uses the value at its published precision of 0.01 USD. A value of exactly 1449.99 does not meet the trigger. A value of 1450.00 or more does.\n\nThe trigger has no other conditions and no counts."
+    },
+    {
+     "ir_nodes": [],
+     "name": "examples",
+     "text": ""
+    },
+    {
+     "ir_nodes": [
+      "timing",
+      "payout",
+      "resolution"
+     ],
+     "name": "timing",
+     "text": "All times are in America/New_York (Eastern Standard Time on these dates), with UTC in parentheses.\n\n- Open: 5:00:00 PM EST, November 1, 2026 (22:00:00 UTC).\n- Close: 6:00:00 PM EST, November 1, 2026 (23:00:00 UTC). This is also the Reference time at which the Underlying is evaluated.\n- Expiration: 6:00:00 PM EST, November 8, 2026 (23:00:00 UTC).\n- Observation cutoff: 6:00:00 PM EST, November 8, 2026 (23:00:00 UTC). Only data available by this time is used to establish the outcome.\n- Settlement lag: 1 day, counted in calendar days. No holiday calendar applies.\n- Payment lag: 0 days. Payment is made at settlement.\n- Early expiration: none."
+    },
+    {
+     "ir_nodes": [
+      "resolution",
+      "timing"
+     ],
+     "name": "unknown_at_expiry",
+     "text": "If the trigger cannot be established by the observation cutoff at expiration (6:00:00 PM EST, November 8, 2026), the contract resolves No. There is no extension. The contract is never voided, and no void transfer applies."
+    },
+    {
+     "ir_nodes": [
+      "eth_usd_erti_60s"
+     ],
+     "name": "revisions",
+     "text": "Revision policy: as of expiry. The Underlying settles at the value CF Benchmarks has published as of expiration (6:00:00 PM EST, November 8, 2026). Any revision CF Benchmarks publishes after expiration is disregarded."
+    }
+   ]
+  },
+  "total_cost_usd": 0.086,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 2919,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 2919,
+   "cache_read_input_tokens": 0,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 2919,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 2919,
+     "cache_read_input_tokens": 0,
+     "input_tokens": 2,
+     "output_tokens": 3132,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 3132,
+   "output_tokens_details": {
+    "thinking_tokens": 1580
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}

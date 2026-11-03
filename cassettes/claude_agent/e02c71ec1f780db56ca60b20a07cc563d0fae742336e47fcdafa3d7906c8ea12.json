@@ -1,0 +1,2155 @@
+{
+ "cost_usd": 0.0,
+ "endpoint": "contract_reader",
+ "latency_ms": 56050,
+ "provider": "claude_agent",
+ "recorded_at": "2026-11-02T03:42:09.519386+00:00",
+ "request": {
+  "effort": "high",
+  "input": {
+   "filings": [
+    {
+     "document": "contract terms",
+     "text": "[page 1 of 7: text layer]\nSOCCERGAMEWIN\nScope:\nThese rules shall apply to this contract.\nUnderlying:\nThe Underlying for this Contract is whether <team> wins <soccer game>, within <result scope>. Revisions to\n\nthe Underlying made after Expiration will not be accounted for in determining the Expiration Value.\nInstructions:\nThe Underlying may be verified through the official website or official communications of the organizer of\n\n<soccer game>. These instructions on how to access the Underlying are provided for convenience only and are not part of the\n\nbinding Terms and Conditions of the Contract. They may be clarified at any time.\nSource Agency:\nThe Source Agencies are, in hierarchical order, the official website and official communications of the\n\norganizer of <soccer game> (including FIFA, UEFA, CONMEBOL, CONCACAF, AFC, CAF, OFC, the Premier League,\n\nLa Liga, the Bundesliga, Serie A, Ligue 1, Major League Soccer, the English Football Association, the Royal Spanish\n\nFootball Federation, the Italian Football Federation, the German Football Association, the French Football Federation, the\n\nUnited States Soccer Federation, and any other recognized governing body or organizer of the competition in which <soccer\n\ngame> takes place), Reuters, the Associated Press, Bloomberg News, ESPN, BBC Sport, The New York Times, The\n\nAthletic, The Guardian, Sky Sports, and Opta (Stats Perform).\nType:\nThe type of Contract is an Event Contract.\nIssuance:\nAfter the initial Contract, Contract iterations will be listed on an as-needed basis at the discretion of the Exchange\n\nand corresponding to the risk management needs of Members. The Exchange will generally list iterations of the Contract in\n\nconnection with soccer games. For each <soccer game>, the Exchange may list separate iterations corresponding to each\n\ncombination of (<team>, <result scope>), where <team> may be specified by name, by distinguishing characteristics, or as\n\n\"any team,\" in accordance with the definitions of those variables below. In addition to iterations corresponding to\n\ncombinations of (<team>, <result scope>), the Exchange may, for any <soccer game> and any value of <result scope>, list a\n\nseparate \"Draw\" iteration of the Contract, resolving in accordance with the Draw provision of the Payout Criterion below.\n\nFor any <soccer game> and <result scope>, the set comprising each participant's <team>-win iteration and the Draw\n\niteration is mutually exclusive and collectively exhaustive (subject to the last-fair-price provisions of this Contract).\n<team>:\n<team> refers to a participant in <soccer game>, as specified by the Exchange. <team> may be specified (i) by\n\nname (e.g., a particular national team or club), (ii) by one or more distinguishing characteristics that identify a participant in\n\n<soccer game> without specifying it by name (including, without limitation, nationality, geographic origin or region (e.g., \"a\n\nNorthern English team,\" \"a South American team\"), league or confederation affiliation (e.g., \"a Premier League team,\" \"a\n\nUEFA-affiliated team\"), seeding, or status as the home or away team in <soccer game>), or (iii) as \"any team,\" in which case\n\n<team> is satisfied by either participant in <soccer game>. Where <team> is specified by distinguishing characteristics, the\n\nExchange shall, at the time of Contract listing, identify the objective criteria or external classification (including but not\n\nlimited to recognition by the organizer of <soccer game>, league or confederation membership, official seeding, or\n\ngeographic classifications used by a Source Agency) by which a participant is determined to satisfy the specification. <team>\n\nincludes national teams, club teams, B-teams permitted to participate, and any successor or rebranded entity recognized by\n\nthe organizer of <soccer game> as the same competitive entity. Where a team is dissolved, merged, rebranded, or has its\n\nparticipation transferred prior to the conclusion of <soccer game>, the entity recognized by the organizer of <soccer game>\n\nas the participant in <soccer game> shall, if it satisfies the specification of <team>, be the <team> for purposes of the\n\nContract.\n<soccer game>:\n<soccer game> refers to a single officially scheduled head-to-head soccer contest between two teams in a\n\nspecified competition, as recognized by the organizer of the competition. <soccer game> is specified by the Exchange by\n\nreference to the participating teams, the competition, the relevant round or stage of the competition, and the date or\n\nmatchweek of the contest (e.g., \"the Liverpool vs. Manchester City match in Matchweek 12 of the 2025\u201326 Premier League\n\nseason\"). References in this Contract to \"the organizer of <soccer game>\" mean the recognized governing body or organizer\n\nof the competition in which <soccer game> takes place, and references to \"the rules of <soccer game>\" mean the rules of\n\n[page 2 of 7: text layer]\nthat competition as applied to <soccer game>. Where <soccer game> is reformatted, suspended and resumed, replayed, or\n\nreplaced by the organizer of <soccer game>, references to <soccer game> refer to the contest as so reformatted, replayed, or\n\nreplaced, provided it remains a contest between the same two participating teams and is rescheduled in accordance with the\n\ncorresponding provision of the Payout Criterion.\n<result scope>:\n<result scope> refers to the portion of <soccer game> whose result is used to determine whether <team>\n\nwins, as specified by the Exchange. <result scope> may take one of the following values, each as defined in the Payout\n\nCriterion: (i) \"first half,\" (ii) \"regulation time,\" (iii) \"second half,\" (iv) \"extra time,\" or (v) \"full match.\" The Exchange may\n\nlist iterations of the Contract corresponding to each value of <result scope>. For the avoidance of doubt, the result of <soccer\n\ngame> within <result scope> is determined solely by reference to the period(s) of play and the win condition specified for\n\nthe applicable value of <result scope> above. Where <result scope> is \"full match\" or \"extra time,\" the score, lead, or result\n\nat the conclusion of regulation play is not, by itself, dispositive of whether <team> wins, and shall be given effect only as\n\nexpressly provided in the definition of that <result scope> value.\nPayout Criterion:\nThe Payout Criterion for the Contract encompasses the Expiration Values that <team> wins <soccer\n\ngame> within <result scope>, or, where the Contract is listed as a Draw iteration, that <soccer game> is drawn within <result\n\nscope>.\nFor purposes of this Contract:\n\"First half\" means the result of <soccer game> based solely on goals scored during the first half of regulation play,\n\nwith the first half meaning the period from the opening kickoff through the conclusion of the first half (including any\n\nstoppage time added by the match referee to the first half, and including the completion of any penalty kick awarded\n\nfor an incident occurring before, but taken after, the match referee's signal ending the first half, and ending when the\n\nmatch referee signals the end of the first half (or, where such a penalty kick is taken after that signal, upon completion\n\nof that penalty kick)). Where <result scope> is \"first half,\" <team> \"wins\" if and only if <team> scored strictly more\n\ngoals than the opposing participant in <soccer game> during the first half. For the avoidance of doubt, goals scored at\n\nany time after the conclusion of the first half are disregarded, and a first half ending level does not constitute a win.\n\"Regulation time\" means the result of <soccer game> at the conclusion of regulation play, with regulation play\n\nmeaning two halves of 45 minutes plus any stoppage time added by the match referee (or such other duration as\n\nconstitutes regulation under the rules of <soccer game>). Where <result scope> is \"regulation time,\" <team> \"wins\" if\n\nand only if <team> has a higher score than the opposing participant in <soccer game> at the conclusion of regulation\n\nplay. For the avoidance of doubt, where <result scope> is \"regulation time,\" draws at the conclusion of regulation play\n\ndo not constitute a win, regardless of whether <soccer game> is subsequently decided by extra time, penalty shootout,\n\ndrawing of lots, coin toss, or any other tiebreaker mechanism.\n\"Full match\" means the final result of <soccer game> as officially confirmed by the organizer of <soccer game>,\n\nincluding any result determined by extra time, penalty shootout, drawing of lots, coin toss, golden goal, silver goal, or\n\nanalogous tiebreaker mechanism. Where <result scope> is \"full match,\" <team> \"wins\" if and only if <team> is\n\nofficially confirmed by the organizer of <soccer game> as the winner of <soccer game>, whether by virtue of\n\nregulation play, extra time, penalty shootout, or any other tiebreaker mechanism applied per the rules of <soccer\n\ngame>. For the avoidance of doubt, where <result scope> is \"full match\" and <soccer game> ends in a draw with no\n\ntiebreaker mechanism applied (e.g., a league match concluding level), neither participant \"wins\" for purposes of the\n\nContract.\n\"Second half\" means the result of <soccer game> based solely on goals scored during the second half of\n\nregulation play, with the second half meaning the period from the start of the second half through the conclusion\n\nof regulation play (including any stoppage time added by the match referee to the second half, and including the\n\ncompletion of any penalty kick awarded for an incident occurring before, but taken after, the match referee's\n\nsignal ending regulation play, and ending when the match referee signals the end of regulation play (or, where\n\nsuch a penalty kick is taken after that signal, upon completion of that penalty kick)). Where <result scope> is\n\n\"second half,\" <team> \"wins\" if and only if <team> scored strictly more goals than the opposing participant in\n\n<soccer game> during the second half. For the avoidance of doubt, goals scored during the first half, during\n\nextra time, and during any penalty shootout are disregarded for this <result scope>, and a second half ending\n\n[page 3 of 7: text layer]\nlevel does not constitute a win.\n\"Extra time\" means the result of <soccer game> based solely on goals scored during all periods of extra time played in\n\n<soccer game>. Where <result scope> is \"extra time,\" <team> \"wins\" if and only if <team> scored strictly more goals\n\nthan the opposing participant in <soccer game> during extra time. For the avoidance of doubt, goals scored during\n\nregulation play and any penalty shootout are disregarded for this <result scope>, and extra time ending level does not\n\nconstitute a win. If <soccer game> is played and concluded without any extra time being played, the Contract shall be\n\nsettled at the last fair price as determined by the Exchange in its sole discretion.\nDraw iteration. Where the Contract is listed as a Draw iteration, the Contract shall resolve to Yes if and only if, within\n\nthe applicable <result scope>, neither participant in <soccer game> \"wins\" as \"wins\" is defined for that <result scope>\n\nabove, and shall resolve to No otherwise. For the avoidance of doubt: where <result scope> is \"first half,\" \"regulation\n\ntime,\" or \"second half,\" the Draw iteration resolves Yes if and only if the two participants scored an equal number of\n\ngoals within that <result scope> (including 0\u20130); where <result scope> is \"full match,\" the Draw iteration resolves Yes\n\nif and only if <soccer game> concludes with no participant officially confirmed by the organizer of <soccer game> as\n\nthe winner (e.g., a league match concluding level with no tiebreaker mechanism applied); and where <result scope> is\n\n\"extra time,\" the Draw iteration resolves Yes if and only if extra time is played and the two participants scored an\n\nequal number of goals during extra time (including 0\u20130), provided that if <soccer game> is played and concluded\n\nwithout any extra time being played, the Draw iteration shall be settled at the last fair price as determined by the\n\nExchange in its sole discretion.\nStoppage time and injury time added by the match referee to either half of regulation are part of regulation play.\n\nStoppage time and injury time added to either half of extra time are part of extra time.\nGoals confirmed or disallowed by VAR (Video Assistant Referee) follow the final on-field decision as recorded by the\n\nSource Agency. The official result of <soccer game> for purposes of this Contract is the final result as officially\n\nconfirmed or published by the organizer of <soccer game>. The official result gives effect to every on-field decision\n\nthe organizer of <soccer game> recognizes as part of that final result, including a goal, disallowance, or penalty kick\n\narising from a Video Assistant Referee or other referee review, and including any such decision made, or any penalty\n\nkick taken, after the referee has signalled the end of a period of play, where the organizer recognizes it as part of the\n\nfinal result. The official result does not give effect to any change arising after the organizer of <soccer game> has\n\nofficially confirmed or published the final result, including any change by reason of protest, appeal, administrative or\n\ndisciplinary proceeding, sporting sanction, points adjustment, or forfeiture, except as expressly provided in the\n\n\"Cancellation, Abandonment, Extended Postponement, and Pre-Commencement Awards\" or \"Determined Result\n\nGoverns\" provisions. Where, at the conclusion of any period of play, a goal or other incident bearing on whether\n\n<team> wins within <result scope> is subject to an unresolved on-field review, the result within <result scope> shall be\n\ndetermined by the organizer's officially confirmed result once that review has been officially resolved, and, for\n\npurposes of the \"Determined Result Governs\" provision, the relevant period of play shall not be treated as completed\n\nor as having yielded a definitively determined result until such official resolution. For the avoidance of doubt, a\n\npenalty kick awarded for an incident occurring before the referee's signal ending a period of play, but taken after that\n\nsignal, is attributed to that period as officially recorded by the Source Agency, consistent with the <result scope>\n\ndefinitions above (under which such period is extended for the completion of the penalty kick).\nAn own goal counts toward the score, and toward the applicable goal total under the relevant <result scope>, of the\n\nteam against which the player conceding the own goal was playing \u2014 that is, the team whose goal tally is increased by\n\nthe own goal as officially recorded by the Source Agency \u2014 regardless of which player is credited by the Source\n\nAgency as having scored the own goal. For the avoidance of doubt, an own goal is attributed to the period of play in\n\nwhich it occurred, determined in the same manner as any other goal under the <result scope> definitions above.\nWhere <team> is specified by distinguishing characteristics or as \"any team\" rather than by name, the Contract shall\n\nresolve to Yes if and only if a participant in <soccer game> that satisfies the specification of <team> wins <soccer\n\ngame> within <result scope>. If no participant in <soccer game> satisfies the specification of <team>, or if no\n\nparticipant satisfying the specification of <team> wins <soccer game> within <result scope>, the Contract shall\n\nresolve to No. Where both participants in <soccer game> satisfy the specification of <team>, the Contract shall\n\nresolve to Yes if either participant wins <soccer game> within <result scope>.\nDetermined Result Governs: Notwithstanding the \"Suspension and Resumption,\" \"Replay from Beginning,\" and\n\n\"Cancellation, Abandonment, Extended Postponement, and Pre-Commencement Awards\" provisions, if, on or after\n\n[page 4 of 7: text layer]\nthe commencement of play in <soccer game>, the result of <soccer game> within the applicable <result scope> has\n\nbeen definitively determined \u2014 whether (i) because all period(s) of play comprising the applicable <result scope>\n\nhave been completed (for example, the first half having concluded where <result scope> is \"first half,\" or regulation\n\nplay having concluded where <result scope> is \"regulation time\" or \"second half\"), or (ii) because the organizer of\n\n<soccer game> has officially declared, awarded, or otherwise confirmed a final result of <soccer game> that is\n\ndispositive of whether <team> wins within the applicable <result scope> \u2014 then, regardless of whether <soccer\n\ngame> is thereafter suspended, abandoned, cancelled, curtailed, or not completed, the Contract shall settle based on\n\nthat determined result and shall not be settled at the last fair price. In the event of any inconsistency between this\n\nprovision and any other provision of this Contract, this provision shall control. For the avoidance of doubt, where\n\n<result scope> is \"regulation time,\" if <soccer game> is suspended, abandoned, curtailed, or otherwise not completed\n\nafter commencement, and ninety (90) minutes of regular-time matchplay (not inclusive of stoppage time) have been\n\ncompleted at the time of such suspension, abandonment, curtailment, or non-completion, the result within the\n\napplicable <result scope> at such time shall govern. Any goals scored, and any other revisions to the official result, in\n\nstoppage time added by the match referee that arise prior to such suspension, abandonment, curtailment, or non-\ncompletion shall be given effect.\nSuspension and Resumption: If <soccer game> is suspended after commencement and is officially scheduled to\n\nresume from the point of suspension (i.e., from the minute and score at which play was halted) within forty-eight (48)\n\nhours of the original scheduled start time of <soccer game>, the Contract shall remain open and shall settle based on\n\nthe final result of <soccer game> as so resumed. If <soccer game> does not resume from the point of suspension\n\nwithin forty-eight (48) hours of its original scheduled start time, the Contract shall be settled at the last fair price as\n\ndetermined by the Exchange in its sole discretion, except that the Contract shall instead settle in accordance with the\n\n\"Determined Result Governs\" provision in any case in which that provision applies, including where the result of\n\n<soccer game> within <result scope> has been definitively determined by play as of the time of suspension or where\n\nthe organizer of <soccer game> has officially declared, awarded, or otherwise confirmed a final result of <soccer\n\ngame> that is dispositive of whether <team> wins within <result scope>.\nReplay from Beginning: If <soccer game> is replayed from the beginning (i.e., restarted from minute zero), the\n\nreplayed contest is treated as <soccer game>, provided the replay is scheduled to take place within forty-eight (48)\n\nhours of the original scheduled start time of <soccer game> and remains a contest between the same two participating\n\nteams. If the replay is scheduled beyond forty-eight (48) hours, or is not a contest between the same two participating\n\nteams, the Contract shall be settled at the last fair price as determined by the Exchange in its sole discretion.\nCancellation, Abandonment, Extended Postponement, and Pre-Commencement Awards: If, before the commencement\n\nof play in <soccer game>, (i) <soccer game> is cancelled or abandoned, (ii) <soccer game> is not scheduled or\n\nrescheduled to take place within forty-eight (48) hours of its originally scheduled start time, or (iii) the organizer of\n\n<soccer game> awards the result of <soccer game> by reason of the disqualification, expulsion, withdrawal, or forfeit\n\nof either participant (including any walkover), the Contract shall be settled at the last fair price as determined by the\n\nExchange in its sole discretion. This provision applies regardless of whether the result would otherwise be considered\n\ndefinitively determined.\nNeutral Venue and Relocation: In major tournaments (for example, the FIFA World Cup), all venues shall be\n\nconsidered neutral for the purpose of Contract resolution, and the Exchange will specify which tournaments are treated\n\nas such. A match moved to a neutral venue remains valid and shall be settled in accordance with the official match\n\nresult. A match moved from a neutral venue to the home stadium of either participant, or moved from the home\n\nstadium of one participant to the home stadium of the opposing participant, shall be settled at the last fair price as\n\ndetermined by the Exchange in its sole discretion. A change to the \"home\" or \"away\" designation of a participant that\n\nis not accompanied by a change of the venue itself shall not, by itself, cause any market to be settled at the last fair\n\nprice, and \"home\" and \"away\" designations for statistical purposes shall follow official competition rules.\nExamples that would resolve the market to Yes:\nFor \"<team> wins, regulation time\": <team> wins 2\u20130, with both goals scored within 90 minutes plus stoppage time.\nFor \"<team> wins, regulation time\": <team> wins 1\u20130 on a goal scored in the 90+5th minute (stoppage time of\n\n[page 5 of 7: text layer]\nregulation).\nFor \"<team> wins, regulation time\": <soccer game> is abandoned in the 88th minute with <team> leading 3\u20130 after\n\nthe commencement of play, and the organizer of <soccer game> officially records the final result as 3\u20130 in favor of\n\n<team>.\nFor \"<team> wins, full match\": <team> wins 2\u20130 within 90 minutes plus stoppage time.\nFor \"<team> wins, full match\": <soccer game> ends 1\u20131 at the conclusion of regulation play, and <team> wins 2\u20131 in\n\nextra time.\nFor \"<team> wins, full match\": <soccer game> ends 1\u20131 at the conclusion of regulation play, remains tied at the\n\nconclusion of extra time, and <team> wins the resulting penalty shootout 5\u20134 on kicks.\nFor \"<team> wins, first half\": the score at the conclusion of the first half is 1\u20130 in favor of <team>, and the match\n\nfinishes 1\u20133.\nFor \"<team> wins, second half\": <team> trails 0\u20132 at the conclusion of the first half and the match finishes 1\u20132, with\n\nthe second-half-only score being 1\u20130 in favor of <team>.\nFor \"<team> wins, extra time\": the match is 1\u20131 after regulation, and <team> scores once in extra time to lead 2\u20131\n\nwith no further extra-time goals.\nFor \"<team> wins, first half\": the first half concludes with <team> leading 1\u20130, and <soccer game> is then abandoned\n\nin the 60th minute and not resumed (resolves Yes \u2014 the first-half result was definitively determined before\n\nabandonment).\nFor \"<team> wins, regulation time\": regulation play concludes with <team> leading 2\u20131, and <soccer game> is\n\nabandoned during extra time (resolves Yes).\nFor \"<team> wins, full match\": <soccer game> is abandoned after the commencement of play and the organizer of\n\n<soccer game> subsequently awards the match 3\u20130 in favor of <team> (resolves Yes).\nFor \"Draw, full match\": <soccer game> is a league match concluding 1\u20131 with no tiebreaker mechanism applied.\nFor \"Draw, second half\": the first half ends 1\u20130, the second half ends 0\u20130, and the match finishes 1\u20130 (the second-\nhalf-only result is level).\nFor \"Draw, extra time\": the match is 1\u20131 after regulation, extra time produces no goals, and the match is decided by\n\npenalty shootout.\nFor \"<team> wins, full match\": at the moment the match referee leaves the field of play at the conclusion of the\n\nrelevant period of play the score is 1\u20131; before play restarts or the referee leaves the field of play, a penalty kick is\n\nawarded for an incident that occurred before the whistle, <team> scores it, and the organizer officially confirms the\n\nfinal result as 2\u20131 in favor of <team> (resolves Yes \u2014 the post-whistle penalty is part of the officially confirmed\n\nresult).\nFor \"<team> wins, regulation time\": a <team> goal scored in the 89th minute is under VAR review at the moment the\n\nmatch referee leaves the field of play at the conclusion of the relevant period of play; the organizer officially confirms\n\nthe goal and a final regulation result of 1\u20130 in favor of <team> (resolves Yes once officially confirmed).\nFor \"<team> wins, full match\": the organizer officially confirms <team> as the 2\u20131 winner, the match having been\n\nplayed to completion; a disciplinary body later awards the opponent the match by forfeit for fielding an ineligible\n\nplayer (resolves Yes \u2014 a change arising after official confirmation of a completed match does not affect settlement).\nFor \"<team> wins, full match\": the only goal of <soccer game> is an own goal scored by a player of the opposing\n\nparticipant, the Source Agency records the final result as 1\u20130 in favor of <team>, and <team> is officially confirmed\n\nas the winner (resolves Yes \u2014 the own goal counts for <team>).\nExamples that would NOT resolve the market to Yes:\nFor \"<team> wins, regulation time\": <soccer game> ends 1\u20131 at the conclusion of regulation play.\nFor \"<team> wins, regulation time\": <team> loses 2\u20131 in regulation play.\nFor \"<team> wins, regulation time\": <soccer game> ends 1\u20131 at the conclusion of regulation play, and <team> wins on\n\npenalties (this resolves No because the regulation result is a draw).\nFor \"<team> wins, full match\": <soccer game> is a league match that ends 1\u20131 with no extra time or penalty shootout\n\napplied.\nFor \"<team> wins, full match\": <team> loses 2\u20131 in regulation play.\n\n[page 6 of 7: text layer]\nFor \"<team> wins, full match\": <soccer game> ends 1\u20131 in regulation, remains tied after extra time, and the opposing\n\nparticipant wins the resulting penalty shootout.\nFor \"<team> wins, regulation time\": <soccer game> is cancelled before the commencement of play (in this scenario,\n\nthe Contract is settled at the last fair price as determined by the Exchange rather than resolving to No or Yes).\nFor \"<team> wins, regulation time\": <soccer game> is abandoned in the 30th minute with no official award, and is not\n\nrescheduled to take place within forty-eight (48) hours of its originally scheduled start time (in this scenario, the\n\nContract is settled at the last fair price as determined by the Exchange rather than resolving to No or Yes).\nFor \"<team> wins, second half\": <team> leads 2\u20130 at the conclusion of the first half, the second half finishes 0\u20130, and\n\nthe match ends 2\u20130 (resolves No because the second-half-only result is a draw).\nFor \"<team> wins, extra time\": the match ends 2\u20131 in regulation with no extra time played (in this scenario the\n\nContract is settled at the last fair price rather than resolving Yes or No).\nFor \"<team> wins, extra time\": the match is 1\u20131 after regulation, 1\u20131 after extra time, and <team> wins the penalty\n\nshootout (resolves No because no team outscored the other during extra time; the shootout is disregarded for this\n\n<result scope>).\nFor \"Draw, full match\": <team> wins 2\u20131 in regulation.\nFor \"Draw, extra time\": the match ends 2\u20131 in regulation with no extra time played (in this scenario the Draw iteration\n\nis settled at the last fair price rather than resolving Yes or No).\nFor \"<team> wins, regulation time\": a <team> goal in the 89th minute is disallowed by VAR before the match referee\n\nleaves the field of play at the conclusion of the relevant period of play and the organizer officially confirms a 0\u20130\n\nregulation result (resolves No \u2014 the disallowed goal is not part of the official result).\nFor \"<team> wins, full match\": the only goal of <soccer game> is an own goal scored by a player of <team>, and the\n\nSource Agency records the final result as 0\u20131 in favor of the opposing participant (resolves No \u2014 the own goal counts\n\nfor the opposing participant, not <team>).\nFor \"<team> wins, second half\": the only second-half goal is an own goal scored by a player of <team>; the second-\nhalf-only result is therefore 0\u20131 against <team> (resolves No).\nFor \"<team> wins, full match\": <team> leads 1\u20130 at the conclusion of regulation play, <soccer game> proceeds to\n\nextra time, and the opposing participant is officially confirmed as the 2\u20131 winner (resolves No \u2014 a regulation lead\n\ndoes not by itself validate Yes where <result scope> is \"full match\").\nFor \"<team> wins, extra time\": <team> leads 1\u20130 at the conclusion of regulation play, and no goals are scored by\n\neither participant during extra time (resolves No \u2014 regulation goals are disregarded where <result scope> is \"extra\n\ntime\").\nMinimum Tick:\nThe Minimum Tick size for the Contract shall be $0.01.\nPosition Accountability Level:\nThe Position Accountability Level for the Contract shall be $25,000 per strike, per\n\nMember.\nLast Trading Date:\nThe Last Trading Date of the Contract will be the same as the Expiration Date. The Last Trading Time\n\nwill be the same as the Expiration Time.\nSettlement Date:\nThe Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the\n\nMarket Outcome is under review pursuant to Rule 7.1.\nExpiration Date:\nThe latest Expiration Date of the Contract shall be fifteen days after the originally scheduled date of\n\n<soccer game>. If an event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in\n\naccordance with Rule 7.2.\nExpiration Time:\nThe Expiration time of the Contract shall be 10:00 AM ET.\nSettlement Value:\nThe Settlement Value for this Contract is $1.00.\nExpiration Value:\nThe Expiration Value is the value of the Underlying as documented by the Source Agency on the\n\nExpiration Date at the Expiration time.\n\n[page 7 of 7: text layer]\nContingencies:\nBefore Settlement, Kalshi may, at its sole discretion, initiate the Market Outcome Review Process pursuant\n\nto Rule 7.1 of the Rulebook. If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to\n\ndetermine payouts pursuant to Rule 7.1 in the Rulebook.",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/contract_terms/SOCCERGAMEWIN.pdf"
+    },
+    {
+     "document": "product certification",
+     "text": "[page 1 of 18: text layer]\nKalshiEX\n\nLLC\n\nMay\n\n19,\n\n2026\n\nSUBMITTED\n\nVIA\n\nCFTC\n\nPORTAL\n\nSecretary\n\nof\n\nthe\n\nCommission\n\nOffice\n\nof\n\nthe\n\nSecretariat\n\nU.S.\n\nCommodity\n\nFutures\n\nTrading\n\nCommission\n\nThree\n\nLafayette\n\nCentre\n\n1155\n\n21st\n\nStreet,\n\nN.W.\n\nWashington,\n\nD.C.\n\n20581\n\nRe:\n\nKalshiEX\n\nLLC\n\n\u2013\n\nCFTC\n\nRegulation\n\n40.2(a)\n\nNotification\n\nRegarding\n\nthe\n\nInitial\n\nListing\n\nof\n\nthe\n\nWill\n\n<team>\n\nwin\n\n<soccer\n\ngame>?\n\nContract\n\nDear\n\nSir\n\nor\n\nMadam,\n\nPursuant\n\nto\n\nSection\n\n5c(c)\n\nof\n\nthe\n\nCommodity\n\nExchange\n\nAct\n\nand\n\nSection\n\n40.2(a)\n\nof\n\nthe\n\nregulations\n\nof\n\nthe\n\nCommodity\n\nFutures\n\nTrading\n\nCommission,\n\nKalshiEX\n\nLLC\n\n(Kalshi),\n\na\n\nregistered\n\nDCM,\n\nhereby\n\nnotifies\n\nthe\n\nCommission\n\nthat\n\nit\n\nis\n\nself-certifying\n\nthe\n\nWill\n\n<team>\n\nwin\n\n<soccer\n\ngame>?\n\ncontract\n\n(Contract).\n\nThe\n\nContract\n\nwill\n\ninitially\n\nbe\n\nlisted\n\nafter\n\nclose-of-business\n\non\n\nMay\n\n20,\n\n2026\n;\n\nit\n\nis\n\nlisted\n\nas\n\nthe\n\nday\n\nafter\n\nbecause\n\nof\n\nlimitations\n\nof\n\nthe\n\nCommission's\n\nonline\n\nsubmission\n\nportal.\n\nThe\n\nExchange\n\nintends\n\nto\n\nlist\n\nthe\n\ncontract\n\non\n\na\n\nbasis.\n\nThe\n\nContract\u2019s\n\nterms\n\nand\n\nconditions\n\n(Appendix\n\nA)\n\nincludes\n\nthe\n\nfollowing\n\ncustom\nstrike\n\nconditions:\n\n\u25cf\n\n<date>\n\n\u25cf\n\n<team>\n\n\u25cf\n\n<soccer\n\ngame>\n\n\u25cf\n\n<result\n\nscope>\n\nAlong\n\nwith\n\nthis\n\nletter,\n\nKalshi\n\nsubmits\n\nthe\n\nfollowing\n\ndocuments:\n\n\u25cf\n\nA\n\nconcise\n\nexplanation\n\nand\n\nanalysis\n\nof\n\nthe\n\nContract;\n\n\u25cf\n\nCertification;\n\n\u25cf\n\nAppendix\n\nA\n\nwith\n\nthe\n\nContract\u2019s\n\nTerms\n\nand\n\nConditions;\n\n\u25cf\n\nConfidential\n\nAppendices\n\nwith\n\nfurther\n\ninformation;\n\nand\n\n\u25cf\n\nA\n\nrequest\n\nfor\n\nFOIA\n\nconfidential\n\ntreatment.\n\nIf\n\nyou\n\nhave\n\nany\n\nquestions,\n\nplease\n\ndo\n\nnot\n\nhesitate\n\nto\n\ncontact\n\nme.\n\nSincerely,\n\nXavier\n\nSottile\n\nHead\n\nof\n\nMarkets\n\nKalshiEX\n\nLLC\n\nxsottile@kalshi.com\n\nKalshiEX\n\nLLC\n\n[page 2 of 18: text layer]\nKalshiEX\n\nLLC\n\nKalshiEX\n\nLLC\n\n[page 3 of 18: text layer]\nKalshiEX\n\nLLC\n\nKalshiEX\n\nLLC\n\nOfficial\n\nProduct\n\nName:\n\nWill\n\n<team>\n\nwin\n\n<soccer\n\ngame>?\n\nRulebook:\n\nSOCCERGAMEWIN\n\nSummary:\n\nOutcome\n\nof\n\nspecified\n\nsoccer\n\nteam\u2019s\n\nmatch\n\nKalshi\n\nContract\n\nCategory:\n\nSports\n\nKalshi\n\nInternal\n\nCategory:\n\nSports\n\nMay\n\n19,\n\n2026\n\nCONCISE\n\nEXPLANATION\n\nAND\n\nANALYSIS\n\nOF\n\nTHE\n\nPRODUCT\n\nAND\n\nITS\n\nCOMPLIANCE\n\nWITH\n\nAPPLICABLE\n\nPROVISIONS\n\nOF\n\nTHE\n\nACT,\n\nINCLUDING\n\nCORE\n\nPRINCIPLES\n\nAND\n\nTHE\n\nCOMMISSION'S\n\nREGULATIONS\n\nTHEREUNDER\n\nPursuant\n\nto\n\nCommission\n\nRule\n\n40.2(a)(3)(v),\n\nthe\n\nfollowing\n\nis\n\na\n\nconcise\n\nexplanation\n\nand\n\nanalysis\n\nof\n\nthe\n\nproduct\n\nand\n\nits\n\ncompliance\n\nwith\n\nthe\n\nAct,\n\nincluding\n\nthe\n\nrelevant\n\nCore\n\nPrinciples\n\n(discussed\n\nin\n\nAppendix\n\nD),\n\nand\n\nthe\n\nCommission's\n\nregulations\n\nthereunder.\n\nI.\n\nIntroduction\n\nThe\n\nWill\n\n<team>\n\nwin\n\n<soccer\n\ngame>?\n\nContract\n\nis\n\na\n\ncontract\n\nrelating\n\nto\n\nSports.\n\nFurther\n\ninformation\n\nabout\n\nthe\n\nContract,\n\nincluding\n\nan\n\nanalysis\n\nof\n\nits\n\nrisk\n\nmitigation\n\nand\n\nprice\n\nbasing\n\nutility,\n\nas\n\nwell\n\nas\n\nadditional\n\nconsiderations\n\nrelated\n\nto\n\nthe\n\nContract,\n\nis\n\nincluded\n\nin\n\nConfidential\n\nAppendices\n\nC,\n\nD,\n\nand\n\nE.\n\nPursuant\n\nto\n\nSection\n\n5c(c)\n\nof\n\nthe\n\nAct\n\nand\n\nCFTC\n\nRegulations\n\n40.2(a),\n\nthe\n\nExchange\n\nhereby\n\ncertifies\n\nthat\n\nthe\n\nlisting\n\nof\n\nthe\n\nContract\n\ncomplies\n\nwith\n\nthe\n\nAct\n\nand\n\nCommission\n\nregulations\n\nunder\n\nthe\n\nAct.\n\nGeneral\n\nContract\n\nTerms\n\nand\n\nConditions:\n\nThe\n\nContract\n\noperates\n\nsimilar\n\nto\n\nother\n\nevent\n\ncontracts\n\nthat\n\nthe\n\nExchange\n\nlists\n\nfor\n\ntrading.\n\nThe\n\nminimum\n\nprice\n\nfluctuation\n\nis\n\n$0.01\n\n(one\n\ncent).\n\nPrice\n\nbands\n\nwill\n\napply\n\nso\n\nthat\n\nContracts\n\nmay\n\nonly\n\nbe\n\nlisted\n\nat\n\nvalues\n\nof\n\nat\n\nleast\n\n$0.01\n\nand\n\nat\n\nmost\n\n$0.99.\n\nFurther,\n\nthe\n\nContract\n\nis\n\nsized\n\nwith\n\na\n\none-dollar\n\nnotional\n\nvalue\n\nand\n\nhas\n\na\n\nminimum\n\nprice\n\nfluctuation\n\nof\n\n$0.01\n\nto\n\nenable\n\nMembers\n\nto\n\nmatch\n\nthe\n\nsize\n\nof\n\nthe\n\ncontracts\n\npurchased\n\nto\n\ntheir\n\neconomic\n\nrisks.\n\nAs\n\noutlined\n\nin\n\nRule\n\n5.16\n\nof\n\nthe\n\nRulebook,\n\ntrading\n\nshall\n\nbe\n\navailable\n\nat\n\nall\n\ntimes\n\noutside\n\nof\n\nany\n\nmaintenance\n\nwindows,\n\nwhich\n\nwill\n\nbe\n\nannounced\n\nin\n\nadvance\n\nby\n\nthe\n\nExchange.\n\nMembers\n\nwill\n\nbe\n\ncharged\n\nfees\n\nin\n\naccordance\n\nwith\n\nRule\n\n3.13\n\nof\n\nthe\n\nRulebook.\n\nFees,\n\nif\n\nthey\n\nare\n\ncharged,\n\nare\n\ncharged\n\nin\n\nsuch\n\namounts\n\nas\n\nmay\n\nbe\n\nrevised\n\nfrom\n\ntime\n\nto\n\ntime\n\nto\n\nbe\n\nreflected\n\non\n\nthe\n\nExchange\u2019s\n\nWebsite.\n\nA\n\nnew\n\nSource\n\nAgency\n\ncan\n\nbe\n\nadded\n\nvia\n\na\n\nPart\n\n40\n\namendment.\n\nAll\n\ninstructions\n\non\n\nhow\n\nto\n\naccess\n\nthe\n\nUnderlying\n\nare\n\nnon-binding\n\nand\n\nare\n\nprovided\n\nfor\n\nconvenience\n\nonly\n\nand\n\nare\n\nnot\n\npart\n\nof\n\nthe\n\nbinding\n\nTerms\n\nand\n\nConditions\n\nof\n\nthe\n\nContract.\n\nThey\n\nmay\n\nbe\n\nclarified\n\nat\n\nany\n\ntime.\n\nKalshiEX\n\nLLC\n\n[page 4 of 18: text layer]\nKalshiEX\n\nLLC\n\nFurthermore,\n\nthe\n\nContract\u2019s\n\npayout\n\nstructure\n\nis\n\ncharacterized\n\nby\n\nthe\n\npayment\n\nof\n\nan\n\nabsolute\n\namount\n\nto\n\nthe\n\nholder\n\nof\n\none\n\nside\n\nof\n\nthe\n\noption\n\nand\n\nno\n\npayment\n\nto\n\nthe\n\ncounterparty.\n\nDuring\n\nthe\n\ntime\n\nthat\n\ntrading\n\non\n\nthe\n\nContract\n\nis\n\nopen,\n\nMembers\n\nare\n\nable\n\nto\n\nadjust\n\ntheir\n\npositions\n\nand\n\ntrade\n\nfreely.\n\nThe\n\nExpiration\n\nValue\n\nand\n\nMarket\n\nOutcome\n\nare\n\ndetermined\n\nat\n\nor\n\nafter\n\nMarket\n\nClose.\n\nThe\n\nmarket\n\nis\n\nthen\n\nsettled\n\nby\n\nthe\n\nExchange,\n\nand\n\nthe\n\nlong\n\nposition\n\nholders\n\nand\n\nshort\n\nposition\n\nholders\n\nare\n\npaid\n\naccording\n\nto\n\nthe\n\nMarket\n\nOutcome.\n\nIn\n\nthis\n\ncase,\n\n\u201clong\n\nposition\n\nholders\u201d\n\nrefers\n\nto\n\nMembers\n\nwho\n\npurchased\n\nthe\n\n\u201cYes\u201d\n\nside\n\nof\n\nthe\n\nContract\n\nand\n\n\u201cshort\n\nposition\n\nholders\u201d\n\nrefers\n\nto\n\nMembers\n\nwho\n\npurchased\n\nthe\n\n\u201cNo\u201d\n\nside\n\nof\n\nthe\n\nContract.\n\nIf\n\nthe\n\nMarket\n\nOutcome\n\nis\n\n\u201cYes,\u201d\n\nmeaning\n\nthat\n\nan\n\nevent\n\noccurs\n\nthat\n\nis\n\nencompassed\n\nwithin\n\nthe\n\nPayout\n\nCriterion,\n\nthen\n\nthe\n\nlong\n\nposition\n\nholders\n\nare\n\npaid\n\nan\n\nabsolute\n\namount\n\nproportional\n\nto\n\nthe\n\nsize\n\nof\n\ntheir\n\nposition\n\nand\n\nthe\n\nshort\n\nposition\n\nholders\n\nreceive\n\nno\n\npayment.\n\nIf\n\nthe\n\nMarket\n\nOutcome\n\nis\n\n\u201cNo,\u201d\n\nthen\n\nthe\n\nshort\n\nposition\n\nholders\n\nare\n\npaid\n\nan\n\nabsolute\n\namount\n\nproportional\n\nto\n\nthe\n\nsize\n\nof\n\ntheir\n\nposition\n\nand\n\nthe\n\nlong\n\nposition\n\nholders\n\nreceive\n\nno\n\npayment.\n\nSpecification\n\nof\n\nthe\n\ncircumstances\n\nthat\n\nwould\n\ntrigger\n\na\n\nMarket\n\nOutcome\n\nof\n\n\u201cYes\u201d\n\nare\n\nincluded\n\nbelow\n\nin\n\nthe\n\nsection\n\ntitled\n\n\u201cPayout\n\nCriterion\u201d\n\nin\n\nAppendix\n\nA.\n\nKalshiEX\n\nLLC\n\n[page 5 of 18: text layer]\nKalshiEX\n\nLLC\n\nCERTIFICATIONS\n\nPURSUANT\n\nTO\n\nSECTION\n\n5c\n\nOF\n\nTHE\n\nCOMMODITY\n\nEXCHANGE\n\nACT,\n\n7\n\nU.S.C.\n\n\u00a7\n\n7A-2\n\nAND\n\nCOMMODITY\n\nFUTURES\n\nTRADING\n\nCOMMISSION\n\nRULE\n\n40.2,\n\n17\n\nC.F.R.\n\n\u00a7\n\n40.2\n\nBased\n\non\n\nthe\n\nabove\n\nanalysis,\n\nthe\n\nExchange\n\ncertifies\n\nthat:\n\n\u274f\n\nThe\n\nContract\n\ncomplies\n\nwith\n\nthe\n\nAct\n\nand\n\nCommission\n\nregulations\n\nthereunder.\n\n\u274f\n\nThis\n\nsubmission\n\n(other\n\nthan\n\nthose\n\nappendices\n\nfor\n\nwhich\n\nconfidential\n\ntreatment\n\nhas\n\nbeen\n\nrequested)\n\nhas\n\nbeen\n\nconcurrently\n\nposted\n\non\n\nthe\n\nExchange\u2019s\n\nwebsite\n\nat\n\nhttps://kalshi.com/regulatory/filings\n.\n\nShould\n\nyou\n\nhave\n\nany\n\nquestions\n\nconcerning\n\nthe\n\nabove,\n\nplease\n\ncontact\n\nthe\n\nexchange\n\nat\n\nProductFilings@kalshi.com\n.\n\n______________________\n\nBy:\n\nXavier\n\nSottile\n\nTitle:\n\nHead\n\nof\n\nMarkets\n\nDate:\n\nMay\n\n19,\n\n2026\n\nKalshiEX\n\nLLC\n\n[page 6 of 18: text layer]\nKalshiEX\n\nLLC\n\nAttachments:\n\nAppendix\n\nA\n\n-\n\nContract\n\nTerms\n\nand\n\nConditions\n\nAppendix\n\nB\n\n-\n\nTrading\n\nProhibitions\n\nAppendix\n\nC\n\n(Confidential)\n\n-\n\nFurther\n\nConsiderations\n\nAppendix\n\nD\n\n(Confidential)\n\n-\n\nSource\n\nAgency\n\nAppendix\n\nE\n\n(Confidential)\n\n-\n\nCompliance\n\nwith\n\nCore\n\nPrinciples\n\nKalshiEX\n\nLLC\n\n[page 7 of 18: text layer]\nKalshiEX\n\nLLC\n\nAPPENDIX\n\nA\n\n\u2013\n\nCONTRACT\n\nTERMS\n\nAND\n\nCONDITIONS\n\nOfficial\n\nProduct\n\nName:\n\nWill\n\n<team>\n\nwin\n\n<soccer\n\ngame>?\n\nRulebook:\n\nSOCCERGAMEWIN\n\nKalshiEX\n\nLLC\n\n[page 8 of 18: text layer]\nKalshiEX\n\nLLC\n\nSOCCERGAMEWIN\n\nScope:\n\nThese\n\nrules\n\nshall\n\napply\n\nto\n\nthis\n\ncontract.\n\nUnderlying:\n\nThe\n\nUnderlying\n\nfor\n\nthis\n\nContract\n\nis\n\nwhether\n\n<team>\n\nwins\n\n<soccer\n\ngame>,\n\nwithin\n\n<result\n\nscope>.\n\nRevisions\n\nto\n\nthe\n\nUnderlying\n\nmade\n\nafter\n\nExpiration\n\nwill\n\nnot\n\nbe\n\naccounted\n\nfor\n\nin\n\ndetermining\n\nthe\n\nExpiration\n\nValue.\n\nInstructions:\n\nThe\n\nUnderlying\n\nmay\n\nbe\n\nverified\n\nthrough\n\nthe\n\nofficial\n\nwebsite\n\nor\n\nofficial\n\ncommunications\n\nof\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>.\n\nThese\n\ninstructions\n\non\n\nhow\n\nto\n\naccess\n\nthe\n\nUnderlying\n\nare\n\nprovided\n\nfor\n\nconvenience\n\nonly\n\nand\n\nare\n\nnot\n\npart\n\nof\n\nthe\n\nbinding\n\nTerms\n\nand\n\nConditions\n\nof\n\nthe\n\nContract.\n\nThey\n\nmay\n\nbe\n\nclarified\n\nat\n\nany\n\ntime.\n\nSource\n\nAgency:\n\nThe\n\nSource\n\nAgencies\n\nare,\n\nin\n\nhierarchical\n\norder,\n\nthe\n\nofficial\n\nwebsite\n\nand\n\nofficial\n\ncommunications\n\nof\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\n(including\n\nFIFA,\n\nUEFA,\n\nCONMEBOL,\n\nCONCACAF,\n\nAFC,\n\nCAF,\n\nOFC,\n\nthe\n\nPremier\n\nLeague,\n\nLa\n\nLiga,\n\nthe\n\nBundesliga,\n\nSerie\n\nA,\n\nLigue\n\n1,\n\nMajor\n\nLeague\n\nSoccer,\n\nthe\n\nEnglish\n\nFootball\n\nAssociation,\n\nthe\n\nRoyal\n\nSpanish\n\nFootball\n\nFederation,\n\nthe\n\nItalian\n\nFootball\n\nFederation,\n\nthe\n\nGerman\n\nFootball\n\nAssociation,\n\nthe\n\nFrench\n\nFootball\n\nFederation,\n\nthe\n\nUnited\n\nStates\n\nSoccer\n\nFederation,\n\nand\n\nany\n\nother\n\nrecognized\n\ngoverning\n\nbody\n\nor\n\norganizer\n\nof\n\nthe\n\ncompetition\n\nin\n\nwhich\n\n<soccer\n\ngame>\n\ntakes\n\nplace),\n\nReuters,\n\nthe\n\nAssociated\n\nPress,\n\nBloomberg\n\nNews,\n\nESPN,\n\nBBC\n\nSport,\n\nThe\n\nNew\n\nYork\n\nTimes,\n\nThe\n\nAthletic,\n\nThe\n\nGuardian,\n\nSky\n\nSports,\n\nand\n\nOpta\n\n(Stats\n\nPerform).\n\nType:\n\nThe\n\ntype\n\nof\n\nContract\n\nis\n\nan\n\nEvent\n\nContract.\n\nIssuance:\n\nAfter\n\nthe\n\ninitial\n\nContract,\n\nContract\n\niterations\n\nwill\n\nbe\n\nlisted\n\non\n\nan\n\nas-needed\n\nbasis\n\nat\n\nthe\n\ndiscretion\n\nof\n\nthe\n\nExchange\n\nand\n\ncorresponding\n\nto\n\nthe\n\nrisk\n\nmanagement\n\nneeds\n\nof\n\nMembers.\n\nThe\n\nExchange\n\nwill\n\ngenerally\n\nlist\n\niterations\n\nof\n\nthe\n\nContract\n\nin\n\nconnection\n\nwith\n\nsoccer\n\ngames.\n\nFor\n\neach\n\n<soccer\n\ngame>,\n\nthe\n\nExchange\n\nmay\n\nlist\n\nseparate\n\niterations\n\ncorresponding\n\nto\n\neach\n\ncombination\n\nof\n\n(<team>,\n\n<result\n\nscope>),\n\nwhere\n\n<team>\n\nmay\n\nbe\n\nspecified\n\nby\n\nname,\n\nby\n\ndistinguishing\n\ncharacteristics,\n\nor\n\nas\n\n\"any\n\nteam,\"\n\nin\n\naccordance\n\nwith\n\nthe\n\ndefinitions\n\nof\n\nthose\n\nvariables\n\nbelow.\n\nIn\n\naddition\n\nto\n\niterations\n\ncorresponding\n\nto\n\ncombinations\n\nof\n\n(<team>,\n\n<result\n\nscope>),\n\nthe\n\nExchange\n\nmay,\n\nfor\n\nany\n\n<soccer\n\ngame>\n\nand\n\nany\n\nvalue\n\nof\n\n<result\n\nscope>,\n\nlist\n\na\n\nseparate\n\n\"Draw\"\n\niteration\n\nof\n\nthe\n\nContract,\n\nresolving\n\nin\n\naccordance\n\nwith\n\nthe\n\nDraw\n\nprovision\n\nof\n\nthe\n\nPayout\n\nCriterion\n\nbelow.\n\nFor\n\nany\n\n<soccer\n\ngame>\n\nand\n\n<result\n\nscope>,\n\nthe\n\nset\n\ncomprising\n\neach\n\nparticipant's\n\n<team>-win\n\niteration\n\nand\n\nthe\n\nDraw\n\niteration\n\nis\n\nmutually\n\nexclusive\n\nand\n\ncollectively\n\nexhaustive\n\n(subject\n\nto\n\nthe\n\nlast-fair-price\n\nprovisions\n\nof\n\nthis\n\nContract).\n\n<team>:\n\n<team>\n\nrefers\n\nto\n\na\n\nparticipant\n\nin\n\n<soccer\n\ngame>,\n\nas\n\nspecified\n\nby\n\nthe\n\nExchange.\n\n<team>\n\nmay\n\nbe\n\nspecified\n\n(i)\n\nby\n\nname\n\n(e.g.,\n\na\n\nparticular\n\nnational\n\nteam\n\nor\n\nclub),\n\n(ii)\n\nby\n\none\n\nor\n\nmore\n\ndistinguishing\n\ncharacteristics\n\nthat\n\nidentify\n\na\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nwithout\n\nspecifying\n\nit\n\nby\n\nname\n\n(including,\n\nwithout\n\nlimitation,\n\nnationality,\n\ngeographic\n\norigin\n\nor\n\nregion\n\n(e.g.,\n\n\"a\n\nNorthern\n\nKalshiEX\n\nLLC\n\n[page 9 of 18: text layer]\nKalshiEX\n\nLLC\n\nEnglish\n\nteam,\"\n\n\"a\n\nSouth\n\nAmerican\n\nteam\"),\n\nleague\n\nor\n\nconfederation\n\naffiliation\n\n(e.g.,\n\n\"a\n\nPremier\n\nLeague\n\nteam,\"\n\n\"a\n\nUEFA-affiliated\n\nteam\"),\n\nseeding,\n\nor\n\nstatus\n\nas\n\nthe\n\nhome\n\nor\n\naway\n\nteam\n\nin\n\n<soccer\n\ngame>),\n\nor\n\n(iii)\n\nas\n\n\"any\n\nteam,\"\n\nin\n\nwhich\n\ncase\n\n<team>\n\nis\n\nsatisfied\n\nby\n\neither\n\nparticipant\n\nin\n\n<soccer\n\ngame>.\n\nWhere\n\n<team>\n\nis\n\nspecified\n\nby\n\ndistinguishing\n\ncharacteristics,\n\nthe\n\nExchange\n\nshall,\n\nat\n\nthe\n\ntime\n\nof\n\nContract\n\nlisting,\n\nidentify\n\nthe\n\nobjective\n\ncriteria\n\nor\n\nexternal\n\nclassification\n\n(including\n\nbut\n\nnot\n\nlimited\n\nto\n\nrecognition\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>,\n\nleague\n\nor\n\nconfederation\n\nmembership,\n\nofficial\n\nseeding,\n\nor\n\ngeographic\n\nclassifications\n\nused\n\nby\n\na\n\nSource\n\nAgency)\n\nby\n\nwhich\n\na\n\nparticipant\n\nis\n\ndetermined\n\nto\n\nsatisfy\n\nthe\n\nspecification.\n\n<team>\n\nincludes\n\nnational\n\nteams,\n\nclub\n\nteams,\n\nB-teams\n\npermitted\n\nto\n\nparticipate,\n\nand\n\nany\n\nsuccessor\n\nor\n\nrebranded\n\nentity\n\nrecognized\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nas\n\nthe\n\nsame\n\ncompetitive\n\nentity.\n\nWhere\n\na\n\nteam\n\nis\n\ndissolved,\n\nmerged,\n\nrebranded,\n\nor\n\nhas\n\nits\n\nparticipation\n\ntransferred\n\nprior\n\nto\n\nthe\n\nconclusion\n\nof\n\n<soccer\n\ngame>,\n\nthe\n\nentity\n\nrecognized\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nas\n\nthe\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nshall,\n\nif\n\nit\n\nsatisfies\n\nthe\n\nspecification\n\nof\n\n<team>,\n\nbe\n\nthe\n\n<team>\n\nfor\n\npurposes\n\nof\n\nthe\n\nContract.\n\n<soccer\n\ngame>:\n\n<soccer\n\ngame>\n\nrefers\n\nto\n\na\n\nsingle\n\nofficially\n\nscheduled\n\nhead-to-head\n\nsoccer\n\ncontest\n\nbetween\n\ntwo\n\nteams\n\nin\n\na\n\nspecified\n\ncompetition,\n\nas\n\nrecognized\n\nby\n\nthe\n\norganizer\n\nof\n\nthe\n\ncompetition.\n\n<soccer\n\ngame>\n\nis\n\nspecified\n\nby\n\nthe\n\nExchange\n\nby\n\nreference\n\nto\n\nthe\n\nparticipating\n\nteams,\n\nthe\n\ncompetition,\n\nthe\n\nrelevant\n\nround\n\nor\n\nstage\n\nof\n\nthe\n\ncompetition,\n\nand\n\nthe\n\ndate\n\nor\n\nmatchweek\n\nof\n\nthe\n\ncontest\n\n(e.g.,\n\n\"the\n\nLiverpool\n\nvs.\n\nManchester\n\nCity\n\nmatch\n\nin\n\nMatchweek\n\n12\n\nof\n\nthe\n\n2025\u201326\n\nPremier\n\nLeague\n\nseason\").\n\nReferences\n\nin\n\nthis\n\nContract\n\nto\n\n\"the\n\norganizer\n\nof\n\n<soccer\n\ngame>\"\n\nmean\n\nthe\n\nrecognized\n\ngoverning\n\nbody\n\nor\n\norganizer\n\nof\n\nthe\n\ncompetition\n\nin\n\nwhich\n\n<soccer\n\ngame>\n\ntakes\n\nplace,\n\nand\n\nreferences\n\nto\n\n\"the\n\nrules\n\nof\n\n<soccer\n\ngame>\"\n\nmean\n\nthe\n\nrules\n\nof\n\nthat\n\ncompetition\n\nas\n\napplied\n\nto\n\n<soccer\n\ngame>.\n\nWhere\n\n<soccer\n\ngame>\n\nis\n\nreformatted,\n\nsuspended\n\nand\n\nresumed,\n\nreplayed,\n\nor\n\nreplaced\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>,\n\nreferences\n\nto\n\n<soccer\n\ngame>\n\nrefer\n\nto\n\nthe\n\ncontest\n\nas\n\nso\n\nreformatted,\n\nreplayed,\n\nor\n\nreplaced,\n\nprovided\n\nit\n\nremains\n\na\n\ncontest\n\nbetween\n\nthe\n\nsame\n\ntwo\n\nparticipating\n\nteams\n\nand\n\nis\n\nrescheduled\n\nin\n\naccordance\n\nwith\n\nthe\n\ncorresponding\n\nprovision\n\nof\n\nthe\n\nPayout\n\nCriterion.\n\n<result\n\nscope>:\n\n<result\n\nscope>\n\nrefers\n\nto\n\nthe\n\nportion\n\nof\n\n<soccer\n\ngame>\n\nwhose\n\nresult\n\nis\n\nused\n\nto\n\ndetermine\n\nwhether\n\n<team>\n\nwins,\n\nas\n\nspecified\n\nby\n\nthe\n\nExchange.\n\n<result\n\nscope>\n\nmay\n\ntake\n\none\n\nof\n\nthe\n\nfollowing\n\nvalues,\n\neach\n\nas\n\ndefined\n\nin\n\nthe\n\nPayout\n\nCriterion:\n\n(i)\n\n\"first\n\nhalf,\"\n\n(ii)\n\n\"regulation\n\ntime,\"\n\n(iii)\n\n\"second\n\nhalf,\"\n\n(iv)\n\n\"extra\n\ntime,\"\n\nor\n\n(v)\n\n\"full\n\nmatch.\"\n\nThe\n\nExchange\n\nmay\n\nlist\n\niterations\n\nof\n\nthe\n\nContract\n\ncorresponding\n\nto\n\neach\n\nvalue\n\nof\n\n<result\n\nscope>.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>\n\nis\n\ndetermined\n\nsolely\n\nby\n\nreference\n\nto\n\nthe\n\nperiod(s)\n\nof\n\nplay\n\nand\n\nthe\n\nwin\n\ncondition\n\nspecified\n\nfor\n\nthe\n\napplicable\n\nvalue\n\nof\n\n<result\n\nscope>\n\nabove.\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"full\n\nmatch\"\n\nor\n\n\"extra\n\ntime,\"\n\nthe\n\nscore,\n\nlead,\n\nor\n\nresult\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay\n\nis\n\nnot,\n\nby\n\nitself,\n\ndispositive\n\nof\n\nwhether\n\n<team>\n\nwins,\n\nand\n\nshall\n\nbe\n\ngiven\n\neffect\n\nonly\n\nas\n\nexpressly\n\nprovided\n\nin\n\nthe\n\ndefinition\n\nof\n\nthat\n\n<result\n\nscope>\n\nvalue.\n\nKalshiEX\n\nLLC\n\n[page 10 of 18: text layer]\nKalshiEX\n\nLLC\n\nPayout\n\nCriterion:\n\nThe\n\nPayout\n\nCriterion\n\nfor\n\nthe\n\nContract\n\nencompasses\n\nthe\n\nExpiration\n\nValues\n\nthat\n\n<team>\n\nwins\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>,\n\nor,\n\nwhere\n\nthe\n\nContract\n\nis\n\nlisted\n\nas\n\na\n\nDraw\n\niteration,\n\nthat\n\n<soccer\n\ngame>\n\nis\n\ndrawn\n\nwithin\n\n<result\n\nscope>.\n\nFor\n\npurposes\n\nof\n\nthis\n\nContract:\n\n\u25cf\n\n\"First\n\nhalf\"\n\nmeans\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nbased\n\nsolely\n\non\n\ngoals\n\nscored\n\nduring\n\nthe\n\nfirst\n\nhalf\n\nof\n\nregulation\n\nplay,\n\nwith\n\nthe\n\nfirst\n\nhalf\n\nmeaning\n\nthe\n\nperiod\n\nfrom\n\nthe\n\nopening\n\nkickoff\n\nthrough\n\nthe\n\nconclusion\n\nof\n\nthe\n\nfirst\n\nhalf\n\n(including\n\nany\n\nstoppage\n\ntime\n\nadded\n\nby\n\nthe\n\nmatch\n\nreferee\n\nto\n\nthe\n\nfirst\n\nhalf,\n\nand\n\nincluding\n\nthe\n\ncompletion\n\nof\n\nany\n\npenalty\n\nkick\n\nawarded\n\nfor\n\nan\n\nincident\n\noccurring\n\nbefore,\n\nbut\n\ntaken\n\nafter,\n\nthe\n\nmatch\n\nreferee's\n\nsignal\n\nending\n\nthe\n\nfirst\n\nhalf,\n\nand\n\nending\n\nwhen\n\nthe\n\nmatch\n\nreferee\n\nsignals\n\nthe\n\nend\n\nof\n\nthe\n\nfirst\n\nhalf\n\n(or,\n\nwhere\n\nsuch\n\na\n\npenalty\n\nkick\n\nis\n\ntaken\n\nafter\n\nthat\n\nsignal,\n\nupon\n\ncompletion\n\nof\n\nthat\n\npenalty\n\nkick)).\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"first\n\nhalf,\"\n\n<team>\n\n\"wins\"\n\nif\n\nand\n\nonly\n\nif\n\n<team>\n\nscored\n\nstrictly\n\nmore\n\ngoals\n\nthan\n\nthe\n\nopposing\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nduring\n\nthe\n\nfirst\n\nhalf.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\ngoals\n\nscored\n\nat\n\nany\n\ntime\n\nafter\n\nthe\n\nconclusion\n\nof\n\nthe\n\nfirst\n\nhalf\n\nare\n\ndisregarded,\n\nand\n\na\n\nfirst\n\nhalf\n\nending\n\nlevel\n\ndoes\n\nnot\n\nconstitute\n\na\n\nwin.\n\n\u25cf\n\n\"Regulation\n\ntime\"\n\nmeans\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\nwith\n\nregulation\n\nplay\n\nmeaning\n\ntwo\n\nhalves\n\nof\n\n45\n\nminutes\n\nplus\n\nany\n\nstoppage\n\ntime\n\nadded\n\nby\n\nthe\n\nmatch\n\nreferee\n\n(or\n\nsuch\n\nother\n\nduration\n\nas\n\nconstitutes\n\nregulation\n\nunder\n\nthe\n\nrules\n\nof\n\n<soccer\n\ngame>).\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"regulation\n\ntime,\"\n\n<team>\n\n\"wins\"\n\nif\n\nand\n\nonly\n\nif\n\n<team>\n\nhas\n\na\n\nhigher\n\nscore\n\nthan\n\nthe\n\nopposing\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"regulation\n\ntime,\"\n\ndraws\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay\n\ndo\n\nnot\n\nconstitute\n\na\n\nwin,\n\nregardless\n\nof\n\nwhether\n\n<soccer\n\ngame>\n\nis\n\nsubsequently\n\ndecided\n\nby\n\nextra\n\ntime,\n\npenalty\n\nshootout,\n\ndrawing\n\nof\n\nlots,\n\ncoin\n\ntoss,\n\nor\n\nany\n\nother\n\ntiebreaker\n\nmechanism.\n\n\u25cf\n\n\"Full\n\nmatch\"\n\nmeans\n\nthe\n\nfinal\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nas\n\nofficially\n\nconfirmed\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>,\n\nincluding\n\nany\n\nresult\n\ndetermined\n\nby\n\nextra\n\ntime,\n\npenalty\n\nshootout,\n\ndrawing\n\nof\n\nlots,\n\ncoin\n\ntoss,\n\ngolden\n\ngoal,\n\nsilver\n\ngoal,\n\nor\n\nanalogous\n\ntiebreaker\n\nmechanism.\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"full\n\nmatch,\"\n\n<team>\n\n\"wins\"\n\nif\n\nand\n\nonly\n\nif\n\n<team>\n\nis\n\nofficially\n\nconfirmed\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nas\n\nthe\n\nwinner\n\nof\n\n<soccer\n\ngame>,\n\nwhether\n\nby\n\nvirtue\n\nof\n\nregulation\n\nplay,\n\nextra\n\ntime,\n\npenalty\n\nshootout,\n\nor\n\nany\n\nother\n\ntiebreaker\n\nmechanism\n\napplied\n\nper\n\nthe\n\nrules\n\nof\n\n<soccer\n\ngame>.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"full\n\nmatch\"\n\nand\n\n<soccer\n\ngame>\n\nends\n\nin\n\na\n\ndraw\n\nwith\n\nno\n\ntiebreaker\n\nmechanism\n\napplied\n\n(e.g.,\n\na\n\nleague\n\nmatch\n\nconcluding\n\nlevel),\n\nneither\n\nparticipant\n\n\"wins\"\n\nfor\n\npurposes\n\nof\n\nthe\n\nContract.\n\n\u25cf\n\n\"Second\n\nhalf\"\n\nmeans\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nbased\n\nsolely\n\non\n\ngoals\n\nscored\n\nduring\n\nthe\n\nsecond\n\nhalf\n\nof\n\nregulation\n\nplay,\n\nwith\n\nthe\n\nsecond\n\nhalf\n\nmeaning\n\nthe\n\nperiod\n\nfrom\n\nthe\n\nstart\n\nof\n\nthe\n\nsecond\n\nhalf\n\nthrough\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay\n\n(including\n\nany\n\nstoppage\n\ntime\n\nadded\n\nby\n\nthe\n\nmatch\n\nreferee\n\nto\n\nthe\n\nsecond\n\nhalf,\n\nand\n\nincluding\n\nthe\n\ncompletion\n\nof\n\nany\n\npenalty\n\nkick\n\nawarded\n\nfor\n\nan\n\nincident\n\noccurring\n\nKalshiEX\n\nLLC\n\n[page 11 of 18: text layer]\nKalshiEX\n\nLLC\n\nbefore,\n\nbut\n\ntaken\n\nafter,\n\nthe\n\nmatch\n\nreferee's\n\nsignal\n\nending\n\nregulation\n\nplay,\n\nand\n\nending\n\nwhen\n\nthe\n\nmatch\n\nreferee\n\nsignals\n\nthe\n\nend\n\nof\n\nregulation\n\nplay\n\n(or,\n\nwhere\n\nsuch\n\na\n\npenalty\n\nkick\n\nis\n\ntaken\n\nafter\n\nthat\n\nsignal,\n\nupon\n\ncompletion\n\nof\n\nthat\n\npenalty\n\nkick)).\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"second\n\nhalf,\"\n\n<team>\n\n\"wins\"\n\nif\n\nand\n\nonly\n\nif\n\n<team>\n\nscored\n\nstrictly\n\nmore\n\ngoals\n\nthan\n\nthe\n\nopposing\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nduring\n\nthe\n\nsecond\n\nhalf.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\ngoals\n\nscored\n\nduring\n\nthe\n\nfirst\n\nhalf,\n\nduring\n\nextra\n\ntime,\n\nand\n\nduring\n\nany\n\npenalty\n\nshootout\n\nare\n\ndisregarded\n\nfor\n\nthis\n\n<result\n\nscope>,\n\nand\n\na\n\nsecond\n\nhalf\n\nending\n\nlevel\n\ndoes\n\nnot\n\nconstitute\n\na\n\nwin.\n\n\u25cf\n\n\"Extra\n\ntime\"\n\nmeans\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nbased\n\nsolely\n\non\n\ngoals\n\nscored\n\nduring\n\nall\n\nperiods\n\nof\n\nextra\n\ntime\n\nplayed\n\nin\n\n<soccer\n\ngame>.\n\nWhere\n\n<result\n\nscope>\n\nis\n\n\"extra\n\ntime,\"\n\n<team>\n\n\"wins\"\n\nif\n\nand\n\nonly\n\nif\n\n<team>\n\nscored\n\nstrictly\n\nmore\n\ngoals\n\nthan\n\nthe\n\nopposing\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nduring\n\nextra\n\ntime.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\ngoals\n\nscored\n\nduring\n\nregulation\n\nplay\n\nand\n\nany\n\npenalty\n\nshootout\n\nare\n\ndisregarded\n\nfor\n\nthis\n\n<result\n\nscope>,\n\nand\n\nextra\n\ntime\n\nending\n\nlevel\n\ndoes\n\nnot\n\nconstitute\n\na\n\nwin.\n\nIf\n\n<soccer\n\ngame>\n\nis\n\nplayed\n\nand\n\nconcluded\n\nwithout\n\nany\n\nextra\n\ntime\n\nbeing\n\nplayed,\n\nthe\n\nContract\n\nshall\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nin\n\nits\n\nsole\n\ndiscretion.\n\n\u25cf\n\nDraw\n\niteration.\n\nWhere\n\nthe\n\nContract\n\nis\n\nlisted\n\nas\n\na\n\nDraw\n\niteration,\n\nthe\n\nContract\n\nshall\n\nresolve\n\nto\n\nYes\n\nif\n\nand\n\nonly\n\nif,\n\nwithin\n\nthe\n\napplicable\n\n<result\n\nscope>,\n\nneither\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\n\"wins\"\n\nas\n\n\"wins\"\n\nis\n\ndefined\n\nfor\n\nthat\n\n<result\n\nscope>\n\nabove,\n\nand\n\nshall\n\nresolve\n\nto\n\nNo\n\notherwise.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt:\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"first\n\nhalf,\"\n\n\"regulation\n\ntime,\"\n\nor\n\n\"second\n\nhalf,\"\n\nthe\n\nDraw\n\niteration\n\nresolves\n\nYes\n\nif\n\nand\n\nonly\n\nif\n\nthe\n\ntwo\n\nparticipants\n\nscored\n\nan\n\nequal\n\nnumber\n\nof\n\ngoals\n\nwithin\n\nthat\n\n<result\n\nscope>\n\n(including\n\n0\u20130);\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"full\n\nmatch,\"\n\nthe\n\nDraw\n\niteration\n\nresolves\n\nYes\n\nif\n\nand\n\nonly\n\nif\n\n<soccer\n\ngame>\n\nconcludes\n\nwith\n\nno\n\nparticipant\n\nofficially\n\nconfirmed\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nas\n\nthe\n\nwinner\n\n(e.g.,\n\na\n\nleague\n\nmatch\n\nconcluding\n\nlevel\n\nwith\n\nno\n\ntiebreaker\n\nmechanism\n\napplied);\n\nand\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"extra\n\ntime,\"\n\nthe\n\nDraw\n\niteration\n\nresolves\n\nYes\n\nif\n\nand\n\nonly\n\nif\n\nextra\n\ntime\n\nis\n\nplayed\n\nand\n\nthe\n\ntwo\n\nparticipants\n\nscored\n\nan\n\nequal\n\nnumber\n\nof\n\ngoals\n\nduring\n\nextra\n\ntime\n\n(including\n\n0\u20130),\n\nprovided\n\nthat\n\nif\n\n<soccer\n\ngame>\n\nis\n\nplayed\n\nand\n\nconcluded\n\nwithout\n\nany\n\nextra\n\ntime\n\nbeing\n\nplayed,\n\nthe\n\nDraw\n\niteration\n\nshall\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nin\n\nits\n\nsole\n\ndiscretion.\n\n\u25cf\n\nStoppage\n\ntime\n\nand\n\ninjury\n\ntime\n\nadded\n\nby\n\nthe\n\nmatch\n\nreferee\n\nto\n\neither\n\nhalf\n\nof\n\nregulation\n\nare\n\npart\n\nof\n\nregulation\n\nplay.\n\nStoppage\n\ntime\n\nand\n\ninjury\n\ntime\n\nadded\n\nto\n\neither\n\nhalf\n\nof\n\nextra\n\ntime\n\nare\n\npart\n\nof\n\nextra\n\ntime.\n\n\u25cf\n\nGoals\n\nconfirmed\n\nor\n\ndisallowed\n\nby\n\nVAR\n\n(Video\n\nAssistant\n\nReferee)\n\nfollow\n\nthe\n\nfinal\n\non-field\n\ndecision\n\nas\n\nrecorded\n\nby\n\nthe\n\nSource\n\nAgency.\n\nThe\n\nofficial\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nfor\n\npurposes\n\nof\n\nthis\n\nContract\n\nis\n\nthe\n\nfinal\n\nresult\n\nas\n\nofficially\n\nconfirmed\n\nor\n\npublished\n\nby\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>.\n\nThe\n\nofficial\n\nresult\n\ngives\n\neffect\n\nto\n\nevery\n\non-field\n\ndecision\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nrecognizes\n\nas\n\npart\n\nof\n\nthat\n\nfinal\n\nresult,\n\nincluding\n\na\n\ngoal,\n\ndisallowance,\n\nor\n\npenalty\n\nkick\n\narising\n\nfrom\n\na\n\nVideo\n\nAssistant\n\nReferee\n\nor\n\nother\n\nreferee\n\nreview,\n\nand\n\nincluding\n\nany\n\nsuch\n\ndecision\n\nmade,\n\nor\n\nany\n\npenalty\n\nkick\n\ntaken,\n\nafter\n\nthe\n\nreferee\n\nKalshiEX\n\nLLC\n\n[page 12 of 18: text layer]\nKalshiEX\n\nLLC\n\nhas\n\nsignalled\n\nthe\n\nend\n\nof\n\na\n\nperiod\n\nof\n\nplay,\n\nwhere\n\nthe\n\norganizer\n\nrecognizes\n\nit\n\nas\n\npart\n\nof\n\nthe\n\nfinal\n\nresult.\n\nThe\n\nofficial\n\nresult\n\ndoes\n\nnot\n\ngive\n\neffect\n\nto\n\nany\n\nchange\n\narising\n\nafter\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nhas\n\nofficially\n\nconfirmed\n\nor\n\npublished\n\nthe\n\nfinal\n\nresult,\n\nincluding\n\nany\n\nchange\n\nby\n\nreason\n\nof\n\nprotest,\n\nappeal,\n\nadministrative\n\nor\n\ndisciplinary\n\nproceeding,\n\nsporting\n\nsanction,\n\npoints\n\nadjustment,\n\nor\n\nforfeiture,\n\nexcept\n\nas\n\nexpressly\n\nprovided\n\nin\n\nthe\n\n\"Cancellation,\n\nAbandonment,\n\nExtended\n\nPostponement,\n\nand\n\nPre-Commencement\n\nAwards\"\n\nor\n\n\"Determined\n\nResult\n\nGoverns\"\n\nprovisions.\n\nWhere,\n\nat\n\nthe\n\nconclusion\n\nof\n\nany\n\nperiod\n\nof\n\nplay,\n\na\n\ngoal\n\nor\n\nother\n\nincident\n\nbearing\n\non\n\nwhether\n\n<team>\n\nwins\n\nwithin\n\n<result\n\nscope>\n\nis\n\nsubject\n\nto\n\nan\n\nunresolved\n\non-field\n\nreview,\n\nthe\n\nresult\n\nwithin\n\n<result\n\nscope>\n\nshall\n\nbe\n\ndetermined\n\nby\n\nthe\n\norganizer's\n\nofficially\n\nconfirmed\n\nresult\n\nonce\n\nthat\n\nreview\n\nhas\n\nbeen\n\nofficially\n\nresolved,\n\nand,\n\nfor\n\npurposes\n\nof\n\nthe\n\n\"Determined\n\nResult\n\nGoverns\"\n\nprovision,\n\nthe\n\nrelevant\n\nperiod\n\nof\n\nplay\n\nshall\n\nnot\n\nbe\n\ntreated\n\nas\n\ncompleted\n\nor\n\nas\n\nhaving\n\nyielded\n\na\n\ndefinitively\n\ndetermined\n\nresult\n\nuntil\n\nsuch\n\nofficial\n\nresolution.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\na\n\npenalty\n\nkick\n\nawarded\n\nfor\n\nan\n\nincident\n\noccurring\n\nbefore\n\nthe\n\nreferee's\n\nsignal\n\nending\n\na\n\nperiod\n\nof\n\nplay,\n\nbut\n\ntaken\n\nafter\n\nthat\n\nsignal,\n\nis\n\nattributed\n\nto\n\nthat\n\nperiod\n\nas\n\nofficially\n\nrecorded\n\nby\n\nthe\n\nSource\n\nAgency,\n\nconsistent\n\nwith\n\nthe\n\n<result\n\nscope>\n\ndefinitions\n\nabove\n\n(under\n\nwhich\n\nsuch\n\nperiod\n\nis\n\nextended\n\nfor\n\nthe\n\ncompletion\n\nof\n\nthe\n\npenalty\n\nkick).\n\n\u25cf\n\nAn\n\nown\n\ngoal\n\ncounts\n\ntoward\n\nthe\n\nscore,\n\nand\n\ntoward\n\nthe\n\napplicable\n\ngoal\n\ntotal\n\nunder\n\nthe\n\nrelevant\n\n<result\n\nscope>,\n\nof\n\nthe\n\nteam\n\nagainst\n\nwhich\n\nthe\n\nplayer\n\nconceding\n\nthe\n\nown\n\ngoal\n\nwas\n\nplaying\n\n\u2014\n\nthat\n\nis,\n\nthe\n\nteam\n\nwhose\n\ngoal\n\ntally\n\nis\n\nincreased\n\nby\n\nthe\n\nown\n\ngoal\n\nas\n\nofficially\n\nrecorded\n\nby\n\nthe\n\nSource\n\nAgency\n\n\u2014\n\nregardless\n\nof\n\nwhich\n\nplayer\n\nis\n\ncredited\n\nby\n\nthe\n\nSource\n\nAgency\n\nas\n\nhaving\n\nscored\n\nthe\n\nown\n\ngoal.\n\nFor\n\nthe\n\navoidance\n\nof\n\ndoubt,\n\nan\n\nown\n\ngoal\n\nis\n\nattributed\n\nto\n\nthe\n\nperiod\n\nof\n\nplay\n\nin\n\nwhich\n\nit\n\noccurred,\n\ndetermined\n\nin\n\nthe\n\nsame\n\nmanner\n\nas\n\nany\n\nother\n\ngoal\n\nunder\n\nthe\n\n<result\n\nscope>\n\ndefinitions\n\nabove.\n\n\u25cf\n\nWhere\n\n<team>\n\nis\n\nspecified\n\nby\n\ndistinguishing\n\ncharacteristics\n\nor\n\nas\n\n\"any\n\nteam\"\n\nrather\n\nthan\n\nby\n\nname,\n\nthe\n\nContract\n\nshall\n\nresolve\n\nto\n\nYes\n\nif\n\nand\n\nonly\n\nif\n\na\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nthat\n\nsatisfies\n\nthe\n\nspecification\n\nof\n\n<team>\n\nwins\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>.\n\nIf\n\nno\n\nparticipant\n\nin\n\n<soccer\n\ngame>\n\nsatisfies\n\nthe\n\nspecification\n\nof\n\n<team>,\n\nor\n\nif\n\nno\n\nparticipant\n\nsatisfying\n\nthe\n\nspecification\n\nof\n\n<team>\n\nwins\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>,\n\nthe\n\nContract\n\nshall\n\nresolve\n\nto\n\nNo.\n\nWhere\n\nboth\n\nparticipants\n\nin\n\n<soccer\n\ngame>\n\nsatisfy\n\nthe\n\nspecification\n\nof\n\n<team>,\n\nthe\n\nContract\n\nshall\n\nresolve\n\nto\n\nYes\n\nif\n\neither\n\nparticipant\n\nwins\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>.\n\n\u25cf\n\nDetermined\n\nResult\n\nGoverns:\n\nNotwithstanding\n\nthe\n\n\"Suspension\n\nand\n\nResumption,\"\n\n\"Replay\n\nfrom\n\nBeginning,\"\n\nand\n\n\"Cancellation,\n\nAbandonment,\n\nExtended\n\nPostponement,\n\nand\n\nPre-Commencement\n\nAwards\"\n\nprovisions,\n\nif,\n\non\n\nor\n\nafter\n\nthe\n\ncommencement\n\nof\n\nplay\n\nin\n\n<soccer\n\ngame>,\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nwithin\n\nthe\n\napplicable\n\n<result\n\nscope>\n\nhas\n\nbeen\n\ndefinitively\n\ndetermined\n\n\u2014\n\nwhether\n\n(i)\n\nbecause\n\nall\n\nperiod(s)\n\nof\n\nplay\n\ncomprising\n\nthe\n\napplicable\n\n<result\n\nscope>\n\nhave\n\nbeen\n\ncompleted\n\n(for\n\nexample,\n\nthe\n\nfirst\n\nhalf\n\nhaving\n\nconcluded\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"first\n\nhalf,\"\n\nor\n\nregulation\n\nplay\n\nhaving\n\nconcluded\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"regulation\n\ntime\"\n\nor\n\n\"second\n\nhalf\"),\n\nor\n\n(ii)\n\nbecause\n\nthe\n\norganizer\n\nof\n\nKalshiEX\n\nLLC\n\n[page 13 of 18: text layer]\nKalshiEX\n\nLLC\n\n<soccer\n\ngame>\n\nhas\n\nofficially\n\ndeclared,\n\nawarded,\n\nor\n\notherwise\n\nconfirmed\n\na\n\nfinal\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nthat\n\nis\n\ndispositive\n\nof\n\nwhether\n\n<team>\n\nwins\n\nwithin\n\nthe\n\napplicable\n\n<result\n\nscope>\n\n\u2014\n\nthen,\n\nregardless\n\nof\n\nwhether\n\n<soccer\n\ngame>\n\nis\n\nthereafter\n\nsuspended,\n\nabandoned,\n\ncancelled,\n\ncurtailed,\n\nor\n\nnot\n\ncompleted,\n\nthe\n\nContract\n\nshall\n\nsettle\n\nbased\n\non\n\nthat\n\ndetermined\n\nresult\n\nand\n\nshall\n\nnot\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice.\n\nIn\n\nthe\n\nevent\n\nof\n\nany\n\ninconsistency\n\nbetween\n\nthis\n\nprovision\n\nand\n\nany\n\nother\n\nprovision\n\nof\n\nthis\n\nContract,\n\nthis\n\nprovision\n\nshall\n\ncontrol.\n\n\u25cf\n\nSuspension\n\nand\n\nResumption:\n\nIf\n\n<soccer\n\ngame>\n\nis\n\nsuspended\n\nafter\n\ncommencement\n\nand\n\nis\n\nofficially\n\nscheduled\n\nto\n\nresume\n\nfrom\n\nthe\n\npoint\n\nof\n\nsuspension\n\n(i.e.,\n\nfrom\n\nthe\n\nminute\n\nand\n\nscore\n\nat\n\nwhich\n\nplay\n\nwas\n\nhalted)\n\nwithin\n\nforty-eight\n\n(48)\n\nhours\n\nof\n\nthe\n\noriginal\n\nscheduled\n\nstart\n\ntime\n\nof\n\n<soccer\n\ngame>,\n\nthe\n\nContract\n\nshall\n\nremain\n\nopen\n\nand\n\nshall\n\nsettle\n\nbased\n\non\n\nthe\n\nfinal\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nas\n\nso\n\nresumed.\n\nIf\n\n<soccer\n\ngame>\n\ndoes\n\nnot\n\nresume\n\nfrom\n\nthe\n\npoint\n\nof\n\nsuspension\n\nwithin\n\nforty-eight\n\n(48)\n\nhours\n\nof\n\nits\n\noriginal\n\nscheduled\n\nstart\n\ntime,\n\nthe\n\nContract\n\nshall\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nin\n\nits\n\nsole\n\ndiscretion,\n\nexcept\n\nthat\n\nthe\n\nContract\n\nshall\n\ninstead\n\nsettle\n\nin\n\naccordance\n\nwith\n\nthe\n\n\"Determined\n\nResult\n\nGoverns\"\n\nprovision\n\nin\n\nany\n\ncase\n\nin\n\nwhich\n\nthat\n\nprovision\n\napplies,\n\nincluding\n\nwhere\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nwithin\n\n<result\n\nscope>\n\nhas\n\nbeen\n\ndefinitively\n\ndetermined\n\nby\n\nplay\n\nas\n\nof\n\nthe\n\ntime\n\nof\n\nsuspension\n\nor\n\nwhere\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nhas\n\nofficially\n\ndeclared,\n\nawarded,\n\nor\n\notherwise\n\nconfirmed\n\na\n\nfinal\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nthat\n\nis\n\ndispositive\n\nof\n\nwhether\n\n<team>\n\nwins\n\nwithin\n\n<result\n\nscope>.\n\n\u25cf\n\nReplay\n\nfrom\n\nBeginning:\n\nIf\n\n<soccer\n\ngame>\n\nis\n\nreplayed\n\nfrom\n\nthe\n\nbeginning\n\n(i.e.,\n\nrestarted\n\nfrom\n\nminute\n\nzero),\n\nthe\n\nreplayed\n\ncontest\n\nis\n\ntreated\n\nas\n\n<soccer\n\ngame>,\n\nprovided\n\nthe\n\nreplay\n\nis\n\nscheduled\n\nto\n\ntake\n\nplace\n\nwithin\n\nforty-eight\n\n(48)\n\nhours\n\nof\n\nthe\n\noriginal\n\nscheduled\n\nstart\n\ntime\n\nof\n\n<soccer\n\ngame>\n\nand\n\nremains\n\na\n\ncontest\n\nbetween\n\nthe\n\nsame\n\ntwo\n\nparticipating\n\nteams.\n\nIf\n\nthe\n\nreplay\n\nis\n\nscheduled\n\nbeyond\n\nforty-eight\n\n(48)\n\nhours,\n\nor\n\nis\n\nnot\n\na\n\ncontest\n\nbetween\n\nthe\n\nsame\n\ntwo\n\nparticipating\n\nteams,\n\nthe\n\nContract\n\nshall\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nin\n\nits\n\nsole\n\ndiscretion.\n\n\u25cf\n\nCancellation,\n\nAbandonment,\n\nExtended\n\nPostponement,\n\nand\n\nPre-Commencement\n\nAwards:\n\nIf,\n\nbefore\n\nthe\n\ncommencement\n\nof\n\nplay\n\nin\n\n<soccer\n\ngame>,\n\n(i)\n\n<soccer\n\ngame>\n\nis\n\ncancelled\n\nor\n\nabandoned,\n\n(ii)\n\n<soccer\n\ngame>\n\nis\n\nnot\n\nscheduled\n\nor\n\nrescheduled\n\nto\n\ntake\n\nplace\n\nwithin\n\nforty-eight\n\n(48)\n\nhours\n\nof\n\nits\n\noriginally\n\nscheduled\n\nstart\n\ntime,\n\nor\n\n(iii)\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nawards\n\nthe\n\nresult\n\nof\n\n<soccer\n\ngame>\n\nby\n\nreason\n\nof\n\nthe\n\ndisqualification,\n\nexpulsion,\n\nwithdrawal,\n\nor\n\nforfeit\n\nof\n\neither\n\nparticipant\n\n(including\n\nany\n\nwalkover),\n\nthe\n\nContract\n\nshall\n\nbe\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nin\n\nits\n\nsole\n\ndiscretion.\n\nThis\n\nprovision\n\napplies\n\nregardless\n\nof\n\nwhether\n\nthe\n\nresult\n\nwould\n\notherwise\n\nbe\n\nconsidered\n\ndefinitively\n\ndetermined.\n\nExamples\n\nthat\n\nwould\n\nresolve\n\nthe\n\nmarket\n\nto\n\nYes:\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<team>\n\nwins\n\n2\u20130,\n\nwith\n\nboth\n\ngoals\n\nscored\n\nwithin\n\n90\n\nminutes\n\nplus\n\nstoppage\n\ntime.\n\nKalshiEX\n\nLLC\n\n[page 14 of 18: text layer]\nKalshiEX\n\nLLC\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<team>\n\nwins\n\n1\u20130\n\non\n\na\n\ngoal\n\nscored\n\nin\n\nthe\n\n90+5th\n\nminute\n\n(stoppage\n\ntime\n\nof\n\nregulation).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<soccer\n\ngame>\n\nis\n\nabandoned\n\nin\n\nthe\n\n88th\n\nminute\n\nwith\n\n<team>\n\nleading\n\n3\u20130\n\nafter\n\nthe\n\ncommencement\n\nof\n\nplay,\n\nand\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nofficially\n\nrecords\n\nthe\n\nfinal\n\nresult\n\nas\n\n3\u20130\n\nin\n\nfavor\n\nof\n\n<team>.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<team>\n\nwins\n\n2\u20130\n\nwithin\n\n90\n\nminutes\n\nplus\n\nstoppage\n\ntime.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nends\n\n1\u20131\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\nand\n\n<team>\n\nwins\n\n2\u20131\n\nin\n\nextra\n\ntime.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nends\n\n1\u20131\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\nremains\n\ntied\n\nat\n\nthe\n\nconclusion\n\nof\n\nextra\n\ntime,\n\nand\n\n<team>\n\nwins\n\nthe\n\nresulting\n\npenalty\n\nshootout\n\n5\u20134\n\non\n\nkicks.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfirst\n\nhalf\":\n\nthe\n\nscore\n\nat\n\nthe\n\nconclusion\n\nof\n\nthe\n\nfirst\n\nhalf\n\nis\n\n1\u20130\n\nin\n\nfavor\n\nof\n\n<team>,\n\nand\n\nthe\n\nmatch\n\nfinishes\n\n1\u20133.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nsecond\n\nhalf\":\n\n<team>\n\ntrails\n\n0\u20132\n\nat\n\nthe\n\nconclusion\n\nof\n\nthe\n\nfirst\n\nhalf\n\nand\n\nthe\n\nmatch\n\nfinishes\n\n1\u20132,\n\nwith\n\nthe\n\nsecond-half-only\n\nscore\n\nbeing\n\n1\u20130\n\nin\n\nfavor\n\nof\n\n<team>.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nextra\n\ntime\":\n\nthe\n\nmatch\n\nis\n\n1\u20131\n\nafter\n\nregulation,\n\nand\n\n<team>\n\nscores\n\nonce\n\nin\n\nextra\n\ntime\n\nto\n\nlead\n\n2\u20131\n\nwith\n\nno\n\nfurther\n\nextra-time\n\ngoals.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfirst\n\nhalf\":\n\nthe\n\nfirst\n\nhalf\n\nconcludes\n\nwith\n\n<team>\n\nleading\n\n1\u20130,\n\nand\n\n<soccer\n\ngame>\n\nis\n\nthen\n\nabandoned\n\nin\n\nthe\n\n60th\n\nminute\n\nand\n\nnot\n\nresumed\n\n(resolves\n\nYes\n\n\u2014\n\nthe\n\nfirst-half\n\nresult\n\nwas\n\ndefinitively\n\ndetermined\n\nbefore\n\nabandonment).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\nregulation\n\nplay\n\nconcludes\n\nwith\n\n<team>\n\nleading\n\n2\u20131,\n\nand\n\n<soccer\n\ngame>\n\nis\n\nabandoned\n\nduring\n\nextra\n\ntime\n\n(resolves\n\nYes).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nis\n\nabandoned\n\nafter\n\nthe\n\ncommencement\n\nof\n\nplay\n\nand\n\nthe\n\norganizer\n\nof\n\n<soccer\n\ngame>\n\nsubsequently\n\nawards\n\nthe\n\nmatch\n\n3\u20130\n\nin\n\nfavor\n\nof\n\n<team>\n\n(resolves\n\nYes).\n\n\u25cf\n\nFor\n\n\"Draw,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nis\n\na\n\nleague\n\nmatch\n\nconcluding\n\n1\u20131\n\nwith\n\nno\n\ntiebreaker\n\nmechanism\n\napplied.\n\n\u25cf\n\nFor\n\n\"Draw,\n\nsecond\n\nhalf\":\n\nthe\n\nfirst\n\nhalf\n\nends\n\n1\u20130,\n\nthe\n\nsecond\n\nhalf\n\nends\n\n0\u20130,\n\nand\n\nthe\n\nmatch\n\nfinishes\n\n1\u20130\n\n(the\n\nsecond-half-only\n\nresult\n\nis\n\nlevel).\n\n\u25cf\n\nFor\n\n\"Draw,\n\nextra\n\ntime\":\n\nthe\n\nmatch\n\nis\n\n1\u20131\n\nafter\n\nregulation,\n\nextra\n\ntime\n\nproduces\n\nno\n\ngoals,\n\nand\n\nthe\n\nmatch\n\nis\n\ndecided\n\nby\n\npenalty\n\nshootout.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\nat\n\nthe\n\nfinal\n\nwhistle\n\nthe\n\nscore\n\nis\n\n1\u20131;\n\nbefore\n\nplay\n\nrestarts\n\nor\n\nthe\n\nreferee\n\nleaves\n\nthe\n\nfield\n\nof\n\nplay,\n\na\n\npenalty\n\nkick\n\nis\n\nawarded\n\nfor\n\nan\n\nincident\n\nthat\n\noccurred\n\nbefore\n\nthe\n\nwhistle,\n\n<team>\n\nscores\n\nit,\n\nand\n\nthe\n\norganizer\n\nofficially\n\nconfirms\n\nthe\n\nfinal\n\nresult\n\nas\n\n2\u20131\n\nin\n\nfavor\n\nof\n\n<team>\n\n(resolves\n\nYes\n\n\u2014\n\nthe\n\npost-whistle\n\npenalty\n\nis\n\npart\n\nof\n\nthe\n\nofficially\n\nconfirmed\n\nresult).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\na\n\n<team>\n\ngoal\n\nscored\n\nin\n\nthe\n\n89th\n\nminute\n\nis\n\nunder\n\nVAR\n\nreview\n\nat\n\nthe\n\nfinal\n\nwhistle;\n\nthe\n\norganizer\n\nofficially\n\nconfirms\n\nthe\n\ngoal\n\nand\n\na\n\nfinal\n\nregulation\n\nresult\n\nof\n\n1\u20130\n\nin\n\nfavor\n\nof\n\n<team>\n\n(resolves\n\nYes\n\nonce\n\nofficially\n\nconfirmed).\n\nKalshiEX\n\nLLC\n\n[page 15 of 18: text layer]\nKalshiEX\n\nLLC\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\nthe\n\norganizer\n\nofficially\n\nconfirms\n\n<team>\n\nas\n\nthe\n\n2\u20131\n\nwinner,\n\nthe\n\nmatch\n\nhaving\n\nbeen\n\nplayed\n\nto\n\ncompletion;\n\na\n\ndisciplinary\n\nbody\n\nlater\n\nawards\n\nthe\n\nopponent\n\nthe\n\nmatch\n\nby\n\nforfeit\n\nfor\n\nfielding\n\nan\n\nineligible\n\nplayer\n\n(resolves\n\nYes\n\n\u2014\n\na\n\nchange\n\narising\n\nafter\n\nofficial\n\nconfirmation\n\nof\n\na\n\ncompleted\n\nmatch\n\ndoes\n\nnot\n\naffect\n\nsettlement).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\nthe\n\nonly\n\ngoal\n\nof\n\n<soccer\n\ngame>\n\nis\n\nan\n\nown\n\ngoal\n\nscored\n\nby\n\na\n\nplayer\n\nof\n\nthe\n\nopposing\n\nparticipant,\n\nthe\n\nSource\n\nAgency\n\nrecords\n\nthe\n\nfinal\n\nresult\n\nas\n\n1\u20130\n\nin\n\nfavor\n\nof\n\n<team>,\n\nand\n\n<team>\n\nis\n\nofficially\n\nconfirmed\n\nas\n\nthe\n\nwinner\n\n(resolves\n\nYes\n\n\u2014\n\nthe\n\nown\n\ngoal\n\ncounts\n\nfor\n\n<team>).\n\nExamples\n\nthat\n\nwould\n\nNOT\n\nresolve\n\nthe\n\nmarket\n\nto\n\nYes:\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<soccer\n\ngame>\n\nends\n\n1\u20131\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<team>\n\nloses\n\n2\u20131\n\nin\n\nregulation\n\nplay.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<soccer\n\ngame>\n\nends\n\n1\u20131\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\nand\n\n<team>\n\nwins\n\non\n\npenalties\n\n(this\n\nresolves\n\nNo\n\nbecause\n\nthe\n\nregulation\n\nresult\n\nis\n\na\n\ndraw).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nis\n\na\n\nleague\n\nmatch\n\nthat\n\nends\n\n1\u20131\n\nwith\n\nno\n\nextra\n\ntime\n\nor\n\npenalty\n\nshootout\n\napplied.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<team>\n\nloses\n\n2\u20131\n\nin\n\nregulation\n\nplay.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<soccer\n\ngame>\n\nends\n\n1\u20131\n\nin\n\nregulation,\n\nremains\n\ntied\n\nafter\n\nextra\n\ntime,\n\nand\n\nthe\n\nopposing\n\nparticipant\n\nwins\n\nthe\n\nresulting\n\npenalty\n\nshootout.\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<soccer\n\ngame>\n\nis\n\ncancelled\n\nbefore\n\nthe\n\ncommencement\n\nof\n\nplay\n\n(in\n\nthis\n\nscenario,\n\nthe\n\nContract\n\nis\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nrather\n\nthan\n\nresolving\n\nto\n\nNo\n\nor\n\nYes).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\n<soccer\n\ngame>\n\nis\n\nabandoned\n\nin\n\nthe\n\n30th\n\nminute\n\nwith\n\nno\n\nofficial\n\naward,\n\nand\n\nis\n\nnot\n\nrescheduled\n\nto\n\ntake\n\nplace\n\nwithin\n\nforty-eight\n\n(48)\n\nhours\n\nof\n\nits\n\noriginally\n\nscheduled\n\nstart\n\ntime\n\n(in\n\nthis\n\nscenario,\n\nthe\n\nContract\n\nis\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nas\n\ndetermined\n\nby\n\nthe\n\nExchange\n\nrather\n\nthan\n\nresolving\n\nto\n\nNo\n\nor\n\nYes).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nsecond\n\nhalf\":\n\n<team>\n\nleads\n\n2\u20130\n\nat\n\nthe\n\nconclusion\n\nof\n\nthe\n\nfirst\n\nhalf,\n\nthe\n\nsecond\n\nhalf\n\nfinishes\n\n0\u20130,\n\nand\n\nthe\n\nmatch\n\nends\n\n2\u20130\n\n(resolves\n\nNo\n\nbecause\n\nthe\n\nsecond-half-only\n\nresult\n\nis\n\na\n\ndraw).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nextra\n\ntime\":\n\nthe\n\nmatch\n\nends\n\n2\u20131\n\nin\n\nregulation\n\nwith\n\nno\n\nextra\n\ntime\n\nplayed\n\n(in\n\nthis\n\nscenario\n\nthe\n\nContract\n\nis\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nrather\n\nthan\n\nresolving\n\nYes\n\nor\n\nNo).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nextra\n\ntime\":\n\nthe\n\nmatch\n\nis\n\n1\u20131\n\nafter\n\nregulation,\n\n1\u20131\n\nafter\n\nextra\n\ntime,\n\nand\n\n<team>\n\nwins\n\nthe\n\npenalty\n\nshootout\n\n(resolves\n\nNo\n\nbecause\n\nno\n\nteam\n\noutscored\n\nthe\n\nother\n\nduring\n\nextra\n\ntime;\n\nthe\n\nshootout\n\nis\n\ndisregarded\n\nfor\n\nthis\n\n<result\n\nscope>).\n\n\u25cf\n\nFor\n\n\"Draw,\n\nfull\n\nmatch\":\n\n<team>\n\nwins\n\n2\u20131\n\nin\n\nregulation.\n\nKalshiEX\n\nLLC\n\n[page 16 of 18: text layer]\nKalshiEX\n\nLLC\n\n\u25cf\n\nFor\n\n\"Draw,\n\nextra\n\ntime\":\n\nthe\n\nmatch\n\nends\n\n2\u20131\n\nin\n\nregulation\n\nwith\n\nno\n\nextra\n\ntime\n\nplayed\n\n(in\n\nthis\n\nscenario\n\nthe\n\nDraw\n\niteration\n\nis\n\nsettled\n\nat\n\nthe\n\nlast\n\nfair\n\nprice\n\nrather\n\nthan\n\nresolving\n\nYes\n\nor\n\nNo).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nregulation\n\ntime\":\n\na\n\n<team>\n\ngoal\n\nin\n\nthe\n\n89th\n\nminute\n\nis\n\ndisallowed\n\nby\n\nVAR\n\nbefore\n\nthe\n\nfinal\n\nwhistle\n\nand\n\nthe\n\norganizer\n\nofficially\n\nconfirms\n\na\n\n0\u20130\n\nregulation\n\nresult\n\n(resolves\n\nNo\n\n\u2014\n\nthe\n\ndisallowed\n\ngoal\n\nis\n\nnot\n\npart\n\nof\n\nthe\n\nofficial\n\nresult).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\nthe\n\nonly\n\ngoal\n\nof\n\n<soccer\n\ngame>\n\nis\n\nan\n\nown\n\ngoal\n\nscored\n\nby\n\na\n\nplayer\n\nof\n\n<team>,\n\nand\n\nthe\n\nSource\n\nAgency\n\nrecords\n\nthe\n\nfinal\n\nresult\n\nas\n\n0\u20131\n\nin\n\nfavor\n\nof\n\nthe\n\nopposing\n\nparticipant\n\n(resolves\n\nNo\n\n\u2014\n\nthe\n\nown\n\ngoal\n\ncounts\n\nfor\n\nthe\n\nopposing\n\nparticipant,\n\nnot\n\n<team>).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nsecond\n\nhalf\":\n\nthe\n\nonly\n\nsecond-half\n\ngoal\n\nis\n\nan\n\nown\n\ngoal\n\nscored\n\nby\n\na\n\nplayer\n\nof\n\n<team>;\n\nthe\n\nsecond-half-only\n\nresult\n\nis\n\ntherefore\n\n0\u20131\n\nagainst\n\n<team>\n\n(resolves\n\nNo).\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nfull\n\nmatch\":\n\n<team>\n\nleads\n\n1\u20130\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\n<soccer\n\ngame>\n\nproceeds\n\nto\n\nextra\n\ntime,\n\nand\n\nthe\n\nopposing\n\nparticipant\n\nis\n\nofficially\n\nconfirmed\n\nas\n\nthe\n\n2\u20131\n\nwinner\n\n(resolves\n\nNo\n\n\u2014\n\na\n\nregulation\n\nlead\n\ndoes\n\nnot\n\nby\n\nitself\n\nvalidate\n\nYes\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"full\n\nmatch\").\n\n\u25cf\n\nFor\n\n\"<team>\n\nwins,\n\nextra\n\ntime\":\n\n<team>\n\nleads\n\n1\u20130\n\nat\n\nthe\n\nconclusion\n\nof\n\nregulation\n\nplay,\n\nand\n\nno\n\ngoals\n\nare\n\nscored\n\nby\n\neither\n\nparticipant\n\nduring\n\nextra\n\ntime\n\n(resolves\n\nNo\n\n\u2014\n\nregulation\n\ngoals\n\nare\n\ndisregarded\n\nwhere\n\n<result\n\nscope>\n\nis\n\n\"extra\n\ntime\").\n\nMinimum\n\nTick:\n\nThe\n\nMinimum\n\nTick\n\nsize\n\nfor\n\nthe\n\nContract\n\nshall\n\nbe\n\n$0.01.\n\nPosition\n\nAccountability\n\nLevel:\n\nThe\n\nPosition\n\nAccountability\n\nLevel\n\nfor\n\nthe\n\nContract\n\nshall\n\nbe\n\n$25,000\n\nper\n\nstrike,\n\nper\n\nMember.\n\nLast\n\nTrading\n\nDate:\n\nThe\n\nLast\n\nTrading\n\nDate\n\nof\n\nthe\n\nContract\n\nwill\n\nbe\n\nthe\n\nsame\n\nas\n\nthe\n\nExpiration\n\nDate.\n\nThe\n\nLast\n\nTrading\n\nTime\n\nwill\n\nbe\n\nthe\n\nsame\n\nas\n\nthe\n\nExpiration\n\nTime.\n\nSettlement\n\nDate:\n\nThe\n\nSettlement\n\nDate\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\nno\n\nlater\n\nthan\n\nthe\n\nday\n\nafter\n\nthe\n\nExpiration\n\nDate,\n\nunless\n\nthe\n\nMarket\n\nOutcome\n\nis\n\nunder\n\nreview\n\npursuant\n\nto\n\nRule\n\n7.1.\n\nExpiration\n\nDate:\n\nThe\n\nlatest\n\nExpiration\n\nDate\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\nfifteen\n\ndays\n\nafter\n\nthe\n\noriginally\n\nscheduled\n\ndate\n\nof\n\n<soccer\n\ngame>.\n\nIf\n\nan\n\nevent\n\ndescribed\n\nin\n\nthe\n\nPayout\n\nCriterion\n\noccurs,\n\nexpiration\n\nwill\n\nbe\n\nmoved\n\nto\n\nan\n\nearlier\n\ndate\n\nand\n\ntime\n\nin\n\naccordance\n\nwith\n\nRule\n\n7.2.\n\nExpiration\n\nTime:\n\nThe\n\nExpiration\n\ntime\n\nof\n\nthe\n\nContract\n\nshall\n\nbe\n\n10:00\n\nAM\n\nET.\n\nSettlement\n\nValue:\n\nThe\n\nSettlement\n\nValue\n\nfor\n\nthis\n\nContract\n\nis\n\n$1.00.\n\nExpiration\n\nValue:\n\nThe\n\nExpiration\n\nValue\n\nis\n\nthe\n\nvalue\n\nof\n\nthe\n\nUnderlying\n\nas\n\ndocumented\n\nby\n\nthe\n\nSource\n\nAgency\n\non\n\nthe\n\nExpiration\n\nDate\n\nat\n\nthe\n\nExpiration\n\ntime.\n\nKalshiEX\n\nLLC\n\n[page 17 of 18: text layer]\nKalshiEX\n\nLLC\n\nContingencies:\n\nBefore\n\nSettlement,\n\nKalshi\n\nmay,\n\nat\n\nits\n\nsole\n\ndiscretion,\n\ninitiate\n\nthe\n\nMarket\n\nOutcome\n\nReview\n\nProcess\n\npursuant\n\nto\n\nRule\n\n7.1\n\nof\n\nthe\n\nRulebook.\n\nIf\n\nan\n\nExpiration\n\nValue\n\ncannot\n\nbe\n\ndetermined\n\non\n\nthe\n\nExpiration\n\nDate,\n\nKalshi\n\nhas\n\nthe\n\nright\n\nto\n\ndetermine\n\npayouts\n\npursuant\n\nto\n\nRule\n\n7.1\n\nin\n\nthe\n\nRulebook.\n\nKalshiEX\n\nLLC\n\n[page 18 of 18: text layer]\nKalshiEX\n\nLLC\n\nAPPENDIX\n\nB\n\n\u2013\n\nTRADING\n\nPROHIBITIONS\n\nIn\n\naddition\n\nto\n\nthe\n\ngeneral\n\nprohibition\n\nagainst\n\ntrading\n\non\n\nmaterial\n\nnonpublic\n\ninformation,\n\nthe\n\nExchange\n\nwill\n\ninstitute\n\nadditional\n\nprohibitions\n\nfor\n\ntrading\n\nthe\n\ncontract.\n\nPersons\n\nunder\n\n18\n\nyears\n\nof\n\nage\n\nare\n\nnot\n\npermitted\n\nto\n\ncreate\n\nKalshi\n\naccounts.\n\nThe\n\nfollowing\n\nindividuals\n\nwill\n\nbe\n\nprohibited\n\nfrom\n\ntrading:\n\n\u25cf\n\nPlayers,\n\ncoaches,\n\nmanagers,\n\nassistant\n\ncoaches,\n\ngoalkeeping\n\ncoaches,\n\nfitness\n\nstaff,\n\nand\n\non-field/bench\n\npersonnel\n\nof\n\neither\n\nteam\n\nparticipating\n\nin\n\n<soccer\n\ngame>,\n\nincluding\n\nreserve\n\nand\n\nacademy\n\nplayers\n\ndesignated\n\nfor\n\nmatchday,\n\nas\n\nwell\n\nas\n\ntheir\n\nimmediate\n\nfamily\n\nmembers\n\nand\n\nhousehold\n\nmembers\n\n\u25cf\n\nOwners,\n\nsporting\n\ndirectors,\n\ntechnical\n\ndirectors,\n\nscouts,\n\nand\n\nfootball\n\noperations\n\npersonnel\n\nof\n\neither\n\nclub,\n\nschool,\n\nor\n\nnational\n\nside\n\nparticipating\n\nin\n\n<soccer\n\ngame>\n\n\u25cf\n\nOfficers,\n\nemployees,\n\ncontractors,\n\nand\n\nboard\n\nmembers\n\nof\n\nthe\n\ngoverning\n\nbody\n\nof\n\nthe\n\nrelevant\n\ncompetition\n\n(e.g.,\n\nFIFA,\n\nUEFA,\n\nEPL,\n\nMLS,\n\nNCAA,\n\nCONCACAF,\n\nCONMEBOL,\n\nAFC,\n\nCAF,\n\nOFC,\n\nEFL),\n\nincluding\n\nmatch\n\nofficials\n\n(referees,\n\nassistant\n\nreferees,\n\nfourth\n\nofficials,\n\nVAR\n\nofficials),\n\nmatch\n\ncommissioners,\n\ncompetition\n\norganizers,\n\nand\n\nleague\n\noffice\n\nstaff\n\nwith\n\naccess\n\nto\n\nnon-public\n\nmatch-related\n\ninformation\n\n\u25cf\n\nTeam\n\nmedical\n\nstaff,\n\nclub\n\ndoctors,\n\nphysiotherapists,\n\nand\n\nkit/equipment\n\nmanagers\n\nwith\n\nnon-public\n\nknowledge\n\nof\n\nplayer\n\nfitness,\n\ninjury\n\nstatus,\n\nor\n\nmatchday\n\navailability\n\n\u25cf\n\nAgents,\n\nintermediaries,\n\nand\n\npersonal\n\nrepresentatives\n\nof\n\nplayers\n\nparticipating\n\nin\n\n<soccer\n\ngame>\n\n\u25cf\n\nOfficial\n\nscorekeepers,\n\nstatisticians,\n\nand\n\ndata\n\nproviders\n\n(e.g.,\n\nOPTA,\n\nStatsPerform)\n\npersonnel\n\nwith\n\naccess\n\nto\n\nnon-public\n\nmatch\n\ndata,\n\nattribution\n\ndecisions,\n\nor\n\nstat\n\ncorrections\n\nprior\n\nto\n\npublic\n\nrelease\n\n\u25cf\n\nVAR\n\nroom\n\npersonnel\n\nand\n\nreplay\n\nofficials\n\nwith\n\nnon-public\n\nknowledge\n\nof\n\npending\n\nor\n\nin-progress\n\nreviews\n\n\u25cf\n\nBroadcast\n\npersonnel\n\nwith\n\naccess\n\nto\n\nnon-public\n\nteam\n\nnews,\n\nlineup\n\nleaks,\n\nor\n\nin-stadium\n\nintelligence\n\nprior\n\nto\n\npublic\n\nrelease\n\n\u25cf\n\nEmployees\n\nand\n\ncontractors\n\nof\n\nany\n\nSource\n\nAgency\n\nwith\n\naccess\n\nto\n\nnon-public\n\nmatch\n\ndata,\n\nlineups,\n\nor\n\nattribution\n\ndecisions\n\nprior\n\nto\n\npublic\n\nrelease\n\n\u25cf\n\nSportsbook\n\noperators,\n\noddsmakers,\n\ntraders,\n\nand\n\nrisk\n\nmanagers\n\nat\n\nlicensed\n\nsportsbooks\n\nor\n\nbetting\n\nexchanges\n\nwith\n\nnon-public\n\ninformation\n\nregarding\n\nline\n\nmovement,\n\nsharp\n\naction,\n\nor\n\ninsider\n\nreports\n\nrelated\n\nto\n\n<soccer\n\ngame>\n\n\u25cf\n\nPersons\n\nsubject\n\nto\n\nan\n\nactive\n\nintegrity\n\ninvestigation\n\nby\n\nFIFA,\n\nUEFA,\n\na\n\nconfederation,\n\nleague,\n\nor\n\nnational\n\nfederation,\n\nor\n\nsanctioned\n\nfor\n\nmatch-fixing,\n\nspot-fixing,\n\nor\n\ncomp\n\nKalshiEX\n\nLLC",
+     "unreadable": [],
+     "url": "https://assets.kalshi.com/regulatory/product-certifications/SOCCERGAMEWIN.pdf"
+    }
+   ],
+   "listing_fields": [
+    "ticker",
+    "event_ticker",
+    "market_type",
+    "title",
+    "subtitle",
+    "yes_sub_title",
+    "no_sub_title",
+    "rules_primary",
+    "rules_secondary",
+    "early_close_condition",
+    "can_close_early",
+    "strike_type",
+    "floor_strike",
+    "cap_strike",
+    "functional_strike",
+    "custom_strike",
+    "notional_value_dollars",
+    "open_time",
+    "close_time",
+    "expiration_time",
+    "expected_expiration_time",
+    "latest_expiration_time",
+    "occurrence_datetime",
+    "settlement_timer_seconds"
+   ],
+   "markets": {
+    "count": 3,
+    "tickers": [
+     "KXUAEPLGAME-26OCT18AJMSHJ-AJM",
+     "KXUAEPLGAME-26OCT18AJMSHJ-SHJ",
+     "KXUAEPLGAME-26OCT18AJMSHJ-TIE"
+    ],
+    "varying_fields": {
+     "custom_strike": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": {
+        "soccer_team": "06fea0c5-943c-4c62-a823-33eb27b54f70"
+       },
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": {
+        "soccer_team": "3e4e3c37-75d6-43bd-ab30-fdc5b18a1496"
+       },
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": {
+        "soccer_team": "111193d4-9b1f-4bd8-ab7c-9de252737f05"
+       }
+      }
+     },
+     "no_sub_title": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": "Ajman",
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": "Sharjah",
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": "Tie"
+      }
+     },
+     "rules_primary": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": "If Ajman wins the Ajman vs Sharjah professional UAE Pro League soccer game originally scheduled for Oct 18, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.",
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": "If Sharjah wins the Ajman vs Sharjah professional UAE Pro League soccer game originally scheduled for Oct 18, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.",
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": "If Tie is the result of the Ajman vs Sharjah professional UAE Pro League soccer game originally scheduled for Oct 18, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes."
+      }
+     },
+     "ticker": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": "KXUAEPLGAME-26OCT18AJMSHJ-AJM",
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": "KXUAEPLGAME-26OCT18AJMSHJ-SHJ",
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": "KXUAEPLGAME-26OCT18AJMSHJ-TIE"
+      }
+     },
+     "title": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": "Ajman wins",
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": "Sharjah wins",
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": "Tie is the result"
+      }
+     },
+     "yes_sub_title": {
+      "distinct": 3,
+      "examples": {
+       "KXUAEPLGAME-26OCT18AJMSHJ-AJM": "Ajman",
+       "KXUAEPLGAME-26OCT18AJMSHJ-SHJ": "Sharjah",
+       "KXUAEPLGAME-26OCT18AJMSHJ-TIE": "Tie"
+      }
+     }
+    }
+   },
+   "representative_market": {
+    "can_close_early": true,
+    "close_time": "2026-10-18T17:44:58Z",
+    "custom_strike": {
+     "soccer_team": "06fea0c5-943c-4c62-a823-33eb27b54f70"
+    },
+    "early_close_condition": "This market will close and expire after a winner is declared.",
+    "event_ticker": "KXUAEPLGAME-26OCT18AJMSHJ",
+    "expected_expiration_time": "2026-10-18T18:45:00Z",
+    "expiration_time": "2026-10-20T15:45:00Z",
+    "latest_expiration_time": "2026-10-20T15:45:00Z",
+    "market_type": "binary",
+    "no_sub_title": "Ajman",
+    "notional_value_dollars": "1.0000",
+    "occurrence_datetime": "2026-10-18T18:45:00Z",
+    "open_time": "2026-10-14T00:35:00Z",
+    "rules_primary": "If Ajman wins the Ajman vs Sharjah professional UAE Pro League soccer game originally scheduled for Oct 18, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.",
+    "rules_secondary": "The following market refers to the Ajman vs Sharjah professional UAE Pro League soccer game originally scheduled for Oct 18, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties). If the game ends in a tie, the market called \"Tie\" resolves to Yes. If the game is cancelled or rescheduled to over 48 hours away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+    "settlement_timer_seconds": 0,
+    "strike_type": "structured",
+    "ticker": "KXUAEPLGAME-26OCT18AJMSHJ-AJM",
+    "title": "Ajman wins",
+    "yes_sub_title": "Ajman"
+   },
+   "series": {
+    "additional_prohibitions": [
+     "Current players, coaches, and staff of the league, association, or organization(s) governing the event. For college leagues/associations specifically, or where otherwise appropriate (as identified by the Exchange), this applies to current players/coaches/staff of the specific sport in <event> rather than the league/association as a whole (e.g., if the Division I Gonzaga Men\u2019s Basketball Team is playing in <event>, this prohibition will restrict trades by current players/coaches/staff on NCAA Basketball, rather than all current players/coaches/staff in any NCAA sport).",
+     "Paid employees of the league and league participants",
+     "Owners of teams and the league",
+     "and household members and immediate family of all above",
+     "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+     "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+     "Sports"
+    ],
+    "category": "Sports",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/SOCCERGAMEWIN.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/SOCCERGAMEWIN.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-10-14T19:05:10.116776Z",
+    "product_metadata": {
+     "important_info": {
+      "id": "KXUAEPLGAME-2026-04-15",
+      "markdown": "**Important information:** The following market is based on the outcome after 90 minutes plus stoppage time. This does not include extra time or penalties.",
+      "message": "",
+      "title": ""
+     },
+     "scope": "Game"
+    },
+    "settlement_sources": [
+     {
+      "name": "ESPN",
+      "url": "https://www.espn.com/"
+     },
+     {
+      "name": "Fox Sports",
+      "url": "https://www.foxsports.com/"
+     }
+    ],
+    "tags": [
+     "Soccer"
+    ],
+    "ticker": "KXUAEPLGAME",
+    "title": "UAE Pro League"
+   }
+  },
+  "model": "claude-opus-5-5",
+  "role": "contract_reader",
+  "schema": {
+   "$defs": {
+    "And": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "and",
+       "default": "and",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "And",
+     "type": "object"
+    },
+    "At": {
+     "additionalProperties": false,
+     "description": "The condition holds at the instant `at` (spec \u00a74).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "at",
+       "default": "at",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "at"
+     ],
+     "title": "At",
+     "type": "object"
+    },
+    "By": {
+     "additionalProperties": false,
+     "description": "The condition holds at some observation up to the deadline, which is included or not as `closed` says (spec \u00a74\n\"By(expr, t)\"; A05 \u00a75.4 endpoint inclusion). `since` is the earliest observation that counts, with its own\ninclusion, or None where every earlier observation counts: the sources give By no lower bound, so the contract\nstates it (ours).",
+     "properties": {
+      "closed": {
+       "title": "Closed",
+       "type": "boolean"
+      },
+      "deadline": {
+       "format": "date-time",
+       "title": "Deadline",
+       "type": "string"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "by",
+       "default": "by",
+       "title": "Kind",
+       "type": "string"
+      },
+      "since": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      },
+      "since_closed": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since Closed"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "since",
+      "since_closed",
+      "deadline",
+      "closed"
+     ],
+     "title": "By",
+     "type": "object"
+    },
+    "Category": {
+     "additionalProperties": false,
+     "description": "A category or text value, compared as given.",
+     "properties": {
+      "kind": {
+       "const": "text",
+       "default": "text",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Category",
+     "type": "object"
+    },
+    "Cmp": {
+     "additionalProperties": false,
+     "description": "observable op value, at the instant or day its enclosing temporal operator gives (spec \u00a74). The value's type is\nthe observable's (`VALUE_KIND`); a numeric value is compared at the observable's declared precision (A09 \u00a710.3).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "cmp",
+       "default": "cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Number"
+        },
+        {
+         "$ref": "#/$defs/Category"
+        },
+        {
+         "$ref": "#/$defs/Flag"
+        },
+        {
+         "$ref": "#/$defs/OnDay"
+        }
+       ],
+       "title": "Value"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "op",
+      "value"
+     ],
+     "title": "Cmp",
+     "type": "object"
+    },
+    "Computed": {
+     "additionalProperties": false,
+     "description": "A number computed by a registered consequence node from numeric sub-expressions (spec \u00a75: \"The contract IR\ncompiles into the computation layer, so the settlement function and the hedge payoff are the same code\"; I7: code\nowns consequences). The node is pure and registered (spec \u00a74 @node), so the same arithmetic settles, prices and\nfuzzes; over interval inputs its value is the interval of its outputs.",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "inputs": {
+       "additionalProperties": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/CountTrue"
+         },
+         {
+          "$ref": "#/$defs/DurationIn"
+         },
+         {
+          "$ref": "#/$defs/ReadValue"
+         },
+         {
+          "$ref": "#/$defs/ValueAt"
+         },
+         {
+          "$ref": "#/$defs/Computed"
+         }
+        ]
+       },
+       "title": "Inputs",
+       "type": "object"
+      },
+      "kind": {
+       "const": "computed",
+       "default": "computed",
+       "title": "Kind",
+       "type": "string"
+      },
+      "node": {
+       "$ref": "#/$defs/Ref"
+      }
+     },
+     "required": [
+      "id",
+      "node",
+      "inputs"
+     ],
+     "title": "Computed",
+     "type": "object"
+    },
+    "ConflictPolicy": {
+     "additionalProperties": false,
+     "description": "How disagreeing sources are reconciled: a registered procedure and its parameters (A05 \u00a75.4: \"Use a registered\nprocedure ID plus parameters, or an explicit typed policy\"). The two procedures registered so far are ours, the\ntwo readings of spec \u00a74's precedence list that an evaluator can apply deterministically: precedence_first_available,\nthe highest-ranked source in the procedure's precedence that has published settles; require_agreement, the sources\nnamed in `sources` must agree, or the result is disputed. A contract whose rule is neither is not supported exactly\n(A05 \u00a75.5) until its procedure is registered here.",
+     "properties": {
+      "procedure": {
+       "enum": [
+        "precedence_first_available",
+        "require_agreement"
+       ],
+       "title": "Procedure",
+       "type": "string"
+      },
+      "sources": {
+       "default": [],
+       "items": {
+        "type": "string"
+       },
+       "title": "Sources",
+       "type": "array"
+      }
+     },
+     "required": [
+      "procedure"
+     ],
+     "title": "ConflictPolicy",
+     "type": "object"
+    },
+    "ContractIR": {
+     "additionalProperties": false,
+     "description": "A contract in the IR (spec \u00a74). Every observable the trigger or payout references is declared.",
+     "properties": {
+      "examples": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/ScenarioExample"
+       },
+       "title": "Examples",
+       "type": "array"
+      },
+      "exclusions": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/Exclusion"
+       },
+       "title": "Exclusions",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "observables": {
+       "items": {
+        "$ref": "#/$defs/Observable"
+       },
+       "title": "Observables",
+       "type": "array"
+      },
+      "payout": {
+       "$ref": "#/$defs/Payout"
+      },
+      "resolution": {
+       "$ref": "#/$defs/ResolutionProcedure"
+      },
+      "timing": {
+       "$ref": "#/$defs/Timing"
+      },
+      "trigger": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Trigger"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version",
+      "observables",
+      "trigger",
+      "payout",
+      "timing",
+      "resolution"
+     ],
+     "title": "ContractIR",
+     "type": "object"
+    },
+    "CountTrue": {
+     "additionalProperties": false,
+     "description": "The number of calendar days of `days` on which the condition holds, counted in the window's time zone (spec \u00a74).\nIts value over three-valued days is an interval [k, k + u] (A05 \u00a75.3).",
+     "properties": {
+      "days": {
+       "$ref": "#/$defs/TimeWindow"
+      },
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "count_true",
+       "default": "count_true",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "days"
+     ],
+     "title": "CountTrue",
+     "type": "object"
+    },
+    "DurationIn": {
+     "additionalProperties": false,
+     "description": "The time within the window during which the condition holds, in `unit` (spec \u00a74); an interval over unknowns, as\nCountTrue's is. calendar_day counts calendar days of the window's time zone; elapsed_day counts 24-hour periods, so\na daylight-saving change does not change it (A05 \u00a75.4: \"Define ... day-count conventions\").",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "duration_in",
+       "default": "duration_in",
+       "title": "Kind",
+       "type": "string"
+      },
+      "unit": {
+       "enum": [
+        "calendar_day",
+        "elapsed_day",
+        "hour"
+       ],
+       "title": "Unit",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window",
+      "unit"
+     ],
+     "title": "DurationIn",
+     "type": "object"
+    },
+    "Exclusion": {
+     "additionalProperties": false,
+     "description": "An exclusion clause. One that changes settlement is operative and names the IR or interpretive node that carries\nit; a disclosure note is marked non-operative (A05 \u00a75.4).",
+     "properties": {
+      "ir_node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Ir Node"
+      },
+      "operative": {
+       "title": "Operative",
+       "type": "boolean"
+      },
+      "text": {
+       "title": "Text",
+       "type": "string"
+      }
+     },
+     "required": [
+      "text",
+      "operative"
+     ],
+     "title": "Exclusion",
+     "type": "object"
+    },
+    "Flag": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "bool",
+       "default": "bool",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Flag",
+     "type": "object"
+    },
+    "Interpretive": {
+     "additionalProperties": false,
+     "description": "A condition a resolver must judge from text (spec \u00a74): a question template and its bindings, answered by decision\nmodels and mapped to a truth by its answer's status (spec \u00a76.3).",
+     "properties": {
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "interpretive",
+       "default": "interpretive",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings"
+     ],
+     "title": "Interpretive",
+     "type": "object"
+    },
+    "ListingBinding": {
+     "additionalProperties": false,
+     "description": "One per-market listing field of a series and the IR value it fills (ours; spec \u00a79.3's per-market fields). `field`\nis the market record's field, a dotted path into its objects where the value is nested (custom_strike.Option).\n`node` and `slot` name the value it fills: a node's threshold (Cmp, NumCmp), the instant it reads (At, ValueAt), a\nBy's bounds (since, deadline), or a window's ends (Throughout, CountTrue, DurationIn); or, with no node, one of the\ntiming's dates (open, close, expiration, observation_cutoff). The field's value enters as it is, in the slot's type:\na threshold takes the number, text or date its comparison's value is, an instant slot an instant.",
+     "properties": {
+      "field": {
+       "title": "Field",
+       "type": "string"
+      },
+      "node": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Node"
+      },
+      "slot": {
+       "enum": [
+        "threshold",
+        "at",
+        "since",
+        "deadline",
+        "window_start",
+        "window_end",
+        "open",
+        "close",
+        "expiration",
+        "observation_cutoff"
+       ],
+       "title": "Slot",
+       "type": "string"
+      }
+     },
+     "required": [
+      "field",
+      "node",
+      "slot"
+     ],
+     "title": "ListingBinding",
+     "type": "object"
+    },
+    "Not": {
+     "additionalProperties": false,
+     "properties": {
+      "arg": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Arg"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "not",
+       "default": "not",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "arg"
+     ],
+     "title": "Not",
+     "type": "object"
+    },
+    "NumCmp": {
+     "additionalProperties": false,
+     "description": "A count or duration compared with a threshold, e.g. CountTrue(...) >= 20 (ours: spec \u00a74 puts CountTrue and\nDurationIn in the Expr union, and a trigger on them, such as spec \u00a72.5's \"how many days ... will station S record at\nleast X inches\", compares their value).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/CountTrue"
+        },
+        {
+         "$ref": "#/$defs/DurationIn"
+        },
+        {
+         "$ref": "#/$defs/ReadValue"
+        },
+        {
+         "$ref": "#/$defs/ValueAt"
+        },
+        {
+         "$ref": "#/$defs/Computed"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "num_cmp",
+       "default": "num_cmp",
+       "title": "Kind",
+       "type": "string"
+      },
+      "op": {
+       "enum": [
+        "<",
+        "<=",
+        "==",
+        "!=",
+        ">=",
+        ">"
+       ],
+       "title": "Op",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "op",
+      "value"
+     ],
+     "title": "NumCmp",
+     "type": "object"
+    },
+    "Number": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "number",
+       "default": "number",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "Number",
+     "type": "object"
+    },
+    "Observable": {
+     "additionalProperties": false,
+     "description": "A quantity a contract settles on (spec \u00a74).\n\nrevision_policy: which vintage settles (spec \u00a74). \"final\" is a finite rule only with a declared resolution deadline\nor a fallback (addendum A05 \u00a75.4: \"An unlimited `final` vintage is not a finite settlement rule unless 'final' has a\ndeclared resolution deadline or fallback\"): `final_deadline` is the instant by which the value must be final, and\n`final_fallback` the vintage that settles if no final value is published by the settlement determination. unit and precision: what a numeric value is measured in and the precision at which it is published\n(A05 \u00a75.4 unit conversions; A09 \u00a710.3 thresholds at declared precision).",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "final_deadline": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Deadline"
+      },
+      "final_fallback": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_print",
+          "as_of_expiry"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Final Fallback"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "precision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Precision"
+      },
+      "revision_policy": {
+       "enum": [
+        "first_print",
+        "as_of_expiry",
+        "final"
+       ],
+       "title": "Revision Policy",
+       "type": "string"
+      },
+      "schedule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Schedule"
+      },
+      "sources": {
+       "items": {
+        "$ref": "#/$defs/Source"
+       },
+       "title": "Sources",
+       "type": "array"
+      },
+      "unit": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Unit"
+      },
+      "value_type": {
+       "enum": [
+        "bool",
+        "number",
+        "date",
+        "category",
+        "text"
+       ],
+       "title": "Value Type",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "description",
+      "value_type",
+      "sources",
+      "revision_policy"
+     ],
+     "title": "Observable",
+     "type": "object"
+    },
+    "OnDay": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "date",
+       "default": "date",
+       "title": "Kind",
+       "type": "string"
+      },
+      "value": {
+       "format": "date",
+       "title": "Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "title": "OnDay",
+     "type": "object"
+    },
+    "Or": {
+     "additionalProperties": false,
+     "properties": {
+      "args": {
+       "items": {
+        "oneOf": [
+         {
+          "$ref": "#/$defs/Cmp"
+         },
+         {
+          "$ref": "#/$defs/And"
+         },
+         {
+          "$ref": "#/$defs/Or"
+         },
+         {
+          "$ref": "#/$defs/Not"
+         },
+         {
+          "$ref": "#/$defs/By"
+         },
+         {
+          "$ref": "#/$defs/At"
+         },
+         {
+          "$ref": "#/$defs/Throughout"
+         },
+         {
+          "$ref": "#/$defs/Interpretive"
+         },
+         {
+          "$ref": "#/$defs/NumCmp"
+         }
+        ]
+       },
+       "title": "Args",
+       "type": "array"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "or",
+       "default": "or",
+       "title": "Kind",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "args"
+     ],
+     "title": "Or",
+     "type": "object"
+    },
+    "Payout": {
+     "additionalProperties": false,
+     "description": "Per unit (spec \u00a74). currency, and rounding to `rounding_quantum` by `rounding_mode`, are explicit (A05 \u00a75.1,\n\u00a75.4: \"Define ... rounding\"). payment: paid once at settlement, or per\nperiod of `periods`, each period's amount paid after its end (A05 \u00a75.3: \"A count paid once at expiry and a strip paid\nperiodically can have identical terminal amounts and very different liquidity consequences\").",
+     "properties": {
+      "cap": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Cap"
+      },
+      "currency": {
+       "title": "Currency",
+       "type": "string"
+      },
+      "kind": {
+       "enum": [
+        "binary",
+        "per_unit",
+        "capped_linear"
+       ],
+       "title": "Kind",
+       "type": "string"
+      },
+      "payment": {
+       "enum": [
+        "at_settlement",
+        "per_period"
+       ],
+       "title": "Payment",
+       "type": "string"
+      },
+      "periods": {
+       "default": [],
+       "items": {
+        "$ref": "#/$defs/TimeWindow"
+       },
+       "title": "Periods",
+       "type": "array"
+      },
+      "quantity": {
+       "anyOf": [
+        {
+         "oneOf": [
+          {
+           "$ref": "#/$defs/CountTrue"
+          },
+          {
+           "$ref": "#/$defs/DurationIn"
+          },
+          {
+           "$ref": "#/$defs/ReadValue"
+          },
+          {
+           "$ref": "#/$defs/ValueAt"
+          },
+          {
+           "$ref": "#/$defs/Computed"
+          }
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Quantity"
+      },
+      "rounding_mode": {
+       "enum": [
+        "half_even",
+        "half_up",
+        "down",
+        "up"
+       ],
+       "title": "Rounding Mode",
+       "type": "string"
+      },
+      "rounding_quantum": {
+       "title": "Rounding Quantum",
+       "type": "string"
+      },
+      "unit_value": {
+       "title": "Unit Value",
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind",
+      "unit_value",
+      "currency",
+      "rounding_quantum",
+      "rounding_mode",
+      "payment"
+     ],
+     "title": "Payout",
+     "type": "object"
+    },
+    "ReadValue": {
+     "additionalProperties": false,
+     "description": "A number a resolver reads from text, with its unit: a term an instrument sets (an alternative monthly wage, a\nmodified overtime threshold). Decision models answer it as a closed set of bands (spec \u00a74: a question answered by a\ndistribution over a closed set), so its value is the interval of the band the resolved answer names, and unknown is\nthe whole range (A05 \u00a75.3: a number left open by unknowns is an interval, never a guess). Each band is [low, high),\nthe last [low, high], so a value on a shared endpoint belongs to the band above it (A05 \u00a75.4: \"Define open/closed\ninterval endpoints\"). Ours: spec \u00a79.3's specimen tests a cost computed from such terms, and spec \u00a74's Interpretive\nyields only a truth.",
+     "properties": {
+      "bands": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "type": "array"
+       },
+       "title": "Bands",
+       "type": "array"
+      },
+      "bindings": {
+       "additionalProperties": true,
+       "title": "Bindings",
+       "type": "object"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "read_value",
+       "default": "read_value",
+       "title": "Kind",
+       "type": "string"
+      },
+      "question_template": {
+       "title": "Question Template",
+       "type": "string"
+      },
+      "unit": {
+       "title": "Unit",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "question_template",
+      "bindings",
+      "unit",
+      "bands"
+     ],
+     "title": "ReadValue",
+     "type": "object"
+    },
+    "Ref": {
+     "additionalProperties": false,
+     "description": "A versioned reference to another record or policy (addendum \u00a75.1 VersionedRef).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "version": {
+       "title": "Version",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "id",
+      "version"
+     ],
+     "title": "Ref",
+     "type": "object"
+    },
+    "ResolutionProcedure": {
+     "additionalProperties": false,
+     "description": "How the contract resolves (spec \u00a74, amended by A05 \u00a75.2 and \u00a75.4). on_unknown_at_expiry says what an unknown\ntrigger means at settlement without changing the trigger's truth (A05 \u00a75.2). early_expiration: \"when_true\" when the\ncontract expires early once its trigger is true (spec \u00a79.3: \"early_close_condition\"; the Western Grazers terms: \"If\nan event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance\nwith Rule 7.2\"). Its timing is what the contract states: \"first_true\" where the contract itself fixes the instant at\nwhich the trigger is first true on the observations then published; \"per_exchange_rule\" where it defers to a rule\noutside the IR's sources, named in early_expiration_rule, and then the outcome is determined once the trigger is\ntrue while the early date stays unresolved, named, until that rule is supplied (A05 \u00a75.2: \"Unsupported procedure\ndetails must be reported, not guessed\"). An extension names its length and what happens if the trigger is still\nunknown after it.",
+     "properties": {
+      "after_extension": {
+       "anyOf": [
+        {
+         "enum": [
+          "no",
+          "yes",
+          "void"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "After Extension"
+      },
+      "conflict_policy": {
+       "$ref": "#/$defs/ConflictPolicy"
+      },
+      "early_expiration": {
+       "enum": [
+        "none",
+        "when_true"
+       ],
+       "title": "Early Expiration",
+       "type": "string"
+      },
+      "early_expiration_at": {
+       "anyOf": [
+        {
+         "enum": [
+          "first_true",
+          "per_exchange_rule"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration At"
+      },
+      "early_expiration_rule": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Early Expiration Rule"
+      },
+      "extension_days": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Extension Days"
+      },
+      "on_unknown_at_expiry": {
+       "enum": [
+        "no",
+        "yes",
+        "extend",
+        "void"
+       ],
+       "title": "On Unknown At Expiry",
+       "type": "string"
+      },
+      "precedence": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Precedence",
+       "type": "array"
+      },
+      "void_transfer": {
+       "$ref": "#/$defs/VoidTransfer"
+      }
+     },
+     "required": [
+      "precedence",
+      "conflict_policy",
+      "on_unknown_at_expiry",
+      "early_expiration",
+      "void_transfer"
+     ],
+     "title": "ResolutionProcedure",
+     "type": "object"
+    },
+    "ScenarioExample": {
+     "additionalProperties": false,
+     "description": "A published example: a scenario that passed fuzzing, with the evaluator's outcome (spec \u00a78.5, I8). `evaluation`\nis the content hash of the ResolutionEvaluation that produced `expected`.",
+     "properties": {
+      "description": {
+       "title": "Description",
+       "type": "string"
+      },
+      "evaluation": {
+       "title": "Evaluation",
+       "type": "string"
+      },
+      "expected": {
+       "enum": [
+        "resolved_yes",
+        "resolved_no",
+        "pending",
+        "extended",
+        "void",
+        "disputed"
+       ],
+       "title": "Expected",
+       "type": "string"
+      },
+      "scenario_id": {
+       "title": "Scenario Id",
+       "type": "string"
+      }
+     },
+     "required": [
+      "scenario_id",
+      "description",
+      "expected",
+      "evaluation"
+     ],
+     "title": "ScenarioExample",
+     "type": "object"
+    },
+    "SettlementBinding": {
+     "additionalProperties": false,
+     "description": "What a market record's settlement value reports (ours; spec \u00a79.3: \"settled markets supplying known outcomes\"):\nthe observable whose value the exchange settled on, and the market field (`at_field`) giving the instant that value\nis for.",
+     "properties": {
+      "at_field": {
+       "title": "At Field",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "observable",
+      "at_field"
+     ],
+     "title": "SettlementBinding",
+     "type": "object"
+    },
+    "Source": {
+     "additionalProperties": false,
+     "description": "A source of an observable's values, ranked by authority (spec \u00a74: rank 1 is highest).",
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "rank": {
+       "title": "Rank",
+       "type": "integer"
+      },
+      "role": {
+       "title": "Role",
+       "type": "string"
+      },
+      "url": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Url"
+      }
+     },
+     "required": [
+      "id",
+      "name",
+      "rank",
+      "role"
+     ],
+     "title": "Source",
+     "type": "object"
+    },
+    "Throughout": {
+     "additionalProperties": false,
+     "description": "The condition holds at every observation in the window (spec \u00a74).",
+     "properties": {
+      "expr": {
+       "oneOf": [
+        {
+         "$ref": "#/$defs/Cmp"
+        },
+        {
+         "$ref": "#/$defs/And"
+        },
+        {
+         "$ref": "#/$defs/Or"
+        },
+        {
+         "$ref": "#/$defs/Not"
+        },
+        {
+         "$ref": "#/$defs/By"
+        },
+        {
+         "$ref": "#/$defs/At"
+        },
+        {
+         "$ref": "#/$defs/Throughout"
+        },
+        {
+         "$ref": "#/$defs/Interpretive"
+        },
+        {
+         "$ref": "#/$defs/NumCmp"
+        }
+       ],
+       "title": "Expr"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "throughout",
+       "default": "throughout",
+       "title": "Kind",
+       "type": "string"
+      },
+      "window": {
+       "$ref": "#/$defs/TimeWindow"
+      }
+     },
+     "required": [
+      "id",
+      "expr",
+      "window"
+     ],
+     "title": "Throughout",
+     "type": "object"
+    },
+    "TimeWindow": {
+     "additionalProperties": false,
+     "description": "A window of time (spec \u00a74), with each endpoint's inclusion stated (addendum A05 \u00a75.4: \"Define open/closed interval\nendpoints, timezone\"). `tz` is the IANA zone in which calendar days of the window are counted.",
+     "properties": {
+      "end": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      },
+      "end_closed": {
+       "title": "End Closed",
+       "type": "boolean"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "format": "date-time",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      },
+      "start_closed": {
+       "title": "Start Closed",
+       "type": "boolean"
+      },
+      "tz": {
+       "default": "UTC",
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end",
+      "start_closed",
+      "end_closed"
+     ],
+     "title": "TimeWindow",
+     "type": "object"
+    },
+    "Timing": {
+     "additionalProperties": false,
+     "description": "The contract's dates (spec \u00a74), with the cutoff for observations and the payment lag distinguished from the\nsettlement determination (A05 \u00a75.3: event, publication, observation cutoff, settlement determination and payment\ndates are different dates). Lags count calendar days or business days, in the time zone `tz` (A05 \u00a75.4: \"Define ...\ntimezone, day-count conventions\"); a business-day lag skips weekends and the holidays of `holiday_calendar`, whose\none registered calendar is the United States federal holidays of 5 U.S.C. \u00a76103 (ours: the calendar the contracts\nwe build settle against; another is registered here before a contract can use it, A05 \u00a75.4 \"Mechanical policies\nmust be executable\").",
+     "properties": {
+      "close": {
+       "format": "date-time",
+       "title": "Close",
+       "type": "string"
+      },
+      "expiration": {
+       "format": "date-time",
+       "title": "Expiration",
+       "type": "string"
+      },
+      "holiday_calendar": {
+       "anyOf": [
+        {
+         "const": "us_federal",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Holiday Calendar"
+      },
+      "lag_days": {
+       "enum": [
+        "calendar",
+        "business"
+       ],
+       "title": "Lag Days",
+       "type": "string"
+      },
+      "observation_cutoff": {
+       "format": "date-time",
+       "title": "Observation Cutoff",
+       "type": "string"
+      },
+      "open": {
+       "format": "date-time",
+       "title": "Open",
+       "type": "string"
+      },
+      "payment_lag_days": {
+       "title": "Payment Lag Days",
+       "type": "integer"
+      },
+      "settlement_lag_days": {
+       "title": "Settlement Lag Days",
+       "type": "integer"
+      },
+      "tz": {
+       "title": "Tz",
+       "type": "string"
+      }
+     },
+     "required": [
+      "open",
+      "close",
+      "expiration",
+      "observation_cutoff",
+      "settlement_lag_days",
+      "payment_lag_days",
+      "lag_days",
+      "holiday_calendar",
+      "tz"
+     ],
+     "title": "Timing",
+     "type": "object"
+    },
+    "ValueAt": {
+     "additionalProperties": false,
+     "description": "A numeric observable's value at an instant, selected by the contract's revision and conflict policies (spec \u00a74\nObservable; ours: a computed test reads published rates, such as a minimum wage in effect on a day).",
+     "properties": {
+      "at": {
+       "format": "date-time",
+       "title": "At",
+       "type": "string"
+      },
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "kind": {
+       "const": "value_at",
+       "default": "value_at",
+       "title": "Kind",
+       "type": "string"
+      },
+      "observable": {
+       "title": "Observable",
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "observable",
+      "at"
+     ],
+     "title": "ValueAt",
+     "type": "object"
+    },
+    "VoidTransfer": {
+     "additionalProperties": false,
+     "description": "What a void returns per unit (A05 \u00a75.2: \"A void result does not imply a particular refund\").",
+     "properties": {
+      "amount": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Amount"
+      },
+      "returns": {
+       "enum": [
+        "premium",
+        "nothing",
+        "fixed_amount"
+       ],
+       "title": "Returns",
+       "type": "string"
+      }
+     },
+     "required": [
+      "returns"
+     ],
+     "title": "VoidTransfer",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "contract_reader: a filed series read into the IR as an instrument family (core.ContractFamily's fields that are\nthe reader's): the support classification with its assumptions and unsupported terms (core.HarvestedContract), the\nrepresentative market's IR (its id and version are code's), the bindings that say which IR value each per-market\nlisting field fills (core.ListingBinding), and what a market record's settlement value reports\n(core.SettlementBinding). Validated as the core family it drafts, so an answer the definition refuses is refused\nhere, with the definition's reasons.",
+   "properties": {
+    "assumptions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Assumptions",
+     "type": "array"
+    },
+    "bindings": {
+     "items": {
+      "$ref": "#/$defs/ListingBinding"
+     },
+     "title": "Bindings",
+     "type": "array"
+    },
+    "ir": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ContractIR"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "settlement": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/SettlementBinding"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "support": {
+     "enum": [
+      "supported_exact",
+      "supported_with_explicit_assumptions",
+      "unsupported"
+     ],
+     "title": "Support",
+     "type": "string"
+    },
+    "unsupported_terms": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Unsupported Terms",
+     "type": "array"
+    }
+   },
+   "required": [
+    "support",
+    "assumptions",
+    "unsupported_terms",
+    "ir",
+    "bindings",
+    "settlement"
+   ],
+   "title": "HarvestDraft",
+   "type": "object"
+  },
+  "system": "You read a listed event contract series' filed terms into Requisite's contract IR, a formal representation that one evaluator settles in three-valued logic. A series is one set of filed terms listed as many markets that differ only in their listing fields (a strike, their times, the event). You read it as an instrument family: one representative market's IR, and bindings that say which IR value each per-market listing field fills, from which code gives every market its IR. Code validates and tests what you propose; you only propose.\n\nYou are given:\n- series: the exchange's series record.\n- filings: the filed documents' text as extracted from their PDFs (the contract terms, and the product certification where there is one), with anything that could not be read.\n- representative_market: the listing fields of the market whose IR you write.\n- markets: how many markets the series has, their tickers, and each listing field whose value varies across them, with its number of distinct values and its values at a few markets.\n- listing_fields: the market fields a binding may read.\nYou are not shown how any market settled, nor any price. Your IRs are checked afterwards against how the settled markets settled.\n\nProduce:\n- support: \"supported_exact\" when the IR carries every operative term as filed; \"supported_with_explicit_assumptions\" when it carries them only under assumptions you list; \"unsupported\" when a term that decides settlement cannot be expressed, which you name in unsupported_terms. Never simplify a term silently: a term you could not carry exactly is an assumption or an unsupported term, stated in the filing's own words.\n- ir: the representative market's contract in the IR, or null when unsupported. Code sets its id and version.\n- bindings: for each listing field that varies across the markets and that the IR depends on, the IR value it fills: field, node, slot. A slot is a node's \"threshold\" (Cmp, NumCmp), the instant a node reads (\"at\": At, ValueAt), a By's \"since\" or \"deadline\", a window's \"window_start\" or \"window_end\" (Throughout, CountTrue, DurationIn), or, with node null, one of the timing's dates (\"open\", \"close\", \"expiration\", \"observation_cutoff\"). field is one of listing_fields, a dotted path where the value is nested (custom_strike.<key>). The field's value fills the slot exactly as listed, in the slot's type: a number fills a number threshold, a text a text threshold, a timestamp an instant. Write the representative IR with the representative market's own values in every bound slot; code checks that the bindings reproduce it from that market's record. No bindings when unsupported.\n- settlement: what a market's settlement value reports. The exchange's record of a settled market states \"the value that was considered for the settlement\"; name the IR observable whose value that is, and the listing field giving the instant that value is for, the instant the IR reads it at. null where the settlement value is no observable of the IR (for instance, the outcome of a criterion a resolver judges from text), or when unsupported.\n\nHow to read the terms into the IR:\n- Observables are the quantities the terms settle on (a published value, a status, a date), each with the sources the terms name, ranked as the terms rank them, its revision policy as the terms state it, and for a number its unit and published precision.\n- The trigger is the payout criterion. Mechanical conditions (a value compared with a threshold, a count of days, a date before a deadline) are Cmp, NumCmp, By, At, Throughout, CountTrue or DurationIn over observables. Anything a resolver must judge from text (whether an instrument qualifies, whether its effect meets a description, whether it is in effect) is an Interpretive node: a question template name and its bindings, stating the condition in the filing's words. A number a resolver must read from text is a ReadValue with bands; a computation the terms define is a Computed node naming a consequence function and its inputs.\n- The comparison, and whether its bound is included, come from the filed terms and the market's rules text, never from a field's name; a strike field supplies only the value.\n- An observable's values are what its source publishes, in the form the source publishes them: a team or a candidate by the name the organizer reports, an outcome as the source words it, never an identifier the exchange uses internally. Bind a threshold to the listing field that states the value in that form, and where none does, say so as an assumption.\n- Every node has an id, unique in the contract, short and descriptive.\n- Timing, the resolution procedure (source precedence, conflict rule, what an unknown at expiry means, early expiration and its timing, extensions, voids) and the payout follow the terms exactly. Where the terms defer to an exchange rule outside the filing, name the rule (early_expiration_rule) rather than inventing its content. Where a date depends on events (an expiration that is the sooner of when data is available and a latest date), state the date the IR takes as an assumption, quoting the term.\n- Exclusions that change settlement are operative and name the node that carries them; disclosure notes are not.\n\nRead the terms whole before writing anything. Where the terms are ambiguous, do not resolve the ambiguity in the IR: list it as an assumption with both readings.\n\nWhere carrying a term exactly needs a construct the IR does not have, never approximate it silently. Either list it as\nan assumption, giving the filing's words and how the IR carries them instead, or, when it decides settlement and no\nfaithful carriage exists, name it as an unsupported term. Constructs the IR is known not to have:\n- a condition quantified over documents (\"any instrument that ...\", \"a qualifying action\"), where the IR can only\n  read one named instrument;\n- a reading whose answer is a single value other than the top of its range (bands are [low, high));\n- a date read from text and compared;\n- a source hierarchy for the evidence behind an interpretive condition, as distinct from an observable's sources;\n- an unknown-at-expiry outcome left to the exchange's discretion;\n- a settlement or payment date stated as a deadline (\"no later than\");\n- a known payment whose date is left to an exchange rule;\n- a missing-data rule for a payout quantity;\n- what a binary or capped payout pays per period;\n- an early expiration when the outcome is decided either way (the IR expires early only when its trigger is true).\nWhere the IR requires a field the terms do not state (a void transfer with no void path, a rounding mode), give the\nneutral value and list it as an assumption that the terms state no such rule.\n"
+ },
+ "response": {
+  "duration_ms": 55323,
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "cacheCreationInputTokens": 53100,
+    "cacheReadInputTokens": 14602,
+    "canonicalModel": "claude-opus-5-5",
+    "contextWindow": 1000000,
+    "costBasis": "list",
+    "costUSD": 0.5530284,
+    "inputTokens": 2,
+    "maxOutputTokens": 128000,
+    "outputTokens": 6265,
+    "provider": "firstParty",
+    "thinkingTokens": 2383,
+    "webSearchRequests": 0
+   }
+  },
+  "structured_output": {
+   "assumptions": [
+    "Team identity: custom_strike.soccer_team, the only strike field, is an exchange-internal UUID ('06fea0c5-...'), not a name the organizer reports. The threshold is therefore bound to yes_sub_title ('Ajman', 'Sharjah', 'Tie'). This assumes yes_sub_title states the team by the name the organizer of <soccer game> reports. (no_sub_title also varies, but it is not used.)",
+    "Draw iteration: the TIE market is carried by the same comparison, with the category value 'Tie'. The observable takes the value 'Tie' when the scores are level at the conclusion of regulation play, which is the filing's Draw provision for 'regulation time': 'resolves Yes if and only if the two participants scored an equal number of goals within that <result scope> (including 0\u20130)'. This assumes the source's level result is mapped to the listing's word 'Tie'.",
+    "Result scope: the series is 'regulation time', per rules_primary ('after 90 minutes plus stoppage time (does not include extra time or penalties)') and the filing ('<team> \"wins\" if and only if <team> has a higher score than the opposing participant in <soccer game> at the conclusion of regulation play'). The observable is defined as that regulation-time result, with own goals, VAR decisions and post-whistle penalties counted as the organizer officially records them.",
+    "Last fair price: the filing says the Contract 'shall be settled at the last fair price as determined by the Exchange in its sole discretion' if the game is cancelled before play, is not rescheduled within 48 hours, is awarded before play by forfeit or walkover, is suspended and not resumed within 48 hours (unless the result is already determined), is replayed beyond 48 hours, or is moved to an opponent's home stadium. The IR cannot carry an amount set at the exchange's discretion. It carries these cases as an unknown trigger at expiry that voids, with void_transfer 'premium' as a stand-in, but the last fair price is not the premium.",
+    "Determined Result Governs: the filing says 'if ... ninety (90) minutes of regular-time matchplay (not inclusive of stoppage time) have been completed at the time of such suspension, abandonment ... the result ... at such time shall govern', and the same applies to an official award after play has begun. The IR assumes the regulation_result observable reports that determined result in those cases, rather than leaving it unpublished.",
+    "Unknown at expiry: the filing says 'If an Expiration Value cannot be determined on the Expiration Date, Kalshi has the right to determine payouts pursuant to Rule 7.1'. This leaves the outcome to the exchange's discretion, which the IR cannot express. It is carried as void (see the last-fair-price assumption).",
+    "Revision policy: the filing says 'Revisions to the Underlying made after Expiration will not be accounted for', and 'The official result does not give effect to any change arising after the organizer ... has officially confirmed or published the final result' (protest, appeal, forfeiture and similar). This is carried as as_of_expiry. The extra rule that changes made after official confirmation but before expiration are also ignored is not carried separately.",
+    "Early expiration: the filing says 'If an event described in the Payout Criterion occurs, expiration will be moved to an earlier date and time in accordance with Rule 7.2', and early_close_condition says 'This market will close and expire after a winner is declared.' Both readings are possible: expiry happens when the outcome is decided either way (a winner is declared even for the No markets), or only when this market's criterion occurs. The IR can expire early only when the trigger is true, so it carries early expiration as when_true, per_exchange_rule, Rule 7.2. The early expiry of markets resolving No is not carried.",
+    "Expiration: the filing says 'The latest Expiration Date of the Contract shall be fifteen days after the originally scheduled date of <soccer game>' at '10:00 AM ET'. The listing gives expiration_time and latest_expiration_time as 2026-10-20T15:45:00Z, which does not match that rule. The IR takes the listed expiration_time as the expiration, as the observation cutoff and as the instant the Expiration Value is read ('the value of the Underlying as documented by the Source Agency on the Expiration Date at the Expiration time').",
+    "Settlement date: the filing says 'The Settlement Date of the Contract shall be no later than the day after the Expiration Date, unless the Market Outcome is under review pursuant to Rule 7.1.' This is a deadline, not a fixed lag. It is carried as settlement_lag_days 1 (calendar days, America/New_York), and the Rule 7.1 review exception is not carried.",
+    "Payment: the terms state no payment lag separate from settlement, so payment_lag_days is 0 (assumed).",
+    "Rounding: the terms state no rounding rule. The payout is a fixed $1.00, so rounding_quantum is 0.01 with half_even as a neutral value.",
+    "Sources: the filing ranks the sources 'in hierarchical order': the organizer's official website and communications (here the UAE Pro League), then Reuters, AP, Bloomberg News, ESPN, BBC Sport, The New York Times, The Athletic, The Guardian, Sky Sports and Opta. The series record lists ESPN and Fox Sports, and Fox Sports is not a filed Source Agency, so it is not included. The hierarchy is carried as precedence_first_available.",
+    "Neutral venue and relocation: 'A match moved from a neutral venue to the home stadium of either participant, or moved from the home stadium of one participant to the home stadium of the opposing participant, shall be settled at the last fair price.' This is carried only through the void path, on the assumption that the observable is not published as settling in that case."
+   ],
+   "bindings": [
+    {
+     "field": "yes_sub_title",
+     "node": "reg_winner_is_team",
+     "slot": "threshold"
+    }
+   ],
+   "ir": {
+    "exclusions": [
+     {
+      "ir_node": "reg_winner_is_team",
+      "operative": true,
+      "text": "Draws at the conclusion of regulation play do not constitute a win, regardless of whether <soccer game> is subsequently decided by extra time, penalty shootout, drawing of lots, coin toss, or any other tiebreaker mechanism."
+     },
+     {
+      "ir_node": "reg_result_at_expiry",
+      "operative": true,
+      "text": "If, before the commencement of play, <soccer game> is cancelled or abandoned, is not scheduled or rescheduled within 48 hours of its originally scheduled start time, or is awarded by forfeit/walkover, the Contract shall be settled at the last fair price as determined by the Exchange in its sole discretion."
+     },
+     {
+      "ir_node": "reg_result_at_expiry",
+      "operative": true,
+      "text": "If <soccer game> does not resume from the point of suspension within 48 hours of its original scheduled start time, the Contract shall be settled at the last fair price, except where the Determined Result Governs provision applies."
+     },
+     {
+      "ir_node": "reg_result_at_expiry",
+      "operative": true,
+      "text": "The official result does not give effect to any change arising after the organizer of <soccer game> has officially confirmed or published the final result, including any change by reason of protest, appeal, administrative or disciplinary proceeding, sporting sanction, points adjustment, or forfeiture."
+     },
+     {
+      "operative": false,
+      "text": "Kalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League."
+     }
+    ],
+    "id": "KXUAEPLGAME-26OCT18AJMSHJ-AJM",
+    "observables": [
+     {
+      "description": "Result of the Ajman vs Sharjah UAE Pro League game originally scheduled for Oct 18, 2026 at the conclusion of regulation play (two halves of 45 minutes plus stoppage time added by the referee; excludes extra time and penalties), as officially confirmed by the organizer: the name of the team with the higher score, or 'Tie' if the scores are level.",
+      "id": "regulation_result",
+      "revision_policy": "as_of_expiry",
+      "sources": [
+       {
+        "id": "organizer",
+        "name": "UAE Pro League (organizer of <soccer game>) official website and official communications",
+        "rank": 1,
+        "role": "primary"
+       },
+       {
+        "id": "reuters",
+        "name": "Reuters",
+        "rank": 2,
+        "role": "secondary"
+       },
+       {
+        "id": "ap",
+        "name": "Associated Press",
+        "rank": 3,
+        "role": "secondary"
+       },
+       {
+        "id": "bloomberg",
+        "name": "Bloomberg News",
+        "rank": 4,
+        "role": "secondary"
+       },
+       {
+        "id": "espn",
+        "name": "ESPN",
+        "rank": 5,
+        "role": "secondary",
+        "url": "https://www.espn.com/"
+       },
+       {
+        "id": "bbc_sport",
+        "name": "BBC Sport",
+        "rank": 6,
+        "role": "secondary"
+       },
+       {
+        "id": "nyt",
+        "name": "The New York Times",
+        "rank": 7,
+        "role": "secondary"
+       },
+       {
+        "id": "the_athletic",
+        "name": "The Athletic",
+        "rank": 8,
+        "role": "secondary"
+       },
+       {
+        "id": "guardian",
+        "name": "The Guardian",
+        "rank": 9,
+        "role": "secondary"
+       },
+       {
+        "id": "sky_sports",
+        "name": "Sky Sports",
+        "rank": 10,
+        "role": "secondary"
+       },
+       {
+        "id": "opta",
+        "name": "Opta (Stats Perform)",
+        "rank": 11,
+        "role": "secondary"
+       }
+      ],
+      "value_type": "category"
+     }
+    ],
+    "payout": {
+     "currency": "USD",
+     "kind": "binary",
+     "payment": "at_settlement",
+     "rounding_mode": "half_even",
+     "rounding_quantum": "0.01",
+     "unit_value": "1.00"
+    },
+    "resolution": {
+     "conflict_policy": {
+      "procedure": "precedence_first_available"
+     },
+     "early_expiration": "when_true",
+     "early_expiration_at": "per_exchange_rule",
+     "early_expiration_rule": "Kalshi Rulebook Rule 7.2",
+     "on_unknown_at_expiry": "void",
+     "precedence": [
+      "organizer",
+      "reuters",
+      "ap",
+      "bloomberg",
+      "espn",
+      "bbc_sport",
+      "nyt",
+      "the_athletic",
+      "guardian",
+      "sky_sports",
+      "opta"
+     ],
+     "void_transfer": {
+      "returns": "premium"
+     }
+    },
+    "timing": {
+     "close": "2026-10-18T17:44:58Z",
+     "expiration": "2026-10-20T15:45:00Z",
+     "holiday_calendar": null,
+     "lag_days": "calendar",
+     "observation_cutoff": "2026-10-20T15:45:00Z",
+     "open": "2026-10-14T00:35:00Z",
+     "payment_lag_days": 0,
+     "settlement_lag_days": 1,
+     "tz": "America/New_York"
+    },
+    "trigger": {
+     "at": "2026-10-20T15:45:00Z",
+     "expr": {
+      "id": "reg_winner_is_team",
+      "kind": "cmp",
+      "observable": "regulation_result",
+      "op": "==",
+      "value": {
+       "kind": "text",
+       "value": "Ajman"
+      }
+     },
+     "id": "reg_result_at_expiry",
+     "kind": "at"
+    },
+    "version": 1
+   },
+   "settlement": {
+    "at_field": "expiration_time",
+    "observable": "regulation_result"
+   },
+   "support": "supported_with_explicit_assumptions",
+   "unsupported_terms": []
+  },
+  "total_cost_usd": 0.5530284,
+  "usage": {
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 53100,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "cache_creation_input_tokens": 53100,
+   "cache_read_input_tokens": 14602,
+   "fallback_credit": null,
+   "inference_geo": "global",
+   "input_tokens": 2,
+   "iterations": [
+    {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 53100,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 53100,
+     "cache_read_input_tokens": 14602,
+     "input_tokens": 2,
+     "output_tokens": 6265,
+     "type": "message"
+    }
+   ],
+   "output_tokens": 6265,
+   "output_tokens_details": {
+    "thinking_tokens": 2383
+   },
+   "server_tool_use": {
+    "web_fetch_requests": 0,
+    "web_search_requests": 0
+   },
+   "service_tier": "standard",
+   "speed": "standard"
+  }
+ }
+}
